@@ -39,6 +39,9 @@ class Alert(Base):
     
     source: Mapped[str] = mapped_column(String(20), nullable=False, server_default=text("'API'"))
     ingested_from_ip: Mapped[Optional[str]] = mapped_column(String(50))
+    # Test alerts injected from the portal simulator. Must be excluded from
+    # compliance metrics/aggregations — filter with Alert.is_synthetic == False.
+    is_synthetic: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
     
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=text("now()"))
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=text("now()"))

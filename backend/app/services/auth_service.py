@@ -5,7 +5,7 @@ from app.models.user import User
 from app.models.tenant import Tenant
 from app.models.audit import AuditLog
 from app.schemas.auth import UserSignup, UserLogin
-from app.utils.security import hash_password, verify_password, create_access_token, create_refresh_token
+from app.utils.security import hash_password, verify_password, create_access_token, create_refresh_token, dummy_verify
 
 def generate_slug(name: str) -> str:
     # Very basic slugification
@@ -21,7 +21,7 @@ def signup_tenant_admin(data: UserSignup, db: Session):
     slug = generate_slug(data.tenant_name)
     existing_tenant = db.query(Tenant).filter(Tenant.slug == slug).first()
     if existing_tenant:
-        slug = f"{slug}-{User.query.count()}" # just a simple deduplication
+        slug = f"{slug}-{db.query(Tenant).count()}" # just a simple deduplication
         
     # 2. Create Tenant
     tenant = Tenant(
@@ -77,8 +77,10 @@ def signup_tenant_admin(data: UserSignup, db: Session):
 def login_user(data: UserLogin, db: Session):
     user = db.query(User).filter(User.email == data.email).first()
     if not user:
+        # Burn a bcrypt round so unknown emails take as long as wrong passwords
+        dummy_verify(data.password)
         raise HTTPException(status_code=401, detail="Invalid email or password")
-        
+
     if not verify_password(data.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid email or password")
         

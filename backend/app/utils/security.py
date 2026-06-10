@@ -18,8 +18,25 @@ def hash_password(password: str) -> str:
     salt = bcrypt.gensalt()
     return bcrypt.hashpw(_preprocess_password(password), salt).decode('utf-8')
 
+# Pre-computed hash used to equalize timing on code paths where no real
+# credential exists (unknown user/tenant), so attackers cannot distinguish
+# "record not found" from "wrong secret" by measuring response latency.
+_DUMMY_HASH = bcrypt.hashpw(b"aegis-timing-equalizer", bcrypt.gensalt())
+
+def dummy_verify(plain_secret: str = "x") -> None:
+    """Burn a full bcrypt round against a throwaway hash. Call this on
+    not-found branches so they take the same time as a real verification."""
+    bcrypt.hashpw(_preprocess_password(plain_secret), _DUMMY_HASH)
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return bcrypt.checkpw(_preprocess_password(plain_password), hashed_password.encode('utf-8'))
+    try:
+        hashed_bytes = hashed_password.encode('utf-8')
+        candidate = bcrypt.hashpw(_preprocess_password(plain_password), hashed_bytes)
+        return secrets.compare_digest(candidate, hashed_bytes)
+    except ValueError:
+        # Malformed stored hash: still pay the bcrypt cost before rejecting
+        dummy_verify(plain_password)
+        return False
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()

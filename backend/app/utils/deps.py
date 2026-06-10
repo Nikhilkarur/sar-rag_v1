@@ -8,7 +8,7 @@ from app.database import get_db
 from app.config import settings
 from app.models.user import User
 from app.models.tenant import Tenant
-from app.utils.security import verify_api_key
+from app.utils.security import verify_api_key, dummy_verify
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
@@ -65,17 +65,23 @@ def authenticate_api_key(
     x_tenant_id: str = Header(...),
     db: Session = Depends(get_db)
 ) -> Tenant:
+    invalid_credentials = HTTPException(
+        status_code=401, detail="Invalid API Key or Tenant ID"
+    )
+
     tenant = db.query(Tenant).filter(Tenant.tenant_id_public == x_tenant_id).first()
-    if not tenant:
-        raise HTTPException(status_code=401, detail="Invalid API Key or Tenant ID")
-        
+
+    # Equalize timing: every failure path pays exactly one bcrypt round, so
+    # response latency cannot be used to enumerate valid tenant IDs.
+    if not tenant or not tenant.api_key_hash:
+        dummy_verify(x_api_key)
+        raise invalid_credentials
+
+    if not verify_api_key(x_api_key, tenant.api_key_hash):
+        raise invalid_credentials
+
+    # Status is only disclosed after the caller has proven key possession
     if tenant.status != 'ACTIVE':
         raise HTTPException(status_code=403, detail="Tenant is not active")
-        
-    if not tenant.api_key_hash:
-        raise HTTPException(status_code=401, detail="Invalid API Key")
-        
-    if not verify_api_key(x_api_key, tenant.api_key_hash):
-        raise HTTPException(status_code=401, detail="Invalid API Key")
-        
+
     return tenant
