@@ -20,6 +20,13 @@ class Settings(BaseSettings):
     # Rate limiting
     RATE_LIMIT_INGEST_PER_MINUTE: int = 120
 
+    # Ingestion hardening
+    MAX_INGEST_PAYLOAD_BYTES: int = 5 * 1024 * 1024  # 5 MB hard cap
+
+    # PII encryption at rest (Fernet). MUST be set explicitly in production;
+    # when empty, a key is derived from SECRET_KEY so dev works out of the box.
+    PII_ENCRYPTION_KEY: str = ""
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 settings = Settings()

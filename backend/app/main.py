@@ -5,7 +5,16 @@ from app.config import settings
 from app.middleware.logging import APILoggingMiddleware
 from app.routers import auth, admin, tenant, ingest, alerts
 
-app = FastAPI(title="Aegis AML", version="1.0.0")
+_IS_PROD = settings.ENVIRONMENT == "production"
+
+app = FastAPI(
+    title="Aegis AML",
+    version="1.0.0",
+    # Don't hand attackers a complete API map in production
+    docs_url=None if _IS_PROD else "/docs",
+    redoc_url=None if _IS_PROD else "/redoc",
+    openapi_url=None if _IS_PROD else "/openapi.json",
+)
 
 app.add_middleware(APILoggingMiddleware)
 app.add_middleware(

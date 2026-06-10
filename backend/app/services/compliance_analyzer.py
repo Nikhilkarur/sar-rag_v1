@@ -1,5 +1,19 @@
 from typing import Any, Dict, List
 
+def _safe_float(value) -> Any:
+    """Coerce to float, returning None for garbage. A payload like
+    {"transaction_amount": "N/A"} must not 500 the whole ingest request."""
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+def _safe_int(value) -> Any:
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        return None
+
 def check_structuring(normalized: dict) -> dict:
     amount = normalized.get("transaction_amount")
     
@@ -176,6 +190,11 @@ def check_risk_score_threshold(normalized: dict) -> dict:
     }
 
 def analyze(normalized: dict) -> List[Dict[str, Any]]:
+    # Coerce attacker-controllable numeric fields once, so the individual
+    # checks' float()/int() casts can never raise on crafted payloads
+    normalized = dict(normalized)
+    normalized["transaction_amount"] = _safe_float(normalized.get("transaction_amount"))
+    normalized["risk_score"] = _safe_int(normalized.get("risk_score"))
     return [
         check_structuring(normalized),
         check_rapid_movement(normalized),

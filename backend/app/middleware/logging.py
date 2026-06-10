@@ -43,6 +43,10 @@ class APILoggingMiddleware(BaseHTTPMiddleware):
                 user = db.query(User).filter(User.id == user_id).first()
                 if user:
                     tenant_id = user.tenant_id
+                else:
+                    # Token signed for a since-deleted user: keep the log row
+                    # (FK would reject the orphan id and drop the audit entry)
+                    user_id = None
             # If we have X-Tenant-ID, get tenant_id from public id
             elif x_tenant_id:
                 from app.models.tenant import Tenant

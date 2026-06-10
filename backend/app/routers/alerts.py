@@ -128,7 +128,10 @@ def submit_test_alert(
         **_SCENARIO_TEMPLATES[scenario],
     }
     if payload.get("custom_risk_score") is not None:
-        normalized["risk_score"] = int(payload["custom_risk_score"])
+        try:
+            normalized["risk_score"] = max(0, min(100, int(payload["custom_risk_score"])))
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=400, detail="custom_risk_score must be an integer between 0 and 100")
 
     schema = db.query(IngestionSchema).filter(
         IngestionSchema.tenant_id == current_user.tenant_id,

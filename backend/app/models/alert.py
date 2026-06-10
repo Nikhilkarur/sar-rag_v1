@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Any, Dict, Optional
-from sqlalchemy import String, Boolean, text, ForeignKey, Numeric, Integer
+from sqlalchemy import String, Boolean, text, ForeignKey, Numeric, Integer, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy import DateTime, TEXT
@@ -8,6 +8,11 @@ from app.database import Base
 
 class Alert(Base):
     __tablename__ = "alerts"
+    __table_args__ = (
+        # Replay protection: one alert per (tenant, idempotency key).
+        # Postgres treats NULLs as distinct, so legacy/simulator rows are unaffected.
+        UniqueConstraint("tenant_id", "idempotency_key", name="uq_alerts_tenant_idempotency"),
+    )
 
     id: Mapped[str] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
     tenant_id: Mapped[str] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="RESTRICT"), nullable=False)
@@ -19,6 +24,9 @@ class Alert(Base):
     normalized_payload: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB)
     masked_payload: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB)
     
+    # Client-supplied Idempotency-Key header, or SHA-256 of the raw body when absent
+    idempotency_key: Mapped[Optional[str]] = mapped_column(String(255))
+
     transaction_id: Mapped[Optional[str]] = mapped_column(String(255))
     transaction_amount: Mapped[Optional[float]] = mapped_column(Numeric(20, 4))
     transaction_currency: Mapped[Optional[str]] = mapped_column(String(10), server_default=text("'INR'"))

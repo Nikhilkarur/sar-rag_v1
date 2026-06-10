@@ -12,10 +12,13 @@ from app.services.schema_normalizer import normalize_payload
 from app.services.pii_masker import mask_payload
 from app.services.compliance_analyzer import analyze
 from app.services.llm_agent import generate_sar
+import hashlib
+import json
 import threading
 import time
 import uuid
 from collections import defaultdict, deque
+from sqlalchemy.exc import IntegrityError
 
 # --- Rate limiting (sliding window, per tenant-or-IP, in-process) ---
 # Runs as a router dependency BEFORE API-key verification, so unauthenticated
@@ -23,16 +26,42 @@ from collections import defaultdict, deque
 # NOTE: state is per worker process; for multi-instance deployments move the
 # window to Redis, but the contract (429 + Retry-After) stays the same.
 _RATE_WINDOW_SECONDS = 60.0
+_RATE_MAX_BUCKETS = 10_000  # bound limiter memory against random-key floods
 _rate_lock = threading.Lock()
 _rate_buckets: dict = defaultdict(deque)
 
+def _prune_rate_buckets(now: float) -> None:
+    # Caller must hold _rate_lock. Drop buckets with no traffic in the window
+    # so attackers spraying random X-Tenant-ID values cannot grow memory forever.
+    stale = [k for k, b in _rate_buckets.items() if not b or now - b[-1] > _RATE_WINDOW_SECONDS]
+    for k in stale:
+        del _rate_buckets[k]
+
 def enforce_ingest_rate_limit(request: Request):
-    key = request.headers.get("X-Tenant-ID") or (
+    # Reject oversized bodies before auth (bcrypt) or body buffering.
+    # Content-Length is verified against actual bytes again in the handler.
+    content_length = request.headers.get("Content-Length")
+    if content_length is None:
+        raise HTTPException(status_code=411, detail="Content-Length header is required")
+    try:
+        if int(content_length) > settings.MAX_INGEST_PAYLOAD_BYTES:
+            raise HTTPException(status_code=413, detail="Payload exceeds the maximum allowed size")
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid Content-Length header")
+
+    # Untrusted header is the bucket key: cap its length so it can't be abused
+    key = (request.headers.get("X-Tenant-ID") or (
         request.client.host if request.client else "unknown"
-    )
+    ))[:128]
     limit = settings.RATE_LIMIT_INGEST_PER_MINUTE
     now = time.monotonic()
     with _rate_lock:
+        if len(_rate_buckets) >= _RATE_MAX_BUCKETS and key not in _rate_buckets:
+            _prune_rate_buckets(now)
+            if len(_rate_buckets) >= _RATE_MAX_BUCKETS:
+                # Table still full of active keys: shed load instead of growing
+                raise HTTPException(status_code=429, detail="Server busy. Try again later.",
+                                    headers={"Retry-After": "30"})
         bucket = _rate_buckets[key]
         while bucket and now - bucket[0] > _RATE_WINDOW_SECONDS:
             bucket.popleft()
@@ -83,11 +112,40 @@ async def ingest_payload(
     db: Session = Depends(get_db), 
     tenant: Tenant = Depends(authenticate_api_key)
 ):
+    body = await request.body()
+    # Content-Length was checked pre-auth, but a chunked/lying client can send
+    # more bytes than declared — enforce against what actually arrived
+    if len(body) > settings.MAX_INGEST_PAYLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="Payload exceeds the maximum allowed size")
+
     try:
-        raw_payload = await request.json()
+        raw_payload = json.loads(body)
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid JSON payload")
-        
+    if not isinstance(raw_payload, dict):
+        raise HTTPException(status_code=400, detail="Payload must be a JSON object")
+
+    # Replay protection: explicit Idempotency-Key header, falling back to a
+    # hash of the exact body so byte-identical resubmissions are caught too
+    idempotency_key = request.headers.get("Idempotency-Key")
+    if idempotency_key:
+        idempotency_key = idempotency_key.strip()[:255]
+    else:
+        idempotency_key = f"sha256:{hashlib.sha256(body).hexdigest()}"
+
+    existing = db.query(Alert).filter(
+        Alert.tenant_id == tenant.id,
+        Alert.idempotency_key == idempotency_key
+    ).first()
+    if existing:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "message": "Duplicate submission rejected (idempotency key already processed)",
+                "original_alert_id": str(existing.id),
+            },
+        )
+
     schema_key = request.headers.get("X-Schema-Key")
     schema = None
     if schema_key:
@@ -114,8 +172,14 @@ async def ingest_payload(
     # 3. Compliance Analysis
     analysis_results = analyze(normalized)
     
-    # Determine base risk score from payload or rules
-    risk_score = int(normalized.get("risk_score", 0))
+    # Determine base risk score from payload or rules.
+    # Clamp to 0-100: a crafted negative/huge/non-numeric risk_score must not
+    # crash the pipeline or drag the final score below the SAR threshold.
+    try:
+        risk_score = int(float(normalized.get("risk_score") or 0))
+    except (TypeError, ValueError):
+        risk_score = 0
+    risk_score = max(0, min(100, risk_score))
     for r in analysis_results:
         if r["triggered"]:
             if r["confidence"] == "HIGH": risk_score += 20
@@ -134,11 +198,18 @@ async def ingest_payload(
         transaction_type=normalized.get("transaction_type"),
         risk_score=min(100, risk_score),
         is_synthetic=False,
+        idempotency_key=idempotency_key,
         ingested_from_ip=request.client.host if request.client else None,
         processing_started_at=__import__('sqlalchemy').func.now()
     )
     db.add(alert)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        # Two identical requests raced past the SELECT: the unique constraint
+        # on (tenant_id, idempotency_key) is the authoritative guard
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Duplicate submission rejected (idempotency key already processed)")
     db.refresh(alert)
     
     # Save PII Map

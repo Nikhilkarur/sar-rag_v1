@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 
 class Token(BaseModel):
@@ -10,17 +10,19 @@ class TokenData(BaseModel):
     email: Optional[str] = None
 
 class UserSignup(BaseModel):
-    tenant_name: str
-    company_type: str
+    # Length caps prevent multi-megabyte strings reaching bcrypt/DB;
+    # min password length enforces a baseline policy
+    tenant_name: str = Field(min_length=2, max_length=120)
+    company_type: str = Field(min_length=1, max_length=50)
     email: EmailStr
-    password: str
-    full_name: str
-    designation: Optional[str] = None
-    phone: Optional[str] = None
+    password: str = Field(min_length=10, max_length=128)
+    full_name: str = Field(min_length=1, max_length=120)
+    designation: Optional[str] = Field(None, max_length=80)
+    phone: Optional[str] = Field(None, max_length=20)
 
 class UserLogin(BaseModel):
     email: EmailStr
-    password: str
+    password: str = Field(min_length=1, max_length=128)
 
 class RefreshRequest(BaseModel):
     refresh_token: str
