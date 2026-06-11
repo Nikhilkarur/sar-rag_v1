@@ -21,6 +21,11 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from app.models import Base
 target_metadata = Base.metadata
 
+# Single source of truth: migrations always run against the same database the
+# application uses, regardless of what alembic.ini says.
+from app.config import settings
+config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")

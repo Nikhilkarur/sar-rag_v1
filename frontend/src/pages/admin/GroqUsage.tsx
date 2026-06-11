@@ -100,21 +100,21 @@ export function GroqUsage() {
             <Stat
               index={0}
               icon={<Zap size={15} color="var(--accent-text)" />}
-              iconBg="rgba(99,102,241,0.12)"
+              iconBg="rgba(6,78,59,0.10)"
               value={allTime}
               label="Total Tokens — All Time"
             />
             <Stat
               index={1}
               icon={<Hash size={15} color="var(--info)" />}
-              iconBg="rgba(56,189,248,0.12)"
+              iconBg="rgba(14,116,144,0.12)"
               value={thisMonth}
               label="Tokens This Month"
             />
             <Stat
               index={2}
               icon={<DollarSign size={15} color="var(--success)" />}
-              iconBg="rgba(34,197,94,0.12)"
+              iconBg="rgba(6,78,59,0.12)"
               value={`$${cost}`}
               label="Est. Cost This Month"
             />

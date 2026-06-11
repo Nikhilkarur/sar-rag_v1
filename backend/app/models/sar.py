@@ -10,8 +10,8 @@ class SARDraft(Base):
     __tablename__ = "sar_drafts"
 
     id: Mapped[str] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
-    alert_id: Mapped[str] = mapped_column(UUID(as_uuid=True), ForeignKey("alerts.id", ondelete="RESTRICT"), unique=True, nullable=False)
-    tenant_id: Mapped[str] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    alert_id: Mapped[str] = mapped_column(UUID(as_uuid=True), ForeignKey("alerts.id", ondelete="CASCADE"), unique=True, nullable=False)
+    tenant_id: Mapped[str] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
     
     draft_text: Mapped[str] = mapped_column(TEXT, nullable=False)
     draft_structured: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB)

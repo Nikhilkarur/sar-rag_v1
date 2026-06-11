@@ -17,6 +17,8 @@ class WebhookConfig(Base):
     
     secret_hash: Mapped[Optional[str]] = mapped_column(String(255))
     secret_prefix: Mapped[Optional[str]] = mapped_column(String(12))
+    # Fernet-encrypted secret — required to actually sign outbound HMAC payloads
+    secret_encrypted: Mapped[Optional[str]] = mapped_column(String(500))
     
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
     last_tested_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))

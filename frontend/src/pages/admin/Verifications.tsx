@@ -226,7 +226,7 @@ export function Verifications() {
             <div
               style={{
                 background: 'var(--success-subtle)',
-                borderBottom: '1px solid rgba(34,197,94,0.3)',
+                borderBottom: '1px solid rgba(6,78,59,0.3)',
                 padding: '20px 24px',
                 display: 'flex',
                 alignItems: 'center',

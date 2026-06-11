@@ -96,10 +96,10 @@ export function Usage() {
           </>
         ) : (
           <>
-            <Stat index={0} icon={<Inbox size={15} color="var(--accent-text)" />} iconBg="rgba(99,102,241,0.12)" value={alerts} label="Alerts This Month" />
-            <Stat index={1} icon={<CheckCircle2 size={15} color="var(--success)" />} iconBg="rgba(34,197,94,0.12)" value={approved} label="SARs Approved" />
-            <Stat index={2} icon={<ShieldCheck size={15} color="var(--info)" />} iconBg="rgba(56,189,248,0.12)" value={cleared} label="False Positives Cleared" />
-            <Stat index={3} icon={<Timer size={15} color="var(--warning)" />} iconBg="rgba(245,158,11,0.12)" value={`${avgTime} min`} label="Avg. Review Time" />
+            <Stat index={0} icon={<Inbox size={15} color="var(--accent-text)" />} iconBg="rgba(6,78,59,0.10)" value={alerts} label="Alerts This Month" />
+            <Stat index={1} icon={<CheckCircle2 size={15} color="var(--success)" />} iconBg="rgba(6,78,59,0.10)" value={approved} label="SARs Approved" />
+            <Stat index={2} icon={<ShieldCheck size={15} color="var(--info)" />} iconBg="rgba(14,116,144,0.10)" value={cleared} label="False Positives Cleared" />
+            <Stat index={3} icon={<Timer size={15} color="var(--warning)" />} iconBg="rgba(160,116,26,0.10)" value={`${avgTime} min`} label="Avg. Review Time" />
           </>
         )}
       </div>

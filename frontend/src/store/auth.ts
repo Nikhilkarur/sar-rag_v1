@@ -9,6 +9,8 @@ interface AuthState {
   setAuth: (user: User, accessToken: string, refreshToken: string) => void
   updateUser: (user: User) => void
   clearAuth: () => void
+  /** Alias of clearAuth — both names are used across the app */
+  logout: () => void
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -23,6 +25,10 @@ export const useAuthStore = create<AuthState>()(
       },
       updateUser: (user) => set({ user }),
       clearAuth: () => {
+        localStorage.removeItem('aegis_refresh_token')
+        set({ user: null, accessToken: null, isAuthenticated: false })
+      },
+      logout: () => {
         localStorage.removeItem('aegis_refresh_token')
         set({ user: null, accessToken: null, isAuthenticated: false })
       },

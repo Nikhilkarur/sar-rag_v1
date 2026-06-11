@@ -26,6 +26,7 @@ interface FormState {
   admin_email: string
   admin_phone: string
   admin_designation: string
+  admin_password: string
 }
 
 export function Signup() {
@@ -44,6 +45,7 @@ export function Signup() {
     admin_email: '',
     admin_phone: '',
     admin_designation: '',
+    admin_password: '',
   })
   const navigate = useNavigate()
   const setAuth = useAuthStore((s) => s.setAuth)
@@ -60,6 +62,7 @@ export function Signup() {
     } else if (step === 1) {
       if (!form.admin_name.trim()) e.admin_name = 'Full name is required.'
       if (!/^\S+@\S+\.\S+$/.test(form.admin_email)) e.admin_email = 'Enter a valid work email.'
+      if (form.admin_password.length < 10) e.admin_password = 'Password must be at least 10 characters.'
     }
     setErrors(e)
     return Object.keys(e).length === 0
@@ -207,6 +210,9 @@ export function Signup() {
                   </Field>
                   <Field label="Designation">
                     <Input placeholder="Head of Compliance" value={form.admin_designation} onChange={set('admin_designation')} />
+                  </Field>
+                  <Field label="Password" error={errors.admin_password} hint="Minimum 10 characters — this signs you into the portal.">
+                    <Input type="password" placeholder="••••••••••" value={form.admin_password} onChange={set('admin_password')} error={!!errors.admin_password} autoComplete="new-password" />
                   </Field>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
                     <Button variant="ghost" onClick={back}>

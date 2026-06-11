@@ -177,7 +177,7 @@ export function Credentials() {
               <div
                 style={{
                   background: 'var(--danger-subtle)',
-                  borderBottom: '1px solid rgba(239,68,68,0.3)',
+                  borderBottom: '1px solid rgba(179,56,44,0.3)',
                   padding: '8px 14px',
                   fontSize: 12,
                   fontWeight: 600,
@@ -292,7 +292,7 @@ export function Credentials() {
         <div
           style={{
             background: 'var(--danger-subtle)',
-            border: '1px solid rgba(239,68,68,0.3)',
+            border: '1px solid rgba(179,56,44,0.3)',
             borderRadius: 'var(--r-md)',
             padding: 14,
             fontSize: 13,

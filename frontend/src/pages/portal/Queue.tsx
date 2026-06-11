@@ -63,7 +63,7 @@ export function Queue() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 600, letterSpacing: '-0.02em' }}>Review Queue</h1>
+        <h1 style={{ fontSize: 28, fontWeight: 600, letterSpacing: '-0.01em', fontFamily: 'var(--font-serif)' }}>Review Queue</h1>
         {pendingCount > 0 && (
           <span
             style={{
@@ -126,7 +126,7 @@ export function Queue() {
             className="input"
             value={fromDate}
             onChange={(e) => setFromDate(e.target.value)}
-            style={{ height: 32, fontSize: 12, width: 130, colorScheme: 'dark' }}
+            style={{ height: 32, fontSize: 12, width: 130, colorScheme: 'light' }}
             aria-label="From date"
           />
           <input
@@ -134,7 +134,7 @@ export function Queue() {
             className="input"
             value={toDate}
             onChange={(e) => setToDate(e.target.value)}
-            style={{ height: 32, fontSize: 12, width: 130, colorScheme: 'dark' }}
+            style={{ height: 32, fontSize: 12, width: 130, colorScheme: 'light' }}
             aria-label="To date"
           />
         </div>
@@ -171,7 +171,7 @@ export function Queue() {
               {isLoading ? (
                 <SkeletonTableRows rows={6} cols={8} />
               ) : (
-                filtered.map((a) => {
+                filtered.map((a, i) => {
                   const isNew =
                     Date.now() - new Date(a.created_at).getTime() < NEW_THRESHOLD_MS &&
                     new Date(a.created_at).getTime() > mountTime.current - NEW_THRESHOLD_MS
@@ -179,6 +179,9 @@ export function Queue() {
                     <tr
                       key={a.id}
                       className={isNew ? 'row-new' : undefined}
+                      style={{
+                        animation: `fadeInUp 420ms cubic-bezier(0.22, 1, 0.36, 1) ${Math.min(i, 14) * 50}ms both`,
+                      }}
                       onClick={() => navigate(`/queue/${a.id}`)}
                       onMouseEnter={(e) => {
                         const btn = e.currentTarget.querySelector<HTMLElement>('.row-review-btn')

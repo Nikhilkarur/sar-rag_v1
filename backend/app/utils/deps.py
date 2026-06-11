@@ -3,6 +3,7 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 from typing import Optional
+from uuid import UUID
 
 from app.database import get_db
 from app.config import settings
@@ -11,6 +12,14 @@ from app.models.tenant import Tenant
 from app.utils.security import verify_api_key, dummy_verify
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+
+def parse_uuid_or_404(value: str, what: str = "Resource") -> UUID:
+    """Path params compared against Postgres UUID columns must be valid UUIDs,
+    or psycopg2 raises a DataError that surfaces as a 500. Garbage in → 404."""
+    try:
+        return UUID(str(value))
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=404, detail=f"{what} not found")
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
     credentials_exception = HTTPException(

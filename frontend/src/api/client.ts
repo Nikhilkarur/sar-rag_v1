@@ -1,11 +1,7 @@
-import axios from 'axios'
+import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import { useAuthStore } from '../store/auth'
 
-/**
- * Base axios instance. The mock layer (src/mocks/store.ts) currently serves
- * all data; when the FastAPI backend lands, the api/* modules switch over to
- * this client without touching any page code.
- */
+/** Base axios instance for the FastAPI backend. */
 const client = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1',
   headers: { 'Content-Type': 'application/json' },
@@ -18,43 +14,68 @@ client.interceptors.request.use((config) => {
   return config
 })
 
-// Response: on 401, attempt token refresh once, else clear auth + redirect
+/* ── 401 → silent refresh ─────────────────────────────────────────────
+   The backend ROTATES refresh tokens: every successful /auth/refresh
+   invalidates the old token and returns a new pair. We must persist the
+   new refresh token immediately or the next refresh will 401 and force
+   a logout. A single in-flight refresh promise is shared so concurrent
+   401s don't race each other into double-rotation. */
+
 let refreshing: Promise<string | null> | null = null
 
-async function tryRefresh(): Promise<string | null> {
+async function refreshAccessToken(): Promise<string | null> {
   const refreshToken = localStorage.getItem('aegis_refresh_token')
   if (!refreshToken) return null
   try {
-    const { data } = await axios.post(
-      `${client.defaults.baseURL}/auth/refresh`,
-      { refresh_token: refreshToken },
-    )
+    // Raw axios (not `client`) so a 401 here can't recurse into this interceptor
+    const { data } = await axios.post(`${client.defaults.baseURL}/auth/refresh`, {
+      refresh_token: refreshToken,
+    })
+    // Persist the rotated pair — the old refresh token is now dead server-side
+    localStorage.setItem('aegis_refresh_token', data.refresh_token as string)
+    const store = useAuthStore.getState()
+    if (store.user) store.setAuth(store.user, data.access_token as string, data.refresh_token as string)
     return data.access_token as string
   } catch {
     return null
   }
 }
 
+function forceLogout() {
+  useAuthStore.getState().clearAuth()
+  if (!window.location.pathname.startsWith('/login')) {
+    window.location.href = '/login?expired=1'
+  }
+}
+
+/** Auth endpoints must never trigger the refresh dance: a failed login is
+    just a failed login, and a failed refresh is already terminal. */
+function isAuthRoute(config: InternalAxiosRequestConfig | undefined): boolean {
+  const url = config?.url ?? ''
+  return url.includes('/auth/login') || url.includes('/auth/signup') || url.includes('/auth/refresh')
+}
+
 client.interceptors.response.use(
   (r) => r,
-  async (error) => {
-    const original = error.config
-    if (error.response?.status === 401 && original && !original._retried) {
+  async (error: AxiosError) => {
+    const original = error.config as (InternalAxiosRequestConfig & { _retried?: boolean }) | undefined
+    if (error.response?.status === 401 && original && !original._retried && !isAuthRoute(original)) {
       original._retried = true
-      refreshing = refreshing ?? tryRefresh()
+      if (!refreshing) {
+        refreshing = refreshAccessToken().finally(() => {
+          refreshing = null
+        })
+      }
       const newToken = await refreshing
-      refreshing = null
       if (newToken) {
-        const store = useAuthStore.getState()
-        if (store.user) store.setAuth(store.user, newToken, localStorage.getItem('aegis_refresh_token') || '')
         original.headers.Authorization = `Bearer ${newToken}`
         return client(original)
       }
-      useAuthStore.getState().clearAuth()
-      window.location.href = '/login'
+      forceLogout()
     }
     return Promise.reject(error)
   },
 )
 
+export { client as api }
 export default client

@@ -10,9 +10,9 @@ import {
   Zap,
 } from 'lucide-react'
 import {
+  Area,
+  AreaChart,
   CartesianGrid,
-  Line,
-  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -22,6 +22,7 @@ import { useAuthStore } from '../../store/auth'
 import { useAlerts, useSubmitTestAlert } from '../../hooks/useAlerts'
 import { useUsage } from '../../hooks/useTenant'
 import { useCountUp } from '../../hooks/useCountUp'
+import { useTilt } from '../../hooks/useTilt'
 import { useToast } from '../../components/ui/Toast'
 import { Button } from '../../components/ui/Button'
 import { Modal } from '../../components/ui/Modal'
@@ -50,10 +51,14 @@ interface StatCardProps {
 }
 
 function StatCard({ icon, iconBg, value, label, delta, warn, index }: StatCardProps) {
+  const tilt = useTilt<HTMLDivElement>(5)
   return (
     <div
-      className="stat-card"
-      style={{ animation: `fadeInUp 300ms ease-out ${index * 80}ms both` }}
+      ref={tilt.ref}
+      onMouseMove={tilt.onMouseMove}
+      onMouseLeave={tilt.onMouseLeave}
+      className="stat-card tilt-card"
+      style={{ animation: `springRise 560ms cubic-bezier(0.22, 1, 0.36, 1) ${index * 90}ms both` }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div
@@ -97,9 +102,10 @@ function StatCard({ icon, iconBg, value, label, delta, warn, index }: StatCardPr
       </div>
       <div
         style={{
-          fontSize: 28,
+          fontSize: 34,
           fontWeight: 700,
-          marginTop: 12,
+          marginTop: 16,
+          fontFamily: 'var(--font-display)',
           color: warn ? 'var(--warning)' : 'var(--text-1)',
           fontVariantNumeric: 'tabular-nums',
           letterSpacing: '-0.02em',
@@ -107,7 +113,7 @@ function StatCard({ icon, iconBg, value, label, delta, warn, index }: StatCardPr
       >
         {value}
       </div>
-      <div className="label-upper" style={{ marginTop: 6 }}>
+      <div className="label-upper" style={{ marginTop: 10 }}>
         {label}
       </div>
     </div>
@@ -173,7 +179,7 @@ export function Dashboard() {
         style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}
       >
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 600, letterSpacing: '-0.02em' }}>
+          <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em', fontFamily: 'var(--font-display)' }}>
             {greeting()}, {firstName}
             {pending > 0 && (
               <span style={{ color: 'var(--text-3)', fontWeight: 400 }}>
@@ -206,7 +212,7 @@ export function Dashboard() {
             <StatCard
               index={0}
               icon={<Inbox size={15} color="var(--accent-text)" />}
-              iconBg="rgba(99,102,241,0.12)"
+              iconBg="rgba(6,78,59,0.10)"
               value={alertsCount}
               label="Alerts This Month"
               delta={{ value: usage?.delta_alerts ?? 0 }}
@@ -214,7 +220,7 @@ export function Dashboard() {
             <StatCard
               index={1}
               icon={<Clock size={15} color="var(--warning)" />}
-              iconBg="rgba(245,158,11,0.12)"
+              iconBg="rgba(160,116,26,0.10)"
               value={pendingCount}
               label="Pending Review"
               warn={pending > 0}
@@ -222,7 +228,7 @@ export function Dashboard() {
             <StatCard
               index={2}
               icon={<CheckCircle2 size={15} color="var(--success)" />}
-              iconBg="rgba(34,197,94,0.12)"
+              iconBg="rgba(6,78,59,0.10)"
               value={approvedCount}
               label="Approved SARs"
               delta={{ value: usage?.delta_sars ?? 0 }}
@@ -230,7 +236,7 @@ export function Dashboard() {
             <StatCard
               index={3}
               icon={<Timer size={15} color="var(--info)" />}
-              iconBg="rgba(56,189,248,0.12)"
+              iconBg="rgba(14,116,144,0.10)"
               value={`${avgTime} min`}
               label="Avg. Review Time"
             />
@@ -242,18 +248,30 @@ export function Dashboard() {
       {usageLoading ? (
         <SkeletonCard height={240} />
       ) : (
-        <div className="card" style={{ animation: 'fadeInUp 300ms ease-out 240ms both' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 16 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 600, letterSpacing: '-0.01em' }}>
+        <div className="card" style={{ animation: 'springRise 560ms cubic-bezier(0.22, 1, 0.36, 1) 280ms both' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 24 }}>
+            <h3 style={{ fontSize: 18, fontWeight: 600, letterSpacing: '-0.01em' }}>
               Alerts Ingested — Last 14 Days
             </h3>
-            <span style={{ fontSize: 12, color: 'var(--text-3)' }}>
+            <span style={{ fontSize: 12, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>
               {chartData[0]?.date} – {chartData[chartData.length - 1]?.date}
             </span>
           </div>
-          <div style={{ height: 200 }}>
+          <div style={{ height: 220 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 4, right: 8, bottom: 0, left: -24 }}>
+              <AreaChart data={chartData} margin={{ top: 4, right: 8, bottom: 0, left: -24 }}>
+                <defs>
+                  {/* Clean emerald mesh under the curve — no gold, no mud */}
+                  <linearGradient id="beaconFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#064E3B" stopOpacity={0.3} />
+                    <stop offset="60%" stopColor="#0E8A66" stopOpacity={0.12} />
+                    <stop offset="100%" stopColor="#0E7490" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="beaconStroke" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#064E3B" />
+                    <stop offset="100%" stopColor="#0E7490" />
+                  </linearGradient>
+                </defs>
                 <CartesianGrid stroke="var(--border-subtle)" strokeDasharray="3 3" vertical={false} />
                 <XAxis
                   dataKey="date"
@@ -269,26 +287,28 @@ export function Dashboard() {
                   allowDecimals={false}
                 />
                 <Tooltip content={<ChartTooltip />} cursor={{ stroke: 'var(--border)', strokeWidth: 1 }} />
-                <Line
+                <Area
                   type="monotone"
                   dataKey="alerts"
-                  stroke="var(--accent)"
-                  strokeWidth={2}
+                  stroke="url(#beaconStroke)"
+                  strokeWidth={2.5}
+                  fill="url(#beaconFill)"
                   dot={false}
-                  activeDot={{ r: 4, fill: 'var(--accent)', stroke: '#fff', strokeWidth: 1.5 }}
+                  activeDot={{ r: 5, fill: 'var(--accent)', stroke: '#fff', strokeWidth: 2 }}
                   isAnimationActive={true}
-                  animationDuration={1000}
+                  animationDuration={1400}
+                  animationEasing="ease-out"
                 />
-              </LineChart>
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
       )}
 
       {/* Recent activity */}
-      <div className="card" style={{ padding: 0, animation: 'fadeInUp 300ms ease-out 320ms both' }}>
-        <div style={{ padding: '20px 24px 12px' }}>
-          <h3 style={{ fontSize: 16, fontWeight: 600, letterSpacing: '-0.01em' }}>Recent Activity</h3>
+      <div className="card" style={{ padding: 0, animation: 'springRise 560ms cubic-bezier(0.22, 1, 0.36, 1) 380ms both' }}>
+        <div style={{ padding: '28px 32px 16px' }}>
+          <h3 style={{ fontSize: 18, fontWeight: 600, letterSpacing: '-0.01em' }}>Recent Activity</h3>
         </div>
         <div className="tbl-scroll">
           <table className="tbl tbl-clickable">
@@ -306,8 +326,12 @@ export function Dashboard() {
               {alertsLoading ? (
                 <SkeletonTableRows rows={5} cols={6} />
               ) : (
-                recent.map((a) => (
-                  <tr key={a.id} onClick={() => navigate(`/queue/${a.id}`)}>
+                recent.map((a, i) => (
+                  <tr
+                    key={a.id}
+                    onClick={() => navigate(`/queue/${a.id}`)}
+                    style={{ animation: `fadeInUp 420ms cubic-bezier(0.22, 1, 0.36, 1) ${480 + i * 60}ms both` }}
+                  >
                     <td style={{ paddingLeft: 24, fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text-2)' }}>
                       {a.transaction_id}
                     </td>
@@ -332,7 +356,7 @@ export function Dashboard() {
             </tbody>
           </table>
         </div>
-        <div style={{ padding: '12px 24px', borderTop: '1px solid var(--border-subtle)' }}>
+        <div style={{ padding: '16px 32px', borderTop: '1px solid var(--border-subtle)' }}>
           <button
             onClick={() => navigate('/queue')}
             style={{
@@ -340,6 +364,7 @@ export function Dashboard() {
               border: 'none',
               color: 'var(--accent-text)',
               fontSize: 13,
+              fontWeight: 600,
               cursor: 'pointer',
               padding: 0,
             }}

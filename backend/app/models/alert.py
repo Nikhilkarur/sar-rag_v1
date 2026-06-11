@@ -15,8 +15,8 @@ class Alert(Base):
     )
 
     id: Mapped[str] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
-    tenant_id: Mapped[str] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="RESTRICT"), nullable=False)
-    schema_id: Mapped[Optional[str]] = mapped_column(UUID(as_uuid=True), ForeignKey("ingestion_schemas.id"))
+    tenant_id: Mapped[str] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
+    schema_id: Mapped[Optional[str]] = mapped_column(UUID(as_uuid=True), ForeignKey("ingestion_schemas.id", ondelete="SET NULL"))
     
     status: Mapped[str] = mapped_column(String(30), nullable=False, server_default=text("'PENDING_INGESTION'"))
     

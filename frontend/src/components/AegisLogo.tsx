@@ -17,7 +17,7 @@ export function AegisShield({ size = 24, float }: AegisLogoProps) {
         stroke="var(--accent)"
         strokeWidth="2.5"
         strokeLinejoin="round"
-        fill="rgba(99,102,241,0.10)"
+        fill="rgba(6,78,59,0.08)"
       />
       <path
         d="M19 30 L24 17 L29 30 M20.8 26 H27.2"

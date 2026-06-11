@@ -11,7 +11,7 @@ class ComplianceMatch(Base):
 
     id: Mapped[str] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
     alert_id: Mapped[str] = mapped_column(UUID(as_uuid=True), ForeignKey("alerts.id", ondelete="CASCADE"), nullable=False)
-    tenant_id: Mapped[str] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    tenant_id: Mapped[str] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
     
     rule_id: Mapped[str] = mapped_column(String(50), nullable=False)
     rule_name: Mapped[str] = mapped_column(String(255), nullable=False)

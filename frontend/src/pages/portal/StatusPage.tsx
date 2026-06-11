@@ -149,7 +149,7 @@ export function StatusPage() {
             <div
               style={{
                 background: 'var(--danger-subtle)',
-                border: '1px solid rgba(239,68,68,0.3)',
+                border: '1px solid rgba(179,56,44,0.3)',
                 borderRadius: 'var(--r-md)',
                 padding: 16,
                 marginTop: 20,

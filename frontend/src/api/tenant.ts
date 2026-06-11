@@ -1,5 +1,5 @@
 import client from './client'
-import type { WebhookConfig, LLMConfig, UsageStats } from '../types'
+import type { WebhookConfig, LLMConfig, UsageStats, WebhookEvent, SchemaPreset, ApprovedSAR } from '../types'
 
 export async function getCredentials(): Promise<{ api_key_prefix: string; tenant_id_public: string }> {
   const { data } = await client.get('/tenant/credentials')
@@ -31,17 +31,17 @@ export async function sendTestWebhook(): Promise<{ status: string; latency_ms: n
   return data
 }
 
-export async function getWebhookEvents(): Promise<any[]> {
+export async function getWebhookEvents(): Promise<WebhookEvent[]> {
   const { data } = await client.get('/tenant/webhook/events')
   return data
 }
 
-export async function getSchemas(): Promise<any[]> {
+export async function getSchemas(): Promise<SchemaPreset[]> {
   const { data } = await client.get('/tenant/schemas')
   return data
 }
 
-export async function selectSchema(templateKey: string): Promise<any> {
+export async function selectSchema(templateKey: string): Promise<SchemaPreset> {
   const { data } = await client.post('/tenant/schemas/select-preset', { template_key: templateKey })
   return data
 }
@@ -61,7 +61,7 @@ export async function getUsage(): Promise<UsageStats> {
   return data
 }
 
-export async function listApprovedSars(): Promise<any[]> {
+export async function listApprovedSars(): Promise<ApprovedSAR[]> {
   const { data } = await client.get('/tenant/sars')
   return data
 }

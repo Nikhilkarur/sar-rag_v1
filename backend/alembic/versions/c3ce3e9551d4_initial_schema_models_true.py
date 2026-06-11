@@ -1,8 +1,8 @@
-"""Initial Schema
+"""initial schema (models-true)
 
-Revision ID: eb542898043b
+Revision ID: c3ce3e9551d4
 Revises: 
-Create Date: 2026-06-10 21:18:00.854677
+Create Date: 2026-06-12 02:30:22.045760
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = 'eb542898043b'
+revision: str = 'c3ce3e9551d4'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -32,6 +32,8 @@ def upgrade() -> None:
     sa.Column('rejection_reason', sa.TEXT(), nullable=True),
     sa.Column('api_key_hash', sa.String(length=255), nullable=True),
     sa.Column('api_key_prefix', sa.String(length=12), nullable=True),
+    sa.Column('api_key_encrypted', sa.TEXT(), nullable=True),
+    sa.Column('api_key_last_rotated', sa.DateTime(timezone=True), nullable=True),
     sa.Column('tenant_id_public', sa.String(length=20), nullable=True),
     sa.Column('approved_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('approved_by', sa.UUID(), nullable=True),
@@ -98,6 +100,7 @@ def upgrade() -> None:
     sa.Column('use_internal_sink', sa.Boolean(), server_default=sa.text('false'), nullable=False),
     sa.Column('secret_hash', sa.String(length=255), nullable=True),
     sa.Column('secret_prefix', sa.String(length=12), nullable=True),
+    sa.Column('secret_encrypted', sa.String(length=500), nullable=True),
     sa.Column('is_active', sa.Boolean(), server_default=sa.text('true'), nullable=False),
     sa.Column('last_tested_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('last_test_status', sa.String(length=20), nullable=True),
@@ -115,6 +118,7 @@ def upgrade() -> None:
     sa.Column('raw_payload', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
     sa.Column('normalized_payload', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
     sa.Column('masked_payload', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('idempotency_key', sa.String(length=255), nullable=True),
     sa.Column('transaction_id', sa.String(length=255), nullable=True),
     sa.Column('transaction_amount', sa.Numeric(precision=20, scale=4), nullable=True),
     sa.Column('transaction_currency', sa.String(length=10), server_default=sa.text("'INR'"), nullable=True),
@@ -131,12 +135,14 @@ def upgrade() -> None:
     sa.Column('deleted_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('source', sa.String(length=20), server_default=sa.text("'API'"), nullable=False),
     sa.Column('ingested_from_ip', sa.String(length=50), nullable=True),
+    sa.Column('is_synthetic', sa.Boolean(), server_default=sa.text('false'), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['reviewed_by'], ['users.id'], ),
-    sa.ForeignKeyConstraint(['schema_id'], ['ingestion_schemas.id'], ),
-    sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='RESTRICT'),
-    sa.PrimaryKeyConstraint('id')
+    sa.ForeignKeyConstraint(['schema_id'], ['ingestion_schemas.id'], ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('tenant_id', 'idempotency_key', name='uq_alerts_tenant_idempotency')
     )
     op.create_table('api_logs',
     sa.Column('id', sa.UUID(), server_default=sa.text('gen_random_uuid()'), nullable=False),
@@ -151,8 +157,8 @@ def upgrade() -> None:
     sa.Column('error_code', sa.String(length=50), nullable=True),
     sa.Column('error_message', sa.TEXT(), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ),
-    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='SET NULL'),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('audit_logs',
@@ -166,8 +172,8 @@ def upgrade() -> None:
     sa.Column('actor_ip', sa.String(length=50), nullable=True),
     sa.Column('actor_user_agent', sa.String(length=500), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ),
-    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='SET NULL'),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('compliance_matches',
@@ -181,7 +187,7 @@ def upgrade() -> None:
     sa.Column('evidence', postgresql.JSONB(astext_type=sa.Text()), server_default=sa.text("'{}'::jsonb"), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['alert_id'], ['alerts.id'], ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ),
+    sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('pii_maps',
@@ -193,7 +199,7 @@ def upgrade() -> None:
     sa.Column('rehydrated_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['alert_id'], ['alerts.id'], ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ),
+    sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('alert_id')
     )
@@ -218,9 +224,9 @@ def upgrade() -> None:
     sa.Column('prompt_used', sa.TEXT(), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.ForeignKeyConstraint(['alert_id'], ['alerts.id'], ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['alert_id'], ['alerts.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['last_edited_by'], ['users.id'], ),
-    sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ),
+    sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('alert_id')
     )
@@ -243,8 +249,8 @@ def upgrade() -> None:
     sa.Column('next_retry_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('error_message', sa.TEXT(), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.ForeignKeyConstraint(['sar_draft_id'], ['sar_drafts.id'], ondelete='RESTRICT'),
-    sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ),
+    sa.ForeignKeyConstraint(['sar_draft_id'], ['sar_drafts.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('webhook_sink_events',

@@ -11,14 +11,19 @@ class TokenData(BaseModel):
 
 class UserSignup(BaseModel):
     # Length caps prevent multi-megabyte strings reaching bcrypt/DB;
-    # min password length enforces a baseline policy
-    tenant_name: str = Field(min_length=2, max_length=120)
+    # min password length enforces a baseline policy.
+    # Aliases match the portal signup form's field names.
+    tenant_name: str = Field(min_length=2, max_length=120, alias="company_name")
     company_type: str = Field(min_length=1, max_length=50)
-    email: EmailStr
-    password: str = Field(min_length=10, max_length=128)
-    full_name: str = Field(min_length=1, max_length=120)
-    designation: Optional[str] = Field(None, max_length=80)
-    phone: Optional[str] = Field(None, max_length=20)
+    email: EmailStr = Field(alias="admin_email")
+    password: str = Field(min_length=10, max_length=128, alias="admin_password")
+    full_name: str = Field(min_length=1, max_length=120, alias="admin_name")
+    designation: Optional[str] = Field(None, max_length=80, alias="admin_designation")
+    phone: Optional[str] = Field(None, max_length=20, alias="admin_phone")
+    cin: Optional[str] = Field(None, max_length=50)
+    website: Optional[str] = Field(None, max_length=255)
+
+    model_config = {"populate_by_name": True}
 
 class UserLogin(BaseModel):
     email: EmailStr

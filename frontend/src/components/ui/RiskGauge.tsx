@@ -1,66 +1,49 @@
-import { riskColor } from './Badge'
 
-interface RiskGaugeProps {
-  score: number
-  size?: number
-}
-
-const CIRCUMFERENCE = 251 // 2π × r(40)
-
-export function RiskGauge({ score, size = 96 }: RiskGaugeProps) {
-  const color = riskColor(score)
-  const target = CIRCUMFERENCE - (score / 100) * CIRCUMFERENCE
+export function RiskGauge({ score }: { score: number }) {
+  const circumference = 2 * Math.PI * 34; // 213.6
+  const offset = circumference - (score / 100) * circumference;
+  
+  let color = '#00CC66';
+  if (score >= 75) color = '#FF4444';
+  else if (score >= 50) color = '#FFBB00';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-      <div style={{ position: 'relative', width: size, height: size }}>
-        <svg width={size} height={size} viewBox="0 0 96 96">
-          <circle cx="48" cy="48" r="40" stroke="var(--border)" strokeWidth="7" fill="none" />
+    <div className="flex flex-col items-center">
+      <div className="relative w-[80px] h-[80px]">
+        <svg className="w-full h-full transform -rotate-90" viewBox="0 0 80 80">
           <circle
-            cx="48"
-            cy="48"
-            r="40"
-            stroke={color}
-            strokeWidth="7"
+            cx="40" cy="40" r="34"
             fill="none"
+            stroke="#1E1E1E"
+            strokeWidth="6"
+          />
+          <circle
+            cx="40" cy="40" r="34"
+            fill="none"
+            stroke={color}
+            strokeWidth="6"
             strokeLinecap="round"
-            strokeDasharray={CIRCUMFERENCE}
-            strokeDashoffset={CIRCUMFERENCE}
-            transform="rotate(-90 48 48)"
-            style={
-              {
-                '--arc-target': `${target}`,
-                animation: 'riskArc 800ms cubic-bezier(0.4,0,0.2,1) forwards',
-              } as React.CSSProperties
-            }
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+            className="transition-all duration-800 ease-out"
+            style={{ animation: 'drawArc 800ms ease-out forwards' }}
           />
         </svg>
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 20,
-            fontWeight: 700,
-            color,
-          }}
-        >
-          {score}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="font-mono text-[18px] font-semibold" style={{ color }}>
+            {score}
+          </span>
         </div>
       </div>
-      <span
-        style={{
-          fontSize: 10,
-          fontWeight: 500,
-          textTransform: 'uppercase',
-          letterSpacing: '0.06em',
-          color: 'var(--text-3)',
-        }}
-      >
-        Risk Score
-      </span>
+      <span className="mt-2 text-[9px] font-mono uppercase text-ink-3 tracking-widest">Risk Score</span>
+      
+      {/* Required style for the draw animation */}
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes drawArc {
+          from { stroke-dashoffset: ${circumference}; }
+          to { stroke-dashoffset: ${offset}; }
+        }
+      `}} />
     </div>
-  )
+  );
 }

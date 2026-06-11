@@ -242,19 +242,27 @@ export function SARWorkspace() {
 
   // ── Editor wiring ──────────────────────────────────────────────────────
 
-  const draftText = alert?.sar_draft.draft_text
+  const draftText = alert?.sar_draft?.draft_text
   const editorHtml = useMemo(() => (draftText ? draftToHtml(draftText) : ''), [draftText])
 
   useEffect(() => {
     if (draftText !== undefined && draftText !== loadedDraftRef.current && editorRef.current) {
       // Only rewrite the DOM when server content actually changed (avoids caret jumps)
       if (!dirty) {
-        editorRef.current.innerHTML = editorHtml
-        loadedDraftRef.current = draftText
-        setCharCount(draftText.length)
+        const recovered = localStorage.getItem(`aegis_draft_${alertId}`)
+        if (recovered && recovered !== draftText) {
+          editorRef.current.innerHTML = draftToHtml(recovered)
+          loadedDraftRef.current = recovered
+          setCharCount(recovered.length)
+          setDirty(true)
+        } else {
+          editorRef.current.innerHTML = editorHtml
+          loadedDraftRef.current = draftText
+          setCharCount(draftText.length)
+        }
       }
     }
-  }, [draftText, editorHtml, dirty])
+  }, [draftText, editorHtml, dirty, alertId])
 
   const readEditorText = useCallback((): string => {
     return editorRef.current?.innerText.replace(/\n{3,}/g, '\n\n') ?? ''
@@ -262,7 +270,9 @@ export function SARWorkspace() {
 
   const onEditorInput = () => {
     setDirty(true)
-    setCharCount(readEditorText().length)
+    const text = readEditorText()
+    setCharCount(text.length)
+    if (alertId) localStorage.setItem(`aegis_draft_${alertId}`, text)
   }
 
   const saveDraft = useCallback(() => {
@@ -270,9 +280,12 @@ export function SARWorkspace() {
     const text = readEditorText()
     loadedDraftRef.current = text
     updateDraft.mutate(text, {
-      onSuccess: () => setDirty(false),
+      onSuccess: () => {
+        setDirty(false)
+        if (alertId) localStorage.removeItem(`aegis_draft_${alertId}`)
+      },
     })
-  }, [dirty, readEditorText, updateDraft])
+  }, [dirty, readEditorText, updateDraft, alertId])
 
   // ── Approve sequence ───────────────────────────────────────────────────
 
@@ -677,7 +690,7 @@ export function SARWorkspace() {
                 alignItems: 'center',
               }}
             >
-              Groq · {draft.llm_model.replace('-versatile', '')}
+              {draft ? `Groq · ${draft.llm_model.replace('-versatile', '')}` : 'No draft'}
             </span>
           </div>
 
@@ -707,7 +720,7 @@ export function SARWorkspace() {
             <span>
               {dirty
                 ? 'Unsaved edits — click outside to save'
-                : draft.last_edited_at
+                : draft?.last_edited_at
                   ? `Last edited by you, ${timeAgo(draft.last_edited_at)}`
                   : 'No edits yet'}
             </span>
@@ -728,7 +741,9 @@ export function SARWorkspace() {
           >
             <span style={{ fontSize: 12, color: 'var(--text-4)', display: 'inline-flex', alignItems: 'center', gap: 6, minWidth: 0, overflow: 'hidden', whiteSpace: 'nowrap' }}>
               <Sparkles size={12} style={{ flexShrink: 0 }} />
-              Generated in {(draft.generation_latency_ms / 1000).toFixed(1)}s · Groq {draft.llm_model.replace('-versatile', '')}
+              {draft
+                ? `Generated in ${(draft.generation_latency_ms / 1000).toFixed(1)}s · Groq ${draft.llm_model.replace('-versatile', '')}`
+                : 'No SAR draft — this alert completed clean'}
             </span>
             <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
               <Button variant="secondary" size="sm" icon={<Eye size={13} />} onClick={openPreview}>
@@ -805,7 +820,7 @@ export function SARWorkspace() {
                 marginTop: 16,
                 padding: '10px 12px',
                 background: 'var(--warning-subtle)',
-                border: '1px solid rgba(245,158,11,0.3)',
+                border: '1px solid rgba(160,116,26,0.3)',
                 borderRadius: 'var(--r-md)',
                 fontSize: 13,
                 color: 'var(--warning)',
@@ -1007,7 +1022,7 @@ export function SARWorkspace() {
             style={{
               height: 48,
               background: 'var(--danger-subtle)',
-              borderBottom: '1px solid rgba(239,68,68,0.3)',
+              borderBottom: '1px solid rgba(179,56,44,0.3)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',

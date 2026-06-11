@@ -2,10 +2,14 @@ export type Role = 'SUPER_ADMIN' | 'TENANT_ADMIN' | 'COMPLIANCE_OFFICER'
 
 export type TenantStatus = 'PENDING_VERIFICATION' | 'ACTIVE' | 'REJECTED' | 'SUSPENDED'
 
+/** Statuses as the API serves them (backend pipeline statuses are mapped
+    to these in routers/alerts.py::_public_status before leaving the server). */
 export type AlertStatus =
   | 'PENDING_INGESTION'
   | 'PROCESSING'
   | 'PENDING_REVIEW'
+  | 'COMPLETED_CLEAN'
+  | 'PROCESSING_FAILED'
   | 'APPROVED'
   | 'REJECTED'
   | 'DELIVERED'
@@ -41,6 +45,8 @@ export interface AlertSummary {
   status: AlertStatus
   triggered_rules: string[]
   source: 'API' | 'SIMULATOR'
+  /** Portal test alerts — excluded from compliance metrics server-side */
+  is_synthetic: boolean
   created_at: string
 }
 
@@ -74,7 +80,8 @@ export interface AlertDetail extends AlertSummary {
     triggered_rules: ComplianceRule[]
     clean_checks: { rule_id: string; rule_name: string; triggered: boolean }[]
   }
-  sar_draft: SARDraft
+  /** null until the pipeline has generated a draft (clean/low-risk alerts never get one) */
+  sar_draft: SARDraft | null
 }
 
 export interface WebhookEvent {

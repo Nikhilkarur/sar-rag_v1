@@ -17,7 +17,7 @@ export default function LandingNav() {
     <nav className={cls('landing-nav', scrolled && 'scrolled')}>
       <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
         <AegisShield size={22} />
-        <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: '-0.01em' }}>
+        <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: '0.08em', fontFamily: 'var(--font-logo)' }}>
           <span style={{ color: 'var(--text-1)' }}>AEGIS</span>{' '}
           <span style={{ color: 'var(--accent)' }}>AML</span>
         </span>

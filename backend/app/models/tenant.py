@@ -22,6 +22,9 @@ class Tenant(Base):
     
     api_key_hash: Mapped[Optional[str]] = mapped_column(String(255))
     api_key_prefix: Mapped[Optional[str]] = mapped_column(String(12))
+    # Fernet-encrypted copy so the portal can reveal the key (hash stays the verifier)
+    api_key_encrypted: Mapped[Optional[str]] = mapped_column(TEXT)
+    api_key_last_rotated: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     tenant_id_public: Mapped[Optional[str]] = mapped_column(String(20), unique=True)
     
     approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))

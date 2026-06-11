@@ -13,7 +13,7 @@ interface UniverseCanvasProps {
 
 const LABEL_COLORS: Record<string, string> = {
   sar: 'var(--text-3)',
-  rule: 'var(--warning)',
+  rule: 'var(--gold-text)',
   alert: 'var(--danger)',
 }
 
@@ -78,7 +78,7 @@ export default function UniverseCanvas({
     }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, C.PIXEL_RATIO_CAP))
     renderer.setSize(wrap.clientWidth, wrap.clientHeight, false)
-    renderer.setClearColor(0x030305, 1)
+    renderer.setClearColor(0xfdfbf7, 1) // alabaster marble — the astrolabe is engraved, not floating in space
 
     // ── Scene, Camera, Pivot ───────────────────────────────────────
     // All scene objects live in a pivot group so that mouse parallax (x/y
@@ -102,16 +102,23 @@ export default function UniverseCanvas({
     }
 
     // ── Lighting ───────────────────────────────────────────────────
-    const ambient = new THREE.AmbientLight(0xffffff, 0.15)
+    const ambient = new THREE.AmbientLight(0xfdf8ec, 0.85)
     scene.add(ambient)
 
-    const pointLight = new THREE.PointLight(0x6366f1, 6, 12)
+    // The beacon flame — emerald key light
+    const pointLight = new THREE.PointLight(0x064e3b, 5, 12)
     pointLight.position.set(0, 0, 2)
     scene.add(pointLight)
 
-    const rimLight = new THREE.PointLight(0x38bdf8, 2, 8)
+    // Treasury rim — restrained gold kiss from the side
+    const rimLight = new THREE.PointLight(0xd4af37, 1.8, 8)
     rimLight.position.set(-3, 2, -1)
     scene.add(rimLight)
+
+    // Sea-breeze fill — faint azure from below
+    const seaLight = new THREE.PointLight(0x0e7490, 1.4, 9)
+    seaLight.position.set(2, -3, 1)
+    scene.add(seaLight)
 
     // ── Central Orb ────────────────────────────────────────────────
     const orbGeo = track(new THREE.SphereGeometry(C.ORB_RADIUS, 96, 96))
@@ -127,11 +134,10 @@ export default function UniverseCanvas({
     const orb = new THREE.Mesh(orbGeo, orbMat)
     pivot.add(orb)
 
-    // Fake bloom: 3 increasingly large transparent spheres (backside rendering)
+    // Fake bloom: tight, clean atmosphere — no giant blurry halo
     const glowLayers: [number, number, number][] = [
-      [1.18, 0x6366f1, 0.12], // tightest glow
-      [1.5, 0x818cf8, 0.06], // mid glow
-      [2.2, 0x4338ca, 0.03], // wide atmospheric scatter
+      [1.15, 0x064e3b, 0.09], // tight emerald atmosphere
+      [1.42, 0x0e7490, 0.035], // faint azure haze
     ]
     glowLayers.slice(0, C.ORB_GLOW_LAYERS).forEach(([scale, color, opacity]) => {
       const geo = track(new THREE.SphereGeometry(C.ORB_RADIUS * scale, 32, 32))
@@ -178,7 +184,7 @@ export default function UniverseCanvas({
     const lineGeo = track(new THREE.BufferGeometry())
     lineGeo.setAttribute('position', new THREE.BufferAttribute(linePositions, 3))
     const lineMat = track(
-      new THREE.LineBasicMaterial({ color: 0x6366f1, transparent: true, opacity: 0.18 }),
+      new THREE.LineBasicMaterial({ color: 0x064e3b, transparent: true, opacity: 0.28 }),
     )
     const constellationLines = new THREE.LineSegments(lineGeo, lineMat)
     pivot.add(constellationLines)
@@ -187,10 +193,10 @@ export default function UniverseCanvas({
     const starGeo = track(buildStarField(starCount))
     const starMat = track(
       new THREE.PointsMaterial({
-        color: 0xffffff,
-        size: 0.025,
+        color: 0xc9a227, // sparse gold dust — kept faint so the air stays clean
+        size: 0.022,
         transparent: true,
-        opacity: 0.7,
+        opacity: 0.35,
         sizeAttenuation: true,
       }),
     )
@@ -249,14 +255,14 @@ export default function UniverseCanvas({
       autoRotY += C.SCENE_ROTATE_Y
 
       if (parallaxEnabled) {
-        currentRotX = damp(currentRotX, targetRotX, 4, dt)
-        currentRotY = damp(currentRotY, targetRotY, 4, dt)
+        currentRotX = damp(currentRotX, targetRotX, C.PARALLAX_DAMP, dt)
+        currentRotY = damp(currentRotY, targetRotY, C.PARALLAX_DAMP, dt)
       }
       pivot.rotation.y = autoRotY + currentRotY
       pivot.rotation.x = currentRotX
 
-      // Pulse orb emissive intensity
-      orbMat.emissiveIntensity = C.ORB_EMISSIVE_INTENSITY + Math.sin(t * 1.4) * 0.2
+      // Pulse orb emissive intensity — a quiet heartbeat, not a flare
+      orbMat.emissiveIntensity = C.ORB_EMISSIVE_INTENSITY + Math.sin(t * 1.4) * 0.07
 
       // Update node positions along their tilted orbits
       activeNodes.forEach((nodeConf, i) => {
@@ -324,7 +330,7 @@ export default function UniverseCanvas({
           width: '100%',
           height: '100%',
           background:
-            'radial-gradient(ellipse 60% 50% at 50% 45%, rgba(99,102,241,0.22) 0%, rgba(67,56,202,0.10) 40%, #030305 100%)',
+            'radial-gradient(ellipse 60% 50% at 50% 45%, rgba(6,78,59,0.14) 0%, rgba(201,162,39,0.07) 40%, #FDFBF7 100%)',
           filter: blurred ? 'brightness(0.55)' : 'none',
         }}
       />

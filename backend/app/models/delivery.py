@@ -10,8 +10,8 @@ class WebhookDelivery(Base):
     __tablename__ = "webhook_deliveries"
 
     id: Mapped[str] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
-    sar_draft_id: Mapped[str] = mapped_column(UUID(as_uuid=True), ForeignKey("sar_drafts.id", ondelete="RESTRICT"), nullable=False)
-    tenant_id: Mapped[str] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    sar_draft_id: Mapped[str] = mapped_column(UUID(as_uuid=True), ForeignKey("sar_drafts.id", ondelete="CASCADE"), nullable=False)
+    tenant_id: Mapped[str] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
     
     destination_url: Mapped[str] = mapped_column(String(500), nullable=False)
     is_internal_sink: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
