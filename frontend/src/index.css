@@ -1,116 +1,115 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=Cinzel:wght@600;700&family=Playfair+Display:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Cinzel:wght@600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* ═══════════════════════════════════════════════════════════════════
-   AEGIS V2 — THE SOVEREIGN CONTROL BOARD
-   Apple-tier tech sleekness wrapped in institutional luxury: airy
-   sun-bleached alabaster, pure piercing emerald, crisp gold hairlines.
-   Sans-serif everywhere; the Roman chisel survives only in the logo.
+   AEGIS V3 — QUIET PRECISION
+   Attio-style light mode: pure white surfaces, gray hairlines, near-
+   black ink, Inter everywhere. Emerald survives only as the brand
+   accent (logo, links, success states). No dark mode, no glass,
+   no gold. Data tables borrow Resend's developer-tool density.
    ═══════════════════════════════════════════════════════════════════ */
 :root {
-  /* The Citadel — sun-bleached alabaster, airy and clean */
-  --bg-base:      #FDFBF7;
+  /* Surfaces — white, with a whisper of warm gray for chrome */
+  --bg-base:      #FFFFFF;
   --bg-surface:   #FFFFFF;
-  --bg-elevated:  #FFFFFF;
-  --bg-overlay:   #F5F1E8;
+  --bg-elevated:  #FAFAF9;
+  --bg-overlay:   #F4F4F3;
 
-  /* Rules (hairlines) — crisp charcoal at low alpha */
-  --border-subtle: rgba(23,23,23,0.07);
-  --border:        rgba(23,23,23,0.13);
-  --border-strong: rgba(23,23,23,0.24);
+  /* Hairlines — neutral gray, never tinted */
+  --border-subtle: #EEEEEC;
+  --border:        #E4E4E2;
+  --border-strong: #CFCFCD;
 
-  /* Ink — crisp dark charcoal for perfect contrast on cream */
-  --text-1: #171717;
-  --text-2: #44443E;
-  --text-3: #757164;
-  --text-4: #A8A091;
+  /* Ink */
+  --text-1: #151515;
+  --text-2: #4A4A48;
+  --text-3: #7D7D7A;
+  --text-4: #ABABA8;
 
-  /* Accent — pure, piercing emerald */
+  /* Accent — the brand emerald, used sparingly */
   --accent:        #064E3B;
   --accent-hover:  #0A6B50;
   --accent-bright: #10B981;
-  --accent-subtle: rgba(6,78,59,0.07);
-  --accent-text:   #064E3B;
-  --accent-glow:   0 0 0 1px rgba(6,78,59,0.18), 0 8px 24px -6px rgba(6,78,59,0.35);
+  --accent-subtle: #ECF5F1;
+  --accent-text:   #066049;
+  --accent-glow:   0 0 0 1px rgba(6,78,59,0.15);
 
-  /* The treasury — crisp gold, never brown */
-  --gold:        #C9A227;
-  --gold-bright: #D4AF37;
-  --gold-subtle: rgba(212,175,55,0.10);
-  --gold-text:   #8A6F1C;
+  /* Primary action — Attio-style near-black */
+  --btn-bg:       #18181A;
+  --btn-bg-hover: #2D2D2F;
 
-  /* The sea — azure accent */
+  /* Legacy gold vars — neutralized to quiet grays (markup may reference) */
+  --gold:        #B5B5B2;
+  --gold-bright: #C5C5C2;
+  --gold-subtle: #F4F4F3;
+  --gold-text:   #7D7D7A;
+
+  /* Info */
   --azure:        #0E7490;
-  --azure-subtle: rgba(14,116,144,0.08);
+  --azure-subtle: #EDF6F8;
 
   /* Semantic */
-  --danger:         #B3382C;
-  --danger-subtle:  rgba(179,56,44,0.08);
-  --warning:        #A0741A;
-  --warning-subtle: rgba(160,116,26,0.10);
-  --success:        #064E3B;
-  --success-subtle: rgba(6,78,59,0.08);
+  --danger:         #C0392B;
+  --danger-subtle:  #FCF0EE;
+  --warning:        #9A6700;
+  --warning-subtle: #FBF4E5;
+  --success:        #067647;
+  --success-subtle: #EBF6F0;
   --info:           #0E7490;
 
   /* Radii */
   --r-sm:   4px;
-  --r-md:   8px;
-  --r-lg:   14px;
-  --r-xl:   20px;
+  --r-md:   6px;
+  --r-lg:   10px;
+  --r-xl:   14px;
   --r-full: 999px;
 
-  /* Shadows — deep, layered, luxury-yacht soft */
-  --shadow-sm: 0 2px 6px rgba(30,28,20,0.05), 0 1px 2px rgba(30,28,20,0.04);
-  --shadow-md: 0 20px 40px rgba(0,0,0,0.08), 0 4px 12px rgba(30,28,20,0.05), 0 0 0 1px rgba(42,42,42,0.03);
-  --shadow-lg: 0 40px 90px -20px rgba(20,30,26,0.22), 0 20px 40px rgba(0,0,0,0.08), 0 0 0 1px rgba(42,42,42,0.04);
+  /* Shadows — barely-there */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 1px 2px rgba(0,0,0,0.04), 0 4px 12px -2px rgba(0,0,0,0.06);
+  --shadow-lg: 0 1px 2px rgba(0,0,0,0.06), 0 16px 40px -12px rgba(0,0,0,0.16);
 
-  /* Motion — heavy, tactile, video-game */
-  --t-fast:   140ms cubic-bezier(0.4, 0, 0.2, 1);
-  --t-base:   220ms cubic-bezier(0.4, 0, 0.2, 1);
-  --t-slow:   400ms cubic-bezier(0.22, 1, 0.36, 1);
-  --t-spring: 380ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* Motion — quick and quiet */
+  --t-fast:   120ms cubic-bezier(0.4, 0, 0.2, 1);
+  --t-base:   180ms cubic-bezier(0.4, 0, 0.2, 1);
+  --t-slow:   280ms cubic-bezier(0.22, 1, 0.36, 1);
+  --t-spring: 220ms cubic-bezier(0.3, 1.2, 0.5, 1);
 
-  /* Type — sleek premium sans; Cinzel survives ONLY in the logo */
+  /* Type — Inter carries everything; Cinzel survives only in the logo */
   --font-sans:    'Inter', -apple-system, system-ui, sans-serif;
   --font-mono:    'JetBrains Mono', 'Fira Code', monospace;
-  --font-serif:   'Playfair Display', Georgia, 'Times New Roman', serif; /* SAR document body only */
-  --font-display: 'Outfit', 'Inter', -apple-system, system-ui, sans-serif;
+  --font-serif:   'Inter', -apple-system, system-ui, sans-serif; /* serif retired — documents are sans now */
+  --font-display: 'Inter', -apple-system, system-ui, sans-serif;
   --font-logo:    'Cinzel', Georgia, serif;
 
-  /* Surfaces for cards/modals — frosted glass */
-  --glass-a: rgba(255,255,255,0.88);
-  --glass-b: rgba(253,251,247,0.82);
+  /* Flat surfaces (legacy glass vars now plain white) */
+  --glass-a: #FFFFFF;
+  --glass-b: #FFFFFF;
   --glass-modal-a: #FFFFFF;
-  --glass-modal-b: #FCF9F2;
-  --hairline: rgba(212,175,55,0.55);
+  --glass-modal-b: #FFFFFF;
+  --hairline: #E4E4E2;
 
-  /* Clean emerald gradients — no brown, no mud */
-  --gradient-beacon: linear-gradient(135deg, #064E3B 0%, #0A6B50 60%, #0E8A66 100%);
-  --gradient-flame:  linear-gradient(120deg, #064E3B 0%, #0A6B50 45%, #0E7490 100%);
+  /* Brand gradient retired — solid emerald where markup references it */
+  --gradient-beacon: linear-gradient(135deg, #064E3B, #0A6B50);
+  --gradient-flame:  linear-gradient(135deg, #064E3B, #0A6B50);
 
   color-scheme: light;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* The document must be free to grow — the landing's 560vh scroll track
-   depends on the page scrolling normally. Never lock html/body height. */
 html { height: auto; min-height: 100%; }
 
-/* ═══════════════════════════════════════════════════════════════════
-   BODY — airy, perfectly clean alabaster. One whisper of emerald
-   light at the top edge; nothing muddy, nothing brown.
-   ═══════════════════════════════════════════════════════════════════ */
 body {
   height: auto;
   min-height: 100vh;
   background-color: var(--bg-base);
   color: var(--text-1);
   font-family: var(--font-sans);
-  font-size: 13.5px;
+  font-size: 14px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -118,77 +117,45 @@ body {
   overflow-y: auto;
 }
 
-/* Ambient light — two faint, cool washes. Barely there. */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -2;
-  pointer-events: none;
-  background:
-    radial-gradient(50% 36% at 85% -8%,  rgba(6,78,59,0.05) 0%, transparent 70%),
-    radial-gradient(44% 32% at 8% 108%, rgba(14,116,144,0.04) 0%, transparent 70%);
-}
-
-/* Paper grain — near-subliminal texture so white surfaces don't feel flat */
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
-  background-size: 180px 180px;
-  mix-blend-mode: multiply;
-  opacity: 0.22;
-}
-
-@keyframes citadelBreathe {
-  0%   { transform: translate3d(0, 0, 0) scale(1); }
-  100% { transform: translate3d(0.5%, -0.8%, 0) scale(1.03); }
-}
-
-/* Headlines — sleek premium sans, tight tracking */
+/* Headlines — Inter, tight tracking, medium-bold (Attio weight) */
 h1, h2, h3 {
   font-family: var(--font-display);
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: -0.02em;
   color: var(--text-1);
 }
 
-/* Display class — sleek sans authority */
 .font-display, .display-carved {
   font-family: var(--font-display);
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: -0.02em;
 }
 
-/* The Roman chisel — RESERVED for the logo and tiny ceremonial accents */
+/* The Roman chisel — RESERVED for the logo wordmark */
 .font-logo {
   font-family: var(--font-logo);
   font-weight: 700;
   letter-spacing: 0.08em;
 }
 
-/* ── Scrollbar — quiet bronze ── */
+/* ── Scrollbar ── */
 ::-webkit-scrollbar       { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: rgba(42,42,42,0.16);
+  background: rgba(0,0,0,0.14);
   border-radius: 4px;
   border: 2px solid transparent;
   background-clip: content-box;
 }
-::-webkit-scrollbar-thumb:hover { background: rgba(201,162,39,0.55); background-clip: content-box; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.26); background-clip: content-box; }
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
 /* ── Selection / focus ── */
-::selection { background: rgba(6,78,59,0.16); color: var(--text-1); }
+::selection { background: rgba(6,78,59,0.12); color: var(--text-1); }
 :focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--bg-base), 0 0 0 4px rgba(6,78,59,0.5);
+  box-shadow: 0 0 0 2px var(--bg-base), 0 0 0 4px rgba(6,78,59,0.4);
   border-radius: var(--r-sm);
 }
 
@@ -201,17 +168,13 @@ h1, h2, h3 {
 
 /* ═══════════════════════════════════════════════════════════════════
    TAILWIND DARK-PALETTE REMAP — markup hardcodes the old dark utility
-   names; remap them once so every screen lands on marble.
+   names; remap them once so every screen lands on white.
    ═══════════════════════════════════════════════════════════════════ */
-.bg-obsidian  { background-color: transparent !important; }
-.bg-surface {
-  background-color: rgba(255,255,255,0.72) !important;
-  backdrop-filter: blur(18px) saturate(140%);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
-}
-.bg-surface-2 { background-color: #F6F1E7 !important; }
-.bg-surface-3 { background-color: #F0EADC !important; }
-.bg-black     { background-color: var(--text-1) !important; }
+.bg-obsidian  { background-color: var(--bg-base) !important; }
+.bg-surface   { background-color: var(--bg-surface) !important; }
+.bg-surface-2 { background-color: var(--bg-elevated) !important; }
+.bg-surface-3 { background-color: var(--bg-overlay) !important; }
+.bg-black     { background-color: var(--btn-bg) !important; }
 .text-white   { color: var(--text-1) !important; }
 .text-ink-2   { color: var(--text-2) !important; }
 .text-ink-3   { color: var(--text-3) !important; }
@@ -234,187 +197,135 @@ h1, h2, h3 {
 .bg-risk-low-dim  { background-color: var(--success-subtle) !important; }
 .border-risk-high { border-color: var(--danger) !important; }
 .border-risk-med  { border-color: var(--warning) !important; }
-.hover\:bg-surface-2:hover { background-color: #F5EFE3 !important; }
+.hover\:bg-surface-2:hover { background-color: var(--bg-elevated) !important; }
 .hover\:bg-white\/\[0\.06\]:hover,
-.hover\:bg-white\/\[0\.07\]:hover { background-color: rgba(42,42,42,0.05) !important; }
-.bg-white\/\[0\.03\] { background-color: rgba(42,42,42,0.03) !important; }
-.border-white\/10 { border-color: rgba(42,42,42,0.14) !important; }
-.hover\:border-white\/20:hover { border-color: rgba(42,42,42,0.26) !important; }
+.hover\:bg-white\/\[0\.07\]:hover { background-color: rgba(0,0,0,0.04) !important; }
+.bg-white\/\[0\.03\] { background-color: rgba(0,0,0,0.02) !important; }
+.border-white\/10 { border-color: var(--border) !important; }
+.hover\:border-white\/20:hover { border-color: var(--border-strong) !important; }
 .hover\:text-white:hover { color: var(--text-1) !important; }
-.shadow-glow-blue { box-shadow: 0 0 0 1px rgba(6,78,59,0.25), 0 4px 14px -4px rgba(6,78,59,0.25) !important; }
-.shadow-focus     { box-shadow: 0 0 0 3px rgba(6,78,59,0.14) !important; }
-.shadow-glow-red  { box-shadow: 0 0 0 1px rgba(179,56,44,0.3), 0 0 12px rgba(179,56,44,0.10) !important; }
+.shadow-glow-blue { box-shadow: 0 0 0 1px rgba(6,78,59,0.2) !important; }
+.shadow-focus     { box-shadow: 0 0 0 3px rgba(6,78,59,0.12) !important; }
+.shadow-glow-red  { box-shadow: 0 0 0 1px rgba(192,57,43,0.25) !important; }
 .shadow-modal     { box-shadow: var(--shadow-lg) !important; }
 
 /* ═══════════════════════════════════════════════════════════════════
-   KEYFRAMES
+   KEYFRAMES — same names, quieter values
    ═══════════════════════════════════════════════════════════════════ */
 @keyframes fadeIn   { from { opacity: 0; } to { opacity: 1; } }
-@keyframes fadeUp   { from { opacity: 0; transform: translateY(10px); }  to { opacity: 1; transform: none; } }
-@keyframes fadeInUp { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
-@keyframes scaleIn  { from { opacity: 0; transform: scale(0.96); }      to { opacity: 1; transform: scale(1); } }
-@keyframes slideTop { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
+@keyframes fadeUp   { from { opacity: 0; transform: translateY(6px); }  to { opacity: 1; transform: none; } }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes scaleIn  { from { opacity: 0; transform: scale(0.98); }      to { opacity: 1; transform: scale(1); } }
+@keyframes slideTop { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
 @keyframes spin     { to { transform: rotate(360deg); } }
 @keyframes subtleFloat {
   0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-6px); }
+  50%      { transform: translateY(-4px); }
 }
-/* Heavy spring rise — every card/row mounts with this */
 @keyframes springRise {
-  0%   { opacity: 0; transform: translateY(28px) scale(0.97); }
-  60%  { opacity: 1; transform: translateY(-3px) scale(1.005); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
+  0%   { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
-/* Modal: snap into place with a heavy, satisfying bounce */
 @keyframes modalSnap {
-  0%   { opacity: 0; transform: scale(0.84) translateY(36px); }
-  55%  { opacity: 1; transform: scale(1.025) translateY(-6px); }
-  78%  { transform: scale(0.995) translateY(2px); }
-  100% { transform: scale(1) translateY(0); }
+  0%   { opacity: 0; transform: scale(0.98) translateY(6px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
 }
 @keyframes processingPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(160,116,26,0.40); }
-  50%      { box-shadow: 0 0 0 7px rgba(160,116,26,0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(154,103,0,0.30); }
+  50%      { box-shadow: 0 0 0 6px rgba(154,103,0,0); }
 }
 @keyframes particleFly {
   0%   { opacity: 1; transform: translate(0, 0) scale(1); }
   100% { opacity: 0; transform: translate(var(--dx, 0px), var(--dy, -40px)) scale(0.2); }
 }
 @keyframes successGlow {
-  0%   { box-shadow: 0 0 0 0 rgba(6,78,59,0.45); }
-  100% { box-shadow: 0 0 0 24px rgba(6,78,59,0); }
+  0%   { box-shadow: 0 0 0 0 rgba(6,118,71,0.25); }
+  100% { box-shadow: 0 0 0 20px rgba(6,118,71,0); }
 }
 @keyframes drawCheckmark { from { stroke-dashoffset: 60; } to { stroke-dashoffset: 0; } }
 @keyframes progressShrink { from { width: 100%; } to { width: 0%; } }
 @keyframes revealFlash {
-  0%   { box-shadow: 0 0 0 1px rgba(212,175,55,0.7), 0 0 28px rgba(212,175,55,0.3); }
-  100% { box-shadow: 0 0 0 1px rgba(212,175,55,0), 0 0 0 rgba(212,175,55,0); }
+  0%   { box-shadow: 0 0 0 1px rgba(6,78,59,0.4); }
+  100% { box-shadow: 0 0 0 1px rgba(6,78,59,0); }
 }
 @keyframes pulseRing {
-  0%   { transform: scale(1); opacity: 0.6; }
-  100% { transform: scale(2.6); opacity: 0; }
+  0%   { transform: scale(1); opacity: 0.5; }
+  100% { transform: scale(2.4); opacity: 0; }
 }
 @keyframes gradientShift {
-  0%   { background-position: 0% 50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0%, 100% { background-position: 0% 50%; }
 }
 @keyframes sheenSweep {
-  from { transform: translateX(-150%) skewX(-18deg); }
-  to   { transform: translateX(250%) skewX(-18deg); }
+  from { transform: translateX(-150%); }
+  to   { transform: translateX(250%); }
 }
 @keyframes ringSpin { to { transform: rotate(360deg); } }
 @keyframes shimmer {
   0%   { background-position: -200% 0; }
   100% { background-position:  200% 0; }
 }
-/* New-row flash — gold treasury light */
+/* New-row flash — quiet emerald wash */
 @keyframes rowArrive {
-  0%   { background: rgba(212,175,55,0.22); }
+  0%   { background: rgba(6,118,71,0.10); }
   100% { background: transparent; }
 }
 
 /* ── Animation utility classes ── */
-.anim-fade-in    { animation: fadeIn 200ms ease-out both; }
-.anim-fade-in-up { animation: fadeInUp 420ms cubic-bezier(0.22, 1, 0.36, 1) both; }
-.anim-scale-in   { animation: scaleIn 260ms cubic-bezier(0.34, 1.56, 0.64, 1) both; }
-.anim-slide-top  { animation: slideTop 240ms ease-out both; }
-.anim-rise       { animation: springRise 520ms cubic-bezier(0.22, 1, 0.36, 1) both; }
-.page-enter      { animation: fadeUp 280ms cubic-bezier(0.22, 1, 0.36, 1); }
+.anim-fade-in    { animation: fadeIn 150ms ease-out both; }
+.anim-fade-in-up { animation: fadeInUp 240ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.anim-scale-in   { animation: scaleIn 160ms ease-out both; }
+.anim-slide-top  { animation: slideTop 180ms ease-out both; }
+.anim-rise       { animation: springRise 280ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.page-enter      { animation: fadeUp 200ms cubic-bezier(0.22, 1, 0.36, 1); }
 
 /* ═══════════════════════════════════════════════════════════════════
    CORE COMPONENTS
    ═══════════════════════════════════════════════════════════════════ */
 
-/* ── Cards: frosted marble plates with physics-based tilt + a gold
-      glare that tracks the mouse (set --mx/--my/--rx/--ry from JS) ── */
+/* ── Cards — flat white panels, one hairline, no theatrics ── */
 .card, .stat-card {
   position: relative;
-  background: linear-gradient(180deg, var(--glass-a), var(--glass-b));
-  backdrop-filter: blur(14px) saturate(125%);
-  -webkit-backdrop-filter: blur(14px) saturate(125%);
-  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
   border-radius: var(--r-lg);
   box-shadow: var(--shadow-sm);
-  transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
-              border-color var(--t-base), box-shadow var(--t-slow);
-  overflow: hidden;
-  padding: 32px;
+  transition: border-color var(--t-base);
+  padding: 24px;
 }
-/* Gold hairline across the top — the treasury seal */
-.card::before, .stat-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 8%; right: 8%;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--hairline), transparent);
-  opacity: 0.5;
-  transition: opacity var(--t-slow);
-  pointer-events: none;
-  z-index: 2;
-}
-.card:hover, .stat-card:hover {
-  border-color: rgba(201,162,39,0.35);
-  box-shadow: var(--shadow-md), 0 28px 56px -20px rgba(6,78,59,0.16);
-}
-.card:hover::before, .stat-card:hover::before { opacity: 1; }
-.card:hover { transform: translateY(-3px); }
+.card:hover, .stat-card:hover { border-color: var(--border-strong); }
 
-/* Tilt physics — components feed --rx/--ry via mousemove */
-.tilt-card {
-  transform: perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(var(--lift, 0px));
-  will-change: transform;
-}
-/* Mouse-tracked gold glare */
-.tilt-card::after, .stat-card::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    260px circle at var(--mx, 50%) var(--my, 50%),
-    rgba(212,175,55,0.16) 0%,
-    rgba(212,175,55,0.05) 35%,
-    transparent 65%
-  );
-  opacity: 0;
-  transition: opacity 320ms ease;
-  pointer-events: none;
-  z-index: 1;
-}
-.tilt-card:hover::after, .stat-card:hover::after { opacity: 1; }
+/* Tilt physics retired — class kept so markup doesn't break */
+.tilt-card { transform: none !important; }
 
 .stat-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 24px;
+  gap: 16px;
 }
 
 /* ── Typography helpers ── */
 .label-upper {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.16em;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--text-3);
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
 }
 .gradient-text {
   font-family: var(--font-display);
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: -0.02em;
-  background: var(--gradient-flame);
-  background-size: 220% 220%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: gradientShift 8s ease-in-out infinite;
+  color: var(--accent);
+  background: none;
+  -webkit-text-fill-color: currentColor;
 }
 
 /* ── Pulse dot ── */
 .pulse-dot {
   position: relative;
   display: inline-block;
-  width: 8px; height: 8px;
+  width: 7px; height: 7px;
   border-radius: 50%;
   background: var(--success);
 }
@@ -424,7 +335,7 @@ h1, h2, h3 {
   inset: 0;
   border-radius: 50%;
   background: inherit;
-  animation: pulseRing 1.8s cubic-bezier(0.2, 0.6, 0.4, 1) infinite;
+  animation: pulseRing 2s cubic-bezier(0.2, 0.6, 0.4, 1) infinite;
 }
 
 /* ── kbd keycaps ── */
@@ -437,7 +348,7 @@ h1, h2, h3 {
   font-family: var(--font-mono);
   font-size: 10px;
   color: var(--text-3);
-  background: linear-gradient(180deg, #FFFFFF, #F2ECDE);
+  background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-bottom-width: 2px;
   border-radius: 4px;
@@ -445,121 +356,109 @@ h1, h2, h3 {
 
 /* ── Inputs ── */
 .input {
-  height: 36px;
+  height: 34px;
   width: 100%;
-  background: var(--bg-elevated);
+  background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: var(--r-md);
-  padding: 0 12px;
+  padding: 0 10px;
   font-family: var(--font-sans);
-  font-size: 13px;
+  font-size: 13.5px;
   color: var(--text-1);
   transition: border-color var(--t-fast), box-shadow var(--t-base);
   outline: none;
-  box-shadow: inset 0 1px 2px rgba(30,28,20,0.04);
 }
 .input::placeholder { color: var(--text-4); }
 .input:hover { border-color: var(--border-strong); }
 .input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(6,78,59,0.12), inset 0 1px 2px rgba(30,28,20,0.03);
+  box-shadow: 0 0 0 3px rgba(6,78,59,0.10);
 }
 
-/* ── Filter chips — bronze coin buttons ── */
+/* ── Filter chips — Attio-style segmented pills ── */
 .chip {
-  height: 30px;
-  padding: 0 16px;
-  border-radius: var(--r-full);
-  border: 1px solid var(--border);
-  background: rgba(255,255,255,0.6);
-  color: var(--text-2);
-  font-size: 12px;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: var(--r-md);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-3);
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: all var(--t-spring);
+  transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast);
 }
-.chip:hover {
-  border-color: rgba(201,162,39,0.5);
-  color: var(--text-1);
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px -6px rgba(201,162,39,0.3);
-}
+.chip:hover { background: var(--bg-overlay); color: var(--text-1); }
 .chip-active, .chip-active:hover {
-  background: var(--gradient-beacon);
-  border-color: transparent;
-  color: #FDFBF7;
-  box-shadow: 0 8px 20px -8px rgba(6,78,59,0.5);
+  background: var(--bg-surface);
+  border-color: var(--border);
+  color: var(--text-1);
+  box-shadow: var(--shadow-sm);
 }
 
-/* Newly-arrived queue rows flash gold */
-.row-new td { animation: rowArrive 2.4s ease-out both; }
+/* Newly-arrived queue rows flash quietly */
+.row-new td { animation: rowArrive 2s ease-out both; }
 
 /* ── Nav items ── */
 .nav-item {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 9px 14px;
+  padding: 6px 10px;
   border-radius: var(--r-md);
   color: var(--text-2);
   cursor: pointer;
   font-size: 13px;
-  transition: background var(--t-fast), color var(--t-fast), padding-left var(--t-fast);
+  transition: background var(--t-fast), color var(--t-fast);
 }
 .nav-item:hover {
-  background: var(--accent-subtle);
+  background: var(--bg-overlay);
   color: var(--text-1);
-  padding-left: 18px;
 }
 .nav-item.active {
-  background: var(--accent-subtle);
-  color: var(--accent-text);
-  box-shadow: inset 2px 0 0 var(--gold);
+  background: var(--bg-overlay);
+  color: var(--text-1);
+  font-weight: 500;
 }
-.nav-item.active:hover { padding-left: 14px; }
 
 /* ═══════════════════════════════════════════════════════════════════
-   DATA TABLES — engraved stone ledger, emerald scanner on hover
+   DATA TABLES — Resend-style developer ledger: thin hairlines,
+   quiet gray headers, calm row hover.
    ═══════════════════════════════════════════════════════════════════ */
 .tbl {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 13.5px;
 }
 .tbl thead th {
-  font-size: 10px;
-  font-weight: 600;
-  font-family: var(--font-mono);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--font-sans);
+  letter-spacing: 0;
+  text-transform: none;
   color: var(--text-3);
   text-align: left;
-  padding: 14px 16px;
-  border-bottom: 1.5px solid var(--text-1);
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
   white-space: nowrap;
   position: sticky;
   top: 0;
-  background: color-mix(in srgb, var(--bg-surface) 90%, transparent);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: var(--bg-surface);
   z-index: 1;
 }
 .tbl tbody td {
-  padding: 16px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--border-subtle);
   color: var(--text-2);
   vertical-align: middle;
 }
 .tbl tbody tr {
   position: relative;
-  transition: background var(--t-fast), box-shadow var(--t-fast);
+  transition: background var(--t-fast);
 }
-.tbl tbody tr:hover {
-  background: linear-gradient(90deg, rgba(6,78,59,0.06), rgba(201,162,39,0.025) 50%, transparent);
-  box-shadow: inset 2px 0 0 var(--accent);
-}
+.tbl tbody tr:hover { background: var(--bg-elevated); }
 .tbl-clickable tbody tr { cursor: pointer; }
-.tbl-clickable tbody tr:active { background: rgba(6,78,59,0.09); }
+.tbl-clickable tbody tr:active { background: var(--bg-overlay); }
 .tbl-scroll { overflow: auto; }
 
 .tbl tbody tr:hover .row-review-btn { opacity: 1 !important; }
@@ -575,9 +474,9 @@ h1, h2, h3 {
   border-radius: var(--r-md);
   color: var(--text-3);
   cursor: pointer;
-  transition: background var(--t-fast), color var(--t-fast), transform var(--t-fast);
+  transition: background var(--t-fast), color var(--t-fast);
 }
-.kebab:hover { background: var(--bg-overlay); color: var(--text-1); transform: scale(1.1); }
+.kebab:hover { background: var(--bg-overlay); color: var(--text-1); }
 
 /* ═══════════════════════════════════════════════════════════════════
    SPINNERS & STATUS RINGS
@@ -595,7 +494,7 @@ h1, h2, h3 {
 .status-ring {
   width: 64px; height: 64px;
   border-radius: 50%;
-  background: conic-gradient(from 0deg, transparent 0%, var(--gold-bright) 25%, transparent 60%);
+  background: conic-gradient(from 0deg, transparent 0%, var(--accent) 25%, transparent 60%);
   -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), black calc(100% - 3px));
   mask: radial-gradient(farthest-side, transparent calc(100% - 4px), black calc(100% - 3px));
   animation: ringSpin 1.2s linear infinite;
@@ -610,112 +509,118 @@ h1, h2, h3 {
 .countdown-ring svg { transform: rotate(-90deg); }
 
 /* ═══════════════════════════════════════════════════════════════════
-   SAR WORKSPACE — the treasury document
+   SAR WORKSPACE — the document, now a clean sans-serif filing
    ═══════════════════════════════════════════════════════════════════ */
 .sar-document {
   position: relative;
-  font-family: var(--font-serif);
-  font-size: 14.5px;
-  line-height: 1.9;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.85;
   color: var(--text-1);
-  background:
-    linear-gradient(180deg, rgba(201,162,39,0.04), transparent 140px),
-    var(--bg-elevated);
+  background: var(--bg-surface);
   border: 1px solid var(--border);
-  border-top: 3px double var(--gold);
-  border-radius: var(--r-sm);
-  padding: 56px 64px;
+  border-radius: var(--r-lg);
+  padding: 48px 56px;
   white-space: pre-wrap;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-sm);
   overflow: hidden;
 }
 .sar-watermark {
   position: absolute;
   top: 50%; left: 50%;
   transform: translate(-50%, -50%) rotate(-28deg);
-  font-family: var(--font-logo); /* ceremonial accent — Cinzel allowed here */
-  font-size: 34px;
-  font-weight: 700;
-  letter-spacing: 0.35em;
+  font-family: var(--font-sans);
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: 0.3em;
   white-space: nowrap;
-  color: rgba(42,42,42,0.05);
+  color: rgba(0,0,0,0.04);
   pointer-events: none;
   user-select: none;
 }
 .doc-header {
   display: block;
-  font-family: var(--font-display);
-  font-weight: 700;
+  font-family: var(--font-sans);
+  font-weight: 600;
   font-size: 12px;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--text-1);
   margin-top: 1.7em;
-  border-bottom: 1px solid rgba(201,162,39,0.3);
+  border-bottom: 1px solid var(--border);
   padding-bottom: 4px;
+}
+.sar-section-header {
+  display: block;
+  font-weight: 600;
+  font-size: 12.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-1);
+  margin-top: 1.5em;
 }
 
 .sar-editor {
   min-height: 280px;
-  font-family: var(--font-serif);
-  font-size: 14.5px;
-  line-height: 1.9;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.85;
   color: var(--text-1);
   outline: none;
   caret-color: var(--accent);
   white-space: pre-wrap;
   border-radius: var(--r-md);
-  transition: box-shadow var(--t-base);
 }
-.sar-editor:focus { box-shadow: -16px 0 0 -15px var(--gold); }
-.sar-editor::selection, .sar-editor *::selection { background: rgba(6,78,59,0.14); }
+.sar-editor::selection, .sar-editor *::selection { background: rgba(6,78,59,0.12); }
 
 /* Pane divider */
 .drag-handle {
   position: relative;
   width: 1px;
   align-self: stretch;
-  background: var(--border-subtle);
+  background: var(--border);
   flex-shrink: 0;
-  transition: background var(--t-base), box-shadow var(--t-base);
+  cursor: col-resize;
+  transition: background var(--t-base);
+}
+.drag-handle::before {
+  /* invisible 7px grab zone so the 1px line is easy to hit */
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  left: -3px; right: -3px;
 }
 .drag-handle::after {
   content: '';
   position: absolute;
   top: 50%; left: 50%;
-  width: 3px; height: 36px;
+  width: 3px; height: 32px;
   transform: translate(-50%, -50%);
   border-radius: 2px;
   background: var(--border-strong);
   opacity: 0;
   transition: opacity var(--t-base);
 }
-.drag-handle:hover {
-  background: var(--gold);
-  box-shadow: 0 0 10px rgba(201,162,39,0.45);
-}
-.drag-handle:hover::after { opacity: 1; }
+.drag-handle:hover, .drag-handle.dragging { background: var(--border-strong); }
+.drag-handle:hover::after, .drag-handle.dragging::after { opacity: 1; }
+body.dragging-panels { cursor: col-resize; user-select: none; }
 
-/* Compliance rule cards */
+/* Compliance rule cards — quiet bordered rows */
 .rule-card {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-subtle);
-  border-left: 3px solid var(--accent);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--accent);
   border-radius: var(--r-md);
-  padding: 16px 20px;
-  box-shadow: var(--shadow-sm);
-  transition: transform var(--t-spring), border-color var(--t-base), box-shadow var(--t-base);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  transition: border-color var(--t-base);
 }
-.rule-card:hover {
-  transform: translateX(4px);
-  border-color: rgba(201,162,39,0.4);
-  box-shadow: var(--shadow-md);
-}
+.rule-card:hover { border-color: var(--border-strong); }
 
 /* Accordions */
 .accordion-body {
   overflow: hidden;
-  transition: max-height 320ms cubic-bezier(0.4, 0, 0.2, 1), opacity 260ms ease;
+  transition: max-height 260ms cubic-bezier(0.4, 0, 0.2, 1), opacity 200ms ease;
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -730,20 +635,20 @@ h1, h2, h3 {
   position: absolute;
   bottom: calc(100% + 8px);
   left: 50%;
-  transform: translateX(-50%) translateY(4px) scale(0.97);
+  transform: translateX(-50%) translateY(2px);
   width: max-content;
   max-width: 240px;
-  padding: 7px 10px;
+  padding: 6px 10px;
   font-family: var(--font-sans);
-  font-size: 11px;
+  font-size: 11.5px;
   line-height: 1.45;
-  color: var(--bg-surface);
-  background: var(--text-1);
+  color: #FFFFFF;
+  background: #18181A;
   border-radius: var(--r-md);
   box-shadow: var(--shadow-lg);
   opacity: 0;
   pointer-events: none;
-  transition: opacity var(--t-base), transform var(--t-spring);
+  transition: opacity var(--t-base), transform var(--t-base);
   z-index: 60;
 }
 .tip-content::after {
@@ -752,65 +657,89 @@ h1, h2, h3 {
   top: 100%; left: 50%;
   transform: translateX(-50%);
   border: 5px solid transparent;
-  border-top-color: var(--text-1);
+  border-top-color: #18181A;
 }
 .tip:hover .tip-content {
   opacity: 1;
-  transform: translateX(-50%) translateY(0) scale(1);
+  transform: translateX(-50%) translateY(0);
 }
 
-/* ── Corner ribbon ── */
+/* ── Corner ribbon — flattened to a quiet tag ── */
 .ribbon {
   position: absolute;
   top: 10px; right: -32px;
   transform: rotate(45deg);
   width: 120px;
   text-align: center;
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
+  font-weight: 600;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   padding: 3px 0;
-  color: #FDFBF7;
-  background: repeating-linear-gradient(45deg, var(--gold), var(--gold) 8px, #8a6a20 8px, #8a6a20 16px);
-  box-shadow: 0 2px 8px rgba(30,28,20,0.25);
+  color: var(--text-2);
+  background: var(--bg-overlay);
+  border: 1px solid var(--border);
   pointer-events: none;
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   AUTH SHELL — the astrolabe behind frosted marble
+   AUTH SHELL — Attio light: white field, drifting dot mesh,
+   brand top-left, centered hairline card (matches the landing page)
    ═══════════════════════════════════════════════════════════════════ */
 .auth-layout {
   position: relative;
   min-height: 100vh;
   overflow: hidden;
   display: flex;
+  flex-direction: column;
+  background: #FFFFFF;
 }
-.auth-universe-bg {
+.auth-mesh {
   position: absolute;
   inset: 0;
-  z-index: 0;
+  pointer-events: none;
+  -webkit-mask-image: radial-gradient(ellipse 90% 85% at 50% 35%, #000 30%, transparent 92%);
+  mask-image: radial-gradient(ellipse 90% 85% at 50% 35%, #000 30%, transparent 92%);
 }
-.auth-glass-overlay {
+.auth-brand {
   position: absolute;
-  inset: 0;
-  z-index: 1;
-  background:
-    radial-gradient(ellipse at 50% 38%, rgba(253,251,247,0.55) 0%, rgba(253,251,247,0.9) 78%),
-    linear-gradient(180deg, rgba(6,78,59,0.04), transparent 40%);
-  backdrop-filter: blur(6px) saturate(110%);
-  -webkit-backdrop-filter: blur(6px) saturate(110%);
+  top: 0;
+  left: 0;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 22px 28px;
+  text-decoration: none;
+}
+.auth-brand-word {
+  font-family: var(--font-logo);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-1);
+}
+.auth-brand-word em {
+  font-style: normal;
+  color: var(--accent);
 }
 .auth-content {
   position: relative;
-  z-index: 2;
+  z-index: 1;
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 32px 20px;
-  min-height: 100vh;
+  padding: 88px 20px 40px;
+}
+.auth-foot {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding-bottom: 24px;
+  font-size: 12px;
+  color: var(--text-4);
 }
 
 /* ── Universe canvas plumbing ── */
@@ -819,10 +748,7 @@ h1, h2, h3 {
 .universe-canvas-fallback {
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(40% 40% at 30% 30%, rgba(6,78,59,0.12) 0%, transparent 70%),
-    radial-gradient(35% 35% at 72% 64%, rgba(201,162,39,0.10) 0%, transparent 70%),
-    var(--bg-base);
+  background: var(--bg-elevated);
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -832,19 +758,20 @@ h1, h2, h3 {
 @media (max-width: 900px) {
   .chart-grid { grid-template-columns: 1fr !important; }
   .stat-grid  { grid-template-columns: repeat(2, 1fr); }
+  .stat-band  { grid-template-columns: repeat(2, 1fr) !important; }
 }
 @media (max-width: 560px) {
   .stat-grid  { grid-template-columns: 1fr; }
 }
 
 button { transition: transform var(--t-fast); }
-button:active:not(:disabled) { transform: scale(0.96); }
+button:active:not(:disabled) { transform: scale(0.98); }
 
-/* Recharts on marble */
-.recharts-cartesian-grid line { stroke: rgba(42,42,42,0.07); }
-.recharts-text { fill: var(--text-3); font-family: var(--font-mono); font-size: 10px; }
+/* Recharts on white */
+.recharts-cartesian-grid line { stroke: var(--border-subtle); }
+.recharts-text { fill: var(--text-3); font-family: var(--font-sans); font-size: 11px; }
 .recharts-default-tooltip {
-  background: var(--bg-elevated) !important;
+  background: var(--bg-surface) !important;
   border: 1px solid var(--border) !important;
   border-radius: var(--r-md) !important;
   box-shadow: var(--shadow-md) !important;
@@ -861,13 +788,10 @@ img, svg, canvas { max-width: 100%; }
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  body::before { animation: none; }
-  .tilt-card { transform: none !important; }
 }
 
 @media print {
   body { background: #fff; color: #000; }
-  body::before, body::after { display: none; }
   .sar-document { background: #fff; color: #000; border: none; box-shadow: none; }
   .sar-watermark { color: rgba(0,0,0,0.06); }
 }

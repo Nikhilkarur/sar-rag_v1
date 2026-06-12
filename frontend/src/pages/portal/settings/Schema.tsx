@@ -13,6 +13,17 @@ const ICONS: Record<string, React.ReactNode> = {
   PAYMENT_GW: <CreditCard size={28} color="var(--success)" />,
 }
 
+/* The API returns { name, template_key, is_active, field_map, pii_fields } —
+   description and key-field chips are presentation-only, so they live here. */
+const FALLBACK_DESC: Record<string, string> = {
+  STANDARD_FINTECH:
+    'For NEFT / UPI / IMPS transaction alerts from standard core-banking or fintech TMS payloads.',
+  SEBI_BROKER:
+    'For broking and securities alerts — pay-in / pay-out, contract notes and trade-surveillance feeds.',
+  PAYMENT_GW:
+    'For payment-gateway alerts — merchant settlements, refunds and chargeback streams.',
+}
+
 const STANDARD_FIELDS: { field: string; example: string; pii: boolean }[] = [
   { field: 'customer_name', example: 'Rajesh Kumar Sharma', pii: true },
   { field: 'customer_id', example: 'CUST-98271', pii: true },
@@ -73,6 +84,12 @@ export function Schema() {
         ) : (
           ((data as any[]) ?? []).map((preset: any, i: number) => {
             const active = preset.is_active
+            const keyFields: string[] =
+              preset.key_fields ?? Object.keys(preset.field_map ?? {}).slice(0, 6)
+            const description: string =
+              preset.description ??
+              FALLBACK_DESC[preset.template_key] ??
+              'Maps your TMS payload into the 16 Aegis standard fields.'
             return (
               <div
                 key={preset.template_key}
@@ -127,10 +144,10 @@ export function Schema() {
                   {preset.name}
                 </h3>
                 <p style={{ fontSize: 13, color: 'var(--text-3)', lineHeight: 1.6, flex: 1 }}>
-                  {preset.description}
+                  {description}
                 </p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                  {preset.key_fields.map((f: string) => (
+                  {keyFields.map((f: string) => (
                     <span
                       key={f}
                       style={{

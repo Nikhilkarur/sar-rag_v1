@@ -9,20 +9,19 @@ export default function AppLayout({ admin = false }: { admin?: boolean }) {
   const isWorkspace = location.pathname.includes('/queue/');
 
   return (
-    <div className="min-h-screen bg-obsidian flex text-white font-sans selection:bg-electric-dim selection:text-white">
+    <div className="min-h-screen flex font-sans" style={{ background: 'var(--bg-base)', color: 'var(--text-1)' }}>
       <CommandPalette />
 
       {/* Fixed Sidebar */}
       {!isWorkspace && (admin ? <AdminSidebar /> : <Sidebar />)}
 
       {/* Main Content Area */}
-      <div className={`flex flex-col flex-1 min-w-0 ${isWorkspace ? '' : 'ml-[240px]'}`}>
+      <div className={`flex flex-col flex-1 min-w-0 ${isWorkspace ? '' : 'ml-[232px]'}`}>
         <TopBar />
-        
-        {/* The main scrollable container — re-keyed per route so every
-            page sweeps in like a new chamber of the citadel */}
-        <main className={`flex-1 overflow-x-hidden ${isWorkspace ? '' : 'p-10'}`}>
-          <div key={location.pathname} className={isWorkspace ? undefined : 'page-enter'}>
+
+        {/* Scroll container — re-keyed per route for a quiet fade between pages */}
+        <main className={`flex-1 overflow-x-hidden ${isWorkspace ? '' : 'px-8 py-8'}`}>
+          <div key={location.pathname} className={isWorkspace ? undefined : 'page-enter mx-auto max-w-[1200px]'}>
             <Outlet />
           </div>
         </main>

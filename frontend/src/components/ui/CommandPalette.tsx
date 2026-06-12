@@ -22,7 +22,7 @@ export function CommandPalette() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] animate-fade-in px-4">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setIsOpen(false)} />
+      <div className="absolute inset-0" style={{ background: 'rgba(20,20,20,0.35)' }} onClick={() => setIsOpen(false)} />
       <div className="relative w-full max-w-[540px] bg-surface border border-border-base rounded-[10px] shadow-modal animate-scale-in overflow-hidden">
         
         <div className="flex items-center h-[44px] border-b border-border-dim px-3">

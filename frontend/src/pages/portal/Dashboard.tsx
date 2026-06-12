@@ -1,14 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
-  CheckCircle2,
-  Clock,
-  Inbox,
-  Timer,
-  TrendingDown,
-  TrendingUp,
-  Zap,
-} from 'lucide-react'
+import { TrendingDown, TrendingUp, Zap } from 'lucide-react'
 import {
   Area,
   AreaChart,
@@ -22,13 +14,12 @@ import { useAuthStore } from '../../store/auth'
 import { useAlerts, useSubmitTestAlert } from '../../hooks/useAlerts'
 import { useUsage } from '../../hooks/useTenant'
 import { useCountUp } from '../../hooks/useCountUp'
-import { useTilt } from '../../hooks/useTilt'
 import { useToast } from '../../components/ui/Toast'
 import { Button } from '../../components/ui/Button'
 import { Modal } from '../../components/ui/Modal'
 import { Select, Field } from '../../components/ui/Input'
 import { AlertStatusBadge, RiskScoreCell, RulePills } from '../../components/ui/Badge'
-import { SkeletonStatCard, SkeletonCard, SkeletonTableRows } from '../../components/ui/Skeleton'
+import { SkeletonTableRows, Skeleton } from '../../components/ui/Skeleton'
 import { formatINR, greeting, timeAgo } from '../../utils/format'
 import type { SimulatorScenario } from '../../types'
 
@@ -40,81 +31,58 @@ const SCENARIOS = [
   { value: 'DEFAULT', label: 'Default scenario' },
 ]
 
-interface StatCardProps {
-  icon: React.ReactNode
-  iconBg: string
+interface StatCellProps {
   value: string
   label: string
-  delta?: { value: number; positiveIsGood?: boolean }
+  delta?: { value: number }
   warn?: boolean
-  index: number
 }
 
-function StatCard({ icon, iconBg, value, label, delta, warn, index }: StatCardProps) {
-  const tilt = useTilt<HTMLDivElement>(5)
+/** Attio-style stat: a cell in a shared hairline band, not a floating card */
+function StatCell({ value, label, delta, warn }: StatCellProps) {
   return (
     <div
-      ref={tilt.ref}
-      onMouseMove={tilt.onMouseMove}
-      onMouseLeave={tilt.onMouseLeave}
-      className="stat-card tilt-card"
-      style={{ animation: `springRise 560ms cubic-bezier(0.22, 1, 0.36, 1) ${index * 90}ms both` }}
+      style={{
+        padding: '20px 24px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 6,
+        minWidth: 0,
+      }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div
+      <span style={{ fontSize: 13, color: 'var(--text-3)', display: 'flex', alignItems: 'center', gap: 6 }}>
+        {label}
+        {warn && <span className="pulse-dot" style={{ background: 'var(--warning)', width: 6, height: 6 }} />}
+      </span>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+        <span
           style={{
-            width: 32,
-            height: 32,
-            borderRadius: '50%',
-            background: iconBg,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            fontSize: 26,
+            fontWeight: 600,
+            letterSpacing: '-0.02em',
+            color: 'var(--text-1)',
+            fontVariantNumeric: 'tabular-nums',
+            lineHeight: 1.2,
           }}
         >
-          {icon}
-        </div>
+          {value}
+        </span>
         {delta !== undefined && (
           <span
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: 4,
-              fontSize: 11,
+              gap: 3,
+              fontSize: 12,
               fontWeight: 500,
-              padding: '2px 8px',
-              borderRadius: 'var(--r-full)',
-              background: delta.value >= 0 ? 'var(--success-subtle)' : 'var(--danger-subtle)',
               color: delta.value >= 0 ? 'var(--success)' : 'var(--danger)',
             }}
           >
-            {delta.value >= 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+            {delta.value >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
             {delta.value >= 0 ? '+' : ''}
-            {delta.value}% vs last month
+            {delta.value}%
           </span>
         )}
-        {warn && (
-          <span
-            className="pulse-dot"
-            style={{ background: 'var(--warning)', width: 8, height: 8, marginTop: 4 }}
-          />
-        )}
-      </div>
-      <div
-        style={{
-          fontSize: 34,
-          fontWeight: 700,
-          marginTop: 16,
-          fontFamily: 'var(--font-display)',
-          color: warn ? 'var(--warning)' : 'var(--text-1)',
-          fontVariantNumeric: 'tabular-nums',
-          letterSpacing: '-0.02em',
-        }}
-      >
-        {value}
-      </div>
-      <div className="label-upper" style={{ marginTop: 10 }}>
-        {label}
       </div>
     </div>
   )
@@ -125,7 +93,7 @@ function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: 
   return (
     <div
       style={{
-        background: 'var(--bg-overlay)',
+        background: 'var(--bg-surface)',
         border: '1px solid var(--border)',
         borderRadius: 'var(--r-md)',
         padding: '8px 12px',
@@ -172,104 +140,86 @@ export function Dashboard() {
     })
   }
 
+  const panelStyle: React.CSSProperties = {
+    background: 'var(--bg-surface)',
+    border: '1px solid var(--border)',
+    borderRadius: 'var(--r-lg)',
+  }
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* Greeting */}
       <div
         style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}
       >
         <div>
-          <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em', fontFamily: 'var(--font-display)' }}>
+          <h1 style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em' }}>
             {greeting()}, {firstName}
-            {pending > 0 && (
-              <span style={{ color: 'var(--text-3)', fontWeight: 400 }}>
-                {' '}
-                — {pending} alert{pending === 1 ? '' : 's'} need{pending === 1 ? 's' : ''} your review
-              </span>
-            )}
           </h1>
-          <p style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 4 }}>AML Pipeline Status</p>
+          <p style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 2 }}>
+            {pending > 0
+              ? `${pending} alert${pending === 1 ? '' : 's'} need${pending === 1 ? 's' : ''} your review`
+              : 'AML pipeline is clear'}
+          </p>
         </div>
-        <Button size="sm" icon={<Zap size={14} />} onClick={() => setModalOpen(true)}>
-          Submit Test Alert
+        <Button size="sm" variant="secondary" icon={<Zap size={13} />} onClick={() => setModalOpen(true)}>
+          Submit test alert
         </Button>
       </div>
 
-      {/* Stat cards */}
+      {/* Stat band — one bordered strip, hairline-divided cells */}
       <div
-        className="stat-grid"
-        style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}
+        style={{
+          ...panelStyle,
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          overflow: 'hidden',
+        }}
+        className="stat-band"
       >
         {usageLoading ? (
-          <>
-            <SkeletonStatCard />
-            <SkeletonStatCard />
-            <SkeletonStatCard />
-            <SkeletonStatCard />
-          </>
+          [0, 1, 2, 3].map((i) => (
+            <div key={i} style={{ padding: '20px 24px', borderRight: i < 3 ? '1px solid var(--border-subtle)' : 'none' }}>
+              <Skeleton width="60%" height={12} />
+              <Skeleton width="40%" height={26} style={{ marginTop: 10 }} />
+            </div>
+          ))
         ) : (
           <>
-            <StatCard
-              index={0}
-              icon={<Inbox size={15} color="var(--accent-text)" />}
-              iconBg="rgba(6,78,59,0.10)"
-              value={alertsCount}
-              label="Alerts This Month"
-              delta={{ value: usage?.delta_alerts ?? 0 }}
-            />
-            <StatCard
-              index={1}
-              icon={<Clock size={15} color="var(--warning)" />}
-              iconBg="rgba(160,116,26,0.10)"
-              value={pendingCount}
-              label="Pending Review"
-              warn={pending > 0}
-            />
-            <StatCard
-              index={2}
-              icon={<CheckCircle2 size={15} color="var(--success)" />}
-              iconBg="rgba(6,78,59,0.10)"
-              value={approvedCount}
-              label="Approved SARs"
-              delta={{ value: usage?.delta_sars ?? 0 }}
-            />
-            <StatCard
-              index={3}
-              icon={<Timer size={15} color="var(--info)" />}
-              iconBg="rgba(14,116,144,0.10)"
-              value={`${avgTime} min`}
-              label="Avg. Review Time"
-            />
+            <div style={{ borderRight: '1px solid var(--border-subtle)' }}>
+              <StatCell value={alertsCount} label="Alerts this month" delta={{ value: usage?.delta_alerts ?? 0 }} />
+            </div>
+            <div style={{ borderRight: '1px solid var(--border-subtle)' }}>
+              <StatCell value={pendingCount} label="Pending review" warn={pending > 0} />
+            </div>
+            <div style={{ borderRight: '1px solid var(--border-subtle)' }}>
+              <StatCell value={approvedCount} label="Approved SARs" delta={{ value: usage?.delta_sars ?? 0 }} />
+            </div>
+            <StatCell value={`${avgTime} min`} label="Avg. review time" />
           </>
         )}
       </div>
 
       {/* Chart */}
-      {usageLoading ? (
-        <SkeletonCard height={240} />
-      ) : (
-        <div className="card" style={{ animation: 'springRise 560ms cubic-bezier(0.22, 1, 0.36, 1) 280ms both' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 24 }}>
-            <h3 style={{ fontSize: 18, fontWeight: 600, letterSpacing: '-0.01em' }}>
-              Alerts Ingested — Last 14 Days
-            </h3>
-            <span style={{ fontSize: 12, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>
-              {chartData[0]?.date} – {chartData[chartData.length - 1]?.date}
-            </span>
-          </div>
+      <div style={{ ...panelStyle, padding: 24 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 20 }}>
+          <h3 style={{ fontSize: 14, fontWeight: 600, letterSpacing: '-0.01em' }}>
+            Alerts ingested — last 14 days
+          </h3>
+          <span style={{ fontSize: 12, color: 'var(--text-4)', fontFamily: 'var(--font-mono)' }}>
+            {chartData[0]?.date} – {chartData[chartData.length - 1]?.date}
+          </span>
+        </div>
+        {usageLoading ? (
+          <Skeleton height={200} />
+        ) : (
           <div style={{ height: 220 }}>
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData} margin={{ top: 4, right: 8, bottom: 0, left: -24 }}>
                 <defs>
-                  {/* Clean emerald mesh under the curve — no gold, no mud */}
-                  <linearGradient id="beaconFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#064E3B" stopOpacity={0.3} />
-                    <stop offset="60%" stopColor="#0E8A66" stopOpacity={0.12} />
-                    <stop offset="100%" stopColor="#0E7490" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="beaconStroke" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="#064E3B" />
-                    <stop offset="100%" stopColor="#0E7490" />
+                  <linearGradient id="alertFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#064E3B" stopOpacity={0.16} />
+                    <stop offset="100%" stopColor="#064E3B" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid stroke="var(--border-subtle)" strokeDasharray="3 3" vertical={false} />
@@ -290,36 +240,60 @@ export function Dashboard() {
                 <Area
                   type="monotone"
                   dataKey="alerts"
-                  stroke="url(#beaconStroke)"
-                  strokeWidth={2.5}
-                  fill="url(#beaconFill)"
+                  stroke="#064E3B"
+                  strokeWidth={1.75}
+                  fill="url(#alertFill)"
                   dot={false}
-                  activeDot={{ r: 5, fill: 'var(--accent)', stroke: '#fff', strokeWidth: 2 }}
+                  activeDot={{ r: 4, fill: 'var(--accent)', stroke: '#fff', strokeWidth: 2 }}
                   isAnimationActive={true}
-                  animationDuration={1400}
+                  animationDuration={900}
                   animationEasing="ease-out"
                 />
               </AreaChart>
             </ResponsiveContainer>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Recent activity */}
-      <div className="card" style={{ padding: 0, animation: 'springRise 560ms cubic-bezier(0.22, 1, 0.36, 1) 380ms both' }}>
-        <div style={{ padding: '28px 32px 16px' }}>
-          <h3 style={{ fontSize: 18, fontWeight: 600, letterSpacing: '-0.01em' }}>Recent Activity</h3>
+      <div style={{ ...panelStyle, overflow: 'hidden' }}>
+        <div
+          style={{
+            padding: '14px 20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            borderBottom: '1px solid var(--border-subtle)',
+          }}
+        >
+          <h3 style={{ fontSize: 14, fontWeight: 600, letterSpacing: '-0.01em' }}>Recent activity</h3>
+          <button
+            onClick={() => navigate('/queue')}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--text-3)',
+              fontSize: 13,
+              fontWeight: 500,
+              cursor: 'pointer',
+              padding: 0,
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-1)')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-3)')}
+          >
+            View all →
+          </button>
         </div>
         <div className="tbl-scroll">
           <table className="tbl tbl-clickable">
             <thead>
               <tr>
-                <th style={{ paddingLeft: 24 }}>Transaction ID</th>
+                <th style={{ paddingLeft: 20 }}>Transaction ID</th>
                 <th style={{ textAlign: 'right' }}>Amount</th>
-                <th>Risk Score</th>
-                <th>Rules Fired</th>
+                <th>Risk</th>
+                <th>Rules</th>
                 <th>Status</th>
-                <th style={{ paddingRight: 24 }}>Time</th>
+                <th style={{ textAlign: 'right', paddingRight: 20 }}>Time</th>
               </tr>
             </thead>
             <tbody>
@@ -330,12 +304,12 @@ export function Dashboard() {
                   <tr
                     key={a.id}
                     onClick={() => navigate(`/queue/${a.id}`)}
-                    style={{ animation: `fadeInUp 420ms cubic-bezier(0.22, 1, 0.36, 1) ${480 + i * 60}ms both` }}
+                    style={{ animation: `fadeInUp 240ms cubic-bezier(0.22, 1, 0.36, 1) ${i * 30}ms both` }}
                   >
-                    <td style={{ paddingLeft: 24, fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text-2)' }}>
+                    <td style={{ paddingLeft: 20, fontFamily: 'var(--font-mono)', fontSize: 12.5, color: 'var(--text-2)' }}>
                       {a.transaction_id}
                     </td>
-                    <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 500 }}>
+                    <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 500, color: 'var(--text-1)' }}>
                       {formatINR(a.transaction_amount)}
                     </td>
                     <td>
@@ -347,7 +321,7 @@ export function Dashboard() {
                     <td>
                       <AlertStatusBadge status={a.status} />
                     </td>
-                    <td style={{ paddingRight: 24, color: 'var(--text-3)', fontSize: 13 }}>
+                    <td style={{ textAlign: 'right', paddingRight: 20, color: 'var(--text-3)', fontSize: 12.5 }}>
                       {timeAgo(a.created_at)}
                     </td>
                   </tr>
@@ -356,29 +330,13 @@ export function Dashboard() {
             </tbody>
           </table>
         </div>
-        <div style={{ padding: '16px 32px', borderTop: '1px solid var(--border-subtle)' }}>
-          <button
-            onClick={() => navigate('/queue')}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--accent-text)',
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: 'pointer',
-              padding: 0,
-            }}
-          >
-            View all in Queue →
-          </button>
-        </div>
       </div>
 
       {/* Test alert modal */}
       <Modal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title="Submit Test Alert"
+        title="Submit test alert"
         width={380}
         footer={
           <>
@@ -386,14 +344,14 @@ export function Dashboard() {
               Cancel
             </Button>
             <Button onClick={handleInject} loading={submitTest.isPending} icon={<Zap size={14} />}>
-              Inject Alert
+              Inject alert
             </Button>
           </>
         }
       >
         <p style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 16 }}>
           Injects a synthetic transaction alert through the full pipeline — PII masking, AML
-          analysis, and Groq draft generation.
+          analysis, and AI draft generation.
         </p>
         <Field label="Scenario">
           <Select

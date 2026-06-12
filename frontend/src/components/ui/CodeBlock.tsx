@@ -24,8 +24,8 @@ export function CodeBlock({ code, language = 'json', maxHeight }: { code: string
 
   return (
     <pre
-      className="bg-obsidian border border-border-dim rounded-md p-3.5 overflow-x-auto text-[12px] font-mono leading-relaxed whitespace-pre-wrap"
-      style={maxHeight ? { maxHeight, overflowY: 'auto' } : undefined}
+      className="border border-border-dim rounded-md p-3.5 overflow-x-auto text-[12px] font-mono leading-relaxed whitespace-pre-wrap"
+      style={{ background: 'var(--bg-elevated)', ...(maxHeight ? { maxHeight, overflowY: 'auto' } : null) }}
     >
       <code dangerouslySetInnerHTML={{ __html: highlighted }} />
     </pre>

@@ -49,12 +49,12 @@ export function Login() {
       }}
     >
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-          <AegisShield size={40} float />
-          <h1 className="gradient-text" style={{ fontSize: 26, fontWeight: 700, marginTop: 12, letterSpacing: '-0.02em' }}>
-            AEGIS AML
+          <AegisShield size={34} />
+          <h1 style={{ fontSize: 22, fontWeight: 600, marginTop: 14, letterSpacing: '-0.02em', color: 'var(--text-1)' }}>
+            Sign in to Aegis
           </h1>
-          <p style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 4 }}>
-            Compliance Intelligence Platform
+          <p style={{ fontSize: 13.5, color: 'var(--text-3)', marginTop: 6 }}>
+            The compliance workspace for your team.
           </p>
         </div>
 

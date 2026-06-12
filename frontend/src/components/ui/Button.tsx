@@ -14,9 +14,9 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const SIZES: Record<ButtonSize, string> = {
-  sm: 'h-[28px] px-2.5 text-[12px] gap-1.5',
-  md: 'h-[34px] px-[14px] text-[13px] gap-2',
-  lg: 'h-[40px] px-5 text-[14px] gap-2',
+  sm: 'h-[28px] px-2.5 text-[12.5px] gap-1.5',
+  md: 'h-[32px] px-3.5 text-[13px] gap-2',
+  lg: 'h-[38px] px-4 text-[14px] gap-2',
 };
 
 export function Button({
@@ -35,30 +35,28 @@ export function Button({
 
   const baseStyle =
     'relative inline-flex items-center justify-center rounded-md font-medium whitespace-nowrap ' +
-    'transition-all duration-150 ease-out overflow-hidden ' +
+    'transition-colors duration-100 ease-out ' +
     'disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100';
 
   const variants: Record<ButtonVariant, string> = {
     primary:
-      'font-semibold border border-transparent ' +
-      'bg-[#064E3B] !text-[#FDFBF7] ' +
-      'shadow-[0_1px_2px_rgba(6,78,59,0.3),0_4px_14px_-6px_rgba(6,78,59,0.5)] ' +
-      'hover:bg-[#0A6B50] hover:shadow-[0_1px_2px_rgba(6,78,59,0.3),0_8px_22px_-6px_rgba(6,78,59,0.55)]',
+      'border border-transparent bg-[#18181A] !text-white ' +
+      'shadow-[0_1px_2px_rgba(0,0,0,0.08)] hover:bg-[#2D2D2F]',
     secondary:
-      'bg-white border border-[rgba(23,23,23,0.16)] text-[#171717] shadow-sm ' +
-      'hover:border-[rgba(6,78,59,0.4)] hover:text-[#064E3B]',
+      'bg-white border border-border-base text-ink-1 shadow-[0_1px_2px_rgba(0,0,0,0.04)] ' +
+      'hover:border-border-strong hover:bg-surface-2',
     ghost:
       'bg-transparent border border-transparent text-ink-2 ' +
-      'hover:bg-[rgba(23,23,23,0.05)] hover:text-[#171717]',
+      'hover:bg-surface-3 hover:text-ink-1',
     danger:
-      'bg-transparent border border-risk-high/40 text-risk-high ' +
-      'hover:bg-risk-high/10 hover:border-risk-high hover:shadow-glow-red',
+      'bg-white border border-risk-high/40 text-risk-high shadow-[0_1px_2px_rgba(0,0,0,0.04)] ' +
+      'hover:bg-risk-high-dim hover:border-risk-high',
     'danger-ghost':
       'bg-transparent border border-transparent text-risk-high ' +
-      'hover:bg-risk-high/10 hover:border-risk-high/30',
+      'hover:bg-risk-high-dim',
     'success-ghost':
       'bg-transparent border border-transparent text-risk-low ' +
-      'hover:bg-risk-low/10 hover:border-risk-low/30',
+      'hover:bg-risk-low-dim',
   };
 
   return (

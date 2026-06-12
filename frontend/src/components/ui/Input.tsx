@@ -16,7 +16,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           ...(leftIcon ? { paddingLeft: 32 } : null),
           ...(rightSlot ? { paddingRight: 36 } : null),
           ...(error
-            ? { borderColor: 'var(--danger)', boxShadow: '0 0 0 3px rgba(244,72,106,0.15)' }
+            ? { borderColor: 'var(--danger)', boxShadow: '0 0 0 3px rgba(192,57,43,0.12)' }
             : null),
           ...style,
         }}
@@ -90,14 +90,14 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
           paddingRight: 30,
           cursor: 'pointer',
           ...(error
-            ? { borderColor: 'var(--danger)', boxShadow: '0 0 0 3px rgba(244,72,106,0.15)' }
+            ? { borderColor: 'var(--danger)', boxShadow: '0 0 0 3px rgba(192,57,43,0.12)' }
             : null),
           ...style,
         }}
         {...props}
       >
         {options.map((o) => (
-          <option key={o.value} value={o.value} style={{ background: '#14161F', color: '#F4F5F9' }}>
+          <option key={o.value} value={o.value} style={{ background: '#FFFFFF', color: '#151515' }}>
             {o.label}
           </option>
         ))}

@@ -47,7 +47,7 @@ export function LLMConfig() {
           LLM Provider
         </h3>
         <div className="chart-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-          {/* Groq card */}
+          {/* Managed inference card */}
           <div className={cls('card', 'card-selected')} style={{ position: 'relative' }}>
             <span
               style={{
@@ -74,7 +74,7 @@ export function LLMConfig() {
                 letterSpacing: '-0.02em',
               }}
             >
-              groq
+              aegis ai
             </div>
             <h3 style={{ fontSize: 15, fontWeight: 600, marginTop: 10 }}>SaaS Managed</h3>
             <div style={{ marginTop: 10 }}>
@@ -93,8 +93,8 @@ export function LLMConfig() {
               </span>
             </div>
             <p style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 12, lineHeight: 1.6 }}>
-              Managed by Aegis. No configuration required. Sub-3-second SAR drafts on Groq LPU
-              inference.
+              Managed by Aegis. No configuration required. Sub-3-second SAR drafts on low-latency
+              managed inference.
             </p>
           </div>
 

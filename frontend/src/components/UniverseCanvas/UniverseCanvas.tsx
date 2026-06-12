@@ -330,8 +330,8 @@ export default function UniverseCanvas({
           width: '100%',
           height: '100%',
           background:
-            'radial-gradient(ellipse 60% 50% at 50% 45%, rgba(6,78,59,0.14) 0%, rgba(201,162,39,0.07) 40%, #FDFBF7 100%)',
-          filter: blurred ? 'brightness(0.55)' : 'none',
+            'radial-gradient(ellipse 60% 50% at 50% 45%, rgba(6,78,59,0.08) 0%, rgba(0,0,0,0.02) 40%, #FFFFFF 100%)',
+          filter: 'none',
         }}
       />
     )

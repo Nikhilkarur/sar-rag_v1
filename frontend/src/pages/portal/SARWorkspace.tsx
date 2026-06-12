@@ -18,31 +18,38 @@ import { useToast } from '../../components/ui/Toast'
 import { Button } from '../../components/ui/Button'
 import { Modal } from '../../components/ui/Modal'
 import { CodeBlock } from '../../components/ui/CodeBlock'
-import { RiskGauge } from '../../components/ui/RiskGauge'
 import { CopyButton } from '../../components/ui/CopyButton'
-import { AlertStatusBadge, ConfidencePill, RulePill } from '../../components/ui/Badge'
+import { AlertStatusBadge, ConfidencePill, RiskScoreCell } from '../../components/ui/Badge'
 import { Skeleton } from '../../components/ui/Skeleton'
 import { AegisShield } from '../../components/AegisLogo'
 import { previewRehydrated } from '../../api/alerts'
 import { formatINR, timeAgo, formatDateTime } from '../../utils/format'
 import type { ComplianceRule } from '../../types'
 
+/* ═════════════════════════════════════════════════════════════════════════
+   SAR WORKSPACE — Attio-style split screen.
+   Left: the record — transaction attributes and AML analysis.
+   Right: the document — SAR draft on a quiet canvas.
+   Actions live in the header; the divider drags.
+   ═════════════════════════════════════════════════════════════════════════ */
+
 // ── Panel sizing ─────────────────────────────────────────────────────────
 
-const STORAGE_KEY = 'aegis-panel-widths'
-const MIN_PANEL_PX = 280
+const STORAGE_KEY = 'aegis-split-width'
+const MIN_LEFT_PX = 320
+const MAX_LEFT_PX = 600
 
-function loadWidths(): [number, number, number] {
+function loadLeftWidth(): number {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) {
-      const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed) && parsed.length === 3) return parsed as [number, number, number]
+      const n = Number(raw)
+      if (Number.isFinite(n)) return Math.min(MAX_LEFT_PX, Math.max(MIN_LEFT_PX, n))
     }
   } catch {
-    /* corrupted — use defaults */
+    /* corrupted — use default */
   }
-  return [1, 1, 1.4]
+  return 400
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────
@@ -62,22 +69,17 @@ function draftToHtml(text: string): string {
     .join('')
 }
 
-const RISK_BADGE: Record<string, { bg: string; color: string }> = {
-  HIGH: { bg: 'var(--danger-subtle)', color: 'var(--danger)' },
-  MEDIUM: { bg: 'var(--warning-subtle)', color: 'var(--warning)' },
-  LOW: { bg: 'var(--success-subtle)', color: 'var(--success)' },
-}
-
-const CONF_BORDER: Record<string, string> = {
+const RISK_COLOR: Record<string, string> = {
   HIGH: 'var(--danger)',
   MEDIUM: 'var(--warning)',
   LOW: 'var(--success)',
 }
 
+/** Attio-style attribute row: quiet gray label column, value column */
 function FieldRow({ label, value, masked }: { label: string; value: string; masked?: boolean }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '6px 0' }}>
-      <span className="label-upper" style={{ minWidth: 96, flexShrink: 0 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '5px 0', minHeight: 30 }}>
+      <span style={{ width: 120, flexShrink: 0, fontSize: 13, color: 'var(--text-3)' }}>
         {label}
       </span>
       <span
@@ -85,7 +87,7 @@ function FieldRow({ label, value, masked }: { label: string; value: string; mask
           display: 'inline-flex',
           alignItems: 'center',
           gap: 6,
-          fontSize: masked ? 13 : 14,
+          fontSize: 13,
           fontFamily: masked ? 'var(--font-mono)' : 'var(--font-sans)',
           color: 'var(--text-1)',
           minWidth: 0,
@@ -102,6 +104,24 @@ function FieldRow({ label, value, masked }: { label: string; value: string; mask
         )}
         {value}
       </span>
+    </div>
+  )
+}
+
+/** Section heading inside the record panel */
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        fontSize: 11,
+        fontWeight: 500,
+        letterSpacing: '0.05em',
+        textTransform: 'uppercase',
+        color: 'var(--text-3)',
+        margin: '20px 0 6px',
+      }}
+    >
+      {children}
     </div>
   )
 }
@@ -168,11 +188,10 @@ export function SARWorkspace() {
   const approveMutation = useApproveAlert(alertId!)
   const rejectMutation = useRejectAlert(alertId!)
 
-  // Panels
-  const [widths, setWidths] = useState<[number, number, number]>(loadWidths)
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [draggingHandle, setDraggingHandle] = useState<number | null>(null)
-  const dragState = useRef<{ handle: number; startX: number; startWidths: [number, number, number] } | null>(null)
+  // Split pane
+  const [leftWidth, setLeftWidth] = useState<number>(loadLeftWidth)
+  const [dragging, setDragging] = useState(false)
+  const dragState = useRef<{ startX: number; startWidth: number } | null>(null)
 
   // Editor
   const editorRef = useRef<HTMLDivElement>(null)
@@ -197,38 +216,27 @@ export function SARWorkspace() {
 
   // ── Drag handlers ──────────────────────────────────────────────────────
 
-  const onHandleDown = (handle: number) => (e: React.MouseEvent) => {
+  const onHandleDown = (e: React.MouseEvent) => {
     e.preventDefault()
-    dragState.current = { handle, startX: e.clientX, startWidths: [...widths] as [number, number, number] }
-    setDraggingHandle(handle)
+    dragState.current = { startX: e.clientX, startWidth: leftWidth }
+    setDragging(true)
     document.body.classList.add('dragging-panels')
   }
 
   useEffect(() => {
-    if (draggingHandle === null) return
+    if (!dragging) return
     const onMove = (e: MouseEvent) => {
       const ds = dragState.current
-      const container = containerRef.current
-      if (!ds || !container) return
-      const totalPx = container.clientWidth - 12 // minus two 6px handles
-      const totalFr = ds.startWidths[0] + ds.startWidths[1] + ds.startWidths[2]
-      const deltaFr = ((e.clientX - ds.startX) / totalPx) * totalFr
-      const minFr = (MIN_PANEL_PX / totalPx) * totalFr
-      const next: [number, number, number] = [...ds.startWidths] as [number, number, number]
-      const i = ds.handle
-      let d = deltaFr
-      d = Math.max(d, minFr - ds.startWidths[i])
-      d = Math.min(d, ds.startWidths[i + 1] - minFr)
-      next[i] = ds.startWidths[i] + d
-      next[i + 1] = ds.startWidths[i + 1] - d
-      setWidths(next)
+      if (!ds) return
+      const next = Math.min(MAX_LEFT_PX, Math.max(MIN_LEFT_PX, ds.startWidth + (e.clientX - ds.startX)))
+      setLeftWidth(next)
     }
     const onUp = () => {
-      setDraggingHandle(null)
+      setDragging(false)
       dragState.current = null
       document.body.classList.remove('dragging-panels')
-      setWidths((w) => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(w))
+      setLeftWidth((w) => {
+        localStorage.setItem(STORAGE_KEY, String(w))
         return w
       })
     }
@@ -238,7 +246,7 @@ export function SARWorkspace() {
       window.removeEventListener('mousemove', onMove)
       window.removeEventListener('mouseup', onUp)
     }
-  }, [draggingHandle])
+  }, [dragging])
 
   // ── Editor wiring ──────────────────────────────────────────────────────
 
@@ -338,11 +346,10 @@ export function SARWorkspace() {
 
   if (isLoading || !alert) {
     return (
-      <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-base)' }}>
         <div
           style={{
-            height: 48,
-            background: 'var(--bg-surface)',
+            height: 52,
             borderBottom: '1px solid var(--border-subtle)',
             display: 'flex',
             alignItems: 'center',
@@ -353,20 +360,18 @@ export function SARWorkspace() {
           <Skeleton width={28} height={28} />
           <Skeleton width={220} height={14} />
         </div>
-        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 6px 1fr 6px 1.4fr' }}>
-          {[0, 1, 2].map((i) => (
-            <React.Fragment key={i}>
-              {i > 0 && <div className="drag-handle" />}
-              <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 14 }}>
-                <Skeleton width="55%" height={22} />
-                <Skeleton width="80%" height={14} />
-                <Skeleton width="100%" height={120} />
-                <Skeleton width="90%" height={14} />
-                <Skeleton width="70%" height={14} />
-                <Skeleton width="100%" height={180} />
-              </div>
-            </React.Fragment>
-          ))}
+        <div style={{ flex: 1, display: 'flex' }}>
+          <div style={{ width: 400, padding: 24, display: 'flex', flexDirection: 'column', gap: 14, borderRight: '1px solid var(--border-subtle)' }}>
+            <Skeleton width="55%" height={24} />
+            <Skeleton width="80%" height={14} />
+            <Skeleton width="100%" height={120} />
+            <Skeleton width="90%" height={14} />
+            <Skeleton width="70%" height={14} />
+          </div>
+          <div style={{ flex: 1, padding: 40 }}>
+            <Skeleton width="40%" height={16} />
+            <Skeleton width="100%" height={300} style={{ marginTop: 20 }} />
+          </div>
         </div>
       </div>
     )
@@ -375,14 +380,13 @@ export function SARWorkspace() {
   const compliance = alert.compliance
   const draft = alert.sar_draft
   const isPending = alert.status === 'PENDING_REVIEW'
-  const overallStyle = RISK_BADGE[compliance.overall_risk]
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg-base)' }}>
-      {/* Header bar */}
+      {/* ── Header — breadcrumb left, actions right ── */}
       <div
         style={{
-          height: 48,
+          height: 52,
           background: 'var(--bg-surface)',
           borderBottom: '1px solid var(--border-subtle)',
           display: 'flex',
@@ -390,67 +394,77 @@ export function SARWorkspace() {
           justifyContent: 'space-between',
           padding: '0 16px',
           flexShrink: 0,
+          gap: 12,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
           <Button variant="ghost" size="sm" icon={<ChevronLeft size={15} />} onClick={() => navigate('/queue')} />
-          <span style={{ fontSize: 13, fontFamily: 'var(--font-mono)', color: 'var(--text-3)' }}>
-            Queue <span style={{ color: 'var(--text-4)' }}>/</span>{' '}
-            <span style={{ color: 'var(--text-1)' }}>{alert.transaction_id}</span>
+          <span style={{ fontSize: 13, color: 'var(--text-3)', whiteSpace: 'nowrap' }}>
+            Alerts <span style={{ color: 'var(--text-4)', padding: '0 4px' }}>/</span>
+          </span>
+          <span style={{ fontSize: 13, fontFamily: 'var(--font-mono)', color: 'var(--text-1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {alert.transaction_id}
+          </span>
+          <AlertStatusBadge status={alert.status} />
+          <span style={{ fontSize: 12.5, color: 'var(--text-4)', whiteSpace: 'nowrap' }}>
+            Received {timeAgo(alert.created_at)}
           </span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <AlertStatusBadge status={alert.status} />
-          <span style={{ fontSize: 12, color: 'var(--text-4)' }}>Received {timeAgo(alert.created_at)}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          <Button variant="secondary" size="sm" icon={<Eye size={13} />} onClick={openPreview}>
+            Preview
+          </Button>
+          <Button
+            variant="danger-ghost"
+            size="sm"
+            icon={<XCircle size={13} />}
+            onClick={() => setRejectOpen(true)}
+            disabled={!isPending}
+          >
+            Reject
+          </Button>
+          <Button
+            size="sm"
+            icon={<Send size={13} />}
+            onClick={() => {
+              saveDraft()
+              setApprovePhase('confirm')
+              setApproveOpen(true)
+            }}
+            disabled={!isPending}
+          >
+            Approve &amp; send
+          </Button>
         </div>
       </div>
 
-      {/* 3-panel grid */}
-      <div
-        ref={containerRef}
-        style={{
-          display: 'grid',
-          gridTemplateColumns: `${widths[0]}fr 6px ${widths[1]}fr 6px ${widths[2]}fr`,
-          height: 'calc(100vh - 48px)',
-          overflow: 'hidden',
-        }}
-      >
-        {/* ── PANEL 1 — Transaction Intelligence ── */}
-        <section
+      {/* ── Split body ── */}
+      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+        {/* LEFT — the record */}
+        <aside
           style={{
+            width: leftWidth,
+            flexShrink: 0,
             background: 'var(--bg-surface)',
             overflowY: 'auto',
-            padding: 24,
-            animation: 'fadeInUp 300ms ease-out 0ms both',
-            minWidth: 0,
+            padding: '20px 24px 32px',
+            animation: 'fadeIn 200ms ease-out both',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
-            <span
-              className="label-upper"
-              style={{
-                background: 'var(--bg-elevated)',
-                padding: '3px 8px',
-                borderRadius: 'var(--r-sm)',
-              }}
-            >
-              Transaction Data
-            </span>
-          </div>
-
           {/* Amount block */}
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
+          <div style={{ paddingBottom: 16, borderBottom: '1px solid var(--border-subtle)' }}>
+            <div style={{ fontSize: 26, fontWeight: 600, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
               {formatINR(alert.transaction_amount)}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
               <span
                 style={{
-                  height: 22,
-                  padding: '0 8px',
-                  borderRadius: 'var(--r-full)',
+                  height: 20,
+                  padding: '0 7px',
+                  borderRadius: 'var(--r-sm)',
                   fontSize: 11,
                   fontWeight: 600,
+                  letterSpacing: '0.03em',
                   display: 'inline-flex',
                   alignItems: 'center',
                   background: alert.transaction_direction === 'DEBIT' ? 'var(--danger-subtle)' : 'var(--success-subtle)',
@@ -471,98 +485,41 @@ export function SARWorkspace() {
             </div>
           </div>
 
-          {/* Risk gauge */}
-          <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0 20px' }}>
-            <RiskGauge score={alert.risk_score} />
-          </div>
-
-          <div style={{ height: 1, background: 'var(--border-subtle)', margin: '4px 0 16px' }} />
-          <div className="label-upper" style={{ marginBottom: 8 }}>
-            Subject
-          </div>
-          <FieldRow label="Customer Ref" value={String(alert.masked_payload.customer_name ?? '—')} masked />
-          <FieldRow label="Account Ref" value={String(alert.masked_payload.account_id ?? '—')} masked />
-          <FieldRow label="IP Address" value={String(alert.masked_payload.ip_address ?? '—')} masked />
-          <FieldRow label="Device" value={String(alert.masked_payload.device_id ?? '—')} masked />
-
-          <div style={{ height: 1, background: 'var(--border-subtle)', margin: '16px 0' }} />
-          <div className="label-upper" style={{ marginBottom: 8 }}>
-            Counterparty
-          </div>
-          <FieldRow label="Account" value={String(alert.masked_payload.counterparty_account ?? '—')} masked />
-          <FieldRow label="Institution" value={String(alert.masked_payload.counterparty_institution ?? '—')} />
-
-          {/* Raw JSON accordion */}
-          <div style={{ marginTop: 24 }}>
-            <button
-              onClick={() => setRawOpen((o) => !o)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                background: 'none',
-                border: 'none',
-                color: 'var(--text-2)',
-                fontSize: 13,
-                cursor: 'pointer',
-                padding: 0,
-              }}
-            >
-              <ChevronDown
-                size={14}
-                style={{ transition: 'transform 200ms', transform: rawOpen ? 'rotate(180deg)' : 'none' }}
-              />
-              View Raw JSON
-            </button>
-            <div className="accordion-body" style={{ maxHeight: rawOpen ? 600 : 0, opacity: rawOpen ? 1 : 0 }}>
-              <div style={{ paddingTop: 12 }}>
-                <CodeBlock code={JSON.stringify(alert.raw_payload, null, 2)} language="json" maxHeight={420} />
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Handle 1 */}
-        <div
-          className={`drag-handle${draggingHandle === 0 ? ' dragging' : ''}`}
-          onMouseDown={onHandleDown(0)}
-        />
-
-        {/* ── PANEL 2 — Compliance Analysis ── */}
-        <section
-          style={{
-            background: 'var(--bg-base)',
-            overflowY: 'auto',
-            padding: 24,
-            animation: 'fadeInUp 300ms ease-out 80ms both',
-            minWidth: 0,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 600, letterSpacing: '-0.01em' }}>AML Analysis</h3>
+          {/* Risk */}
+          <SectionLabel>Risk</SectionLabel>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '4px 0' }}>
+            <RiskScoreCell score={alert.risk_score} />
             <span
               style={{
-                height: 26,
-                padding: '0 10px',
-                borderRadius: 'var(--r-full)',
                 fontSize: 12,
                 fontWeight: 600,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                background: overallStyle.bg,
-                color: overallStyle.color,
+                letterSpacing: '0.03em',
+                color: RISK_COLOR[compliance.overall_risk],
               }}
             >
-              {compliance.overall_risk === 'HIGH' && <AlertTriangle size={12} />}
               {compliance.overall_risk} RISK
             </span>
           </div>
 
+          {/* Subject */}
+          <SectionLabel>Subject</SectionLabel>
+          <FieldRow label="Customer ref" value={String(alert.masked_payload.customer_name ?? '—')} masked />
+          <FieldRow label="Account ref" value={String(alert.masked_payload.account_id ?? '—')} masked />
+          <FieldRow label="IP address" value={String(alert.masked_payload.ip_address ?? '—')} masked />
+          <FieldRow label="Device" value={String(alert.masked_payload.device_id ?? '—')} masked />
+
+          {/* Counterparty */}
+          <SectionLabel>Counterparty</SectionLabel>
+          <FieldRow label="Account" value={String(alert.masked_payload.counterparty_account ?? '—')} masked />
+          <FieldRow label="Institution" value={String(alert.masked_payload.counterparty_institution ?? '—')} />
+
+          {/* AML analysis */}
+          <SectionLabel>AML analysis</SectionLabel>
+
           {compliance.triggered_rules.length === 0 && alert.status === 'PROCESSING' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <Skeleton height={86} />
-              <Skeleton height={86} />
+              <Skeleton height={72} />
+              <Skeleton height={72} />
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-3)', fontSize: 13 }}>
                 <span className="spinner spinner-accent" />
                 Running AML typology checks…
@@ -575,24 +532,25 @@ export function SARWorkspace() {
               key={rule.rule_id}
               className="rule-card"
               style={{
-                borderLeftColor: CONF_BORDER[rule.confidence],
-                animation: `fadeInUp 250ms ease-out ${i * 60}ms both`,
+                borderLeftColor: RISK_COLOR[rule.confidence] ?? 'var(--accent)',
+                animation: `fadeInUp 200ms ease-out ${i * 40}ms both`,
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-1)' }}>{rule.rule_name}</span>
+                <span style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--text-1)' }}>{rule.rule_name}</span>
                 <ConfidencePill confidence={rule.confidence} />
               </div>
               {rule.evidence.explanation && (
-                <p style={{ fontSize: 13, fontStyle: 'italic', color: 'var(--text-3)', marginTop: 6, lineHeight: 1.6 }}>
+                <p style={{ fontSize: 13, color: 'var(--text-2)', marginTop: 6, lineHeight: 1.6 }}>
                   {rule.evidence.explanation}
                 </p>
               )}
               {rule.evidence.field && (
-                <div style={{ marginTop: 10 }}>
+                <div style={{ marginTop: 8 }}>
                   <span
                     style={{
                       background: 'var(--bg-elevated)',
+                      border: '1px solid var(--border-subtle)',
                       fontSize: 11,
                       fontFamily: 'var(--font-mono)',
                       borderRadius: 'var(--r-sm)',
@@ -610,7 +568,7 @@ export function SARWorkspace() {
 
           {/* Clean checks */}
           {compliance.clean_checks.length > 0 && (
-            <div style={{ marginTop: 16 }}>
+            <div style={{ marginTop: 12 }}>
               <button
                 onClick={() => setCleanOpen((o) => !o)}
                 style={{
@@ -629,7 +587,7 @@ export function SARWorkspace() {
                   size={14}
                   style={{ transition: 'transform 200ms', transform: cleanOpen ? 'rotate(180deg)' : 'none' }}
                 />
-                Clean Checks ({compliance.clean_checks.length})
+                Clean checks ({compliance.clean_checks.length})
               </button>
               <div
                 className="accordion-body"
@@ -646,130 +604,147 @@ export function SARWorkspace() {
               </div>
             </div>
           )}
-        </section>
 
-        {/* Handle 2 */}
-        <div
-          className={`drag-handle${draggingHandle === 1 ? ' dragging' : ''}`}
-          onMouseDown={onHandleDown(1)}
-        />
-
-        {/* ── PANEL 3 — SAR Draft ── */}
-        <section
-          style={{
-            background: 'var(--bg-surface)',
-            display: 'flex',
-            flexDirection: 'column',
-            animation: 'fadeInUp 300ms ease-out 160ms both',
-            minWidth: 0,
-            overflow: 'hidden',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '16px 24px',
-              borderBottom: '1px solid var(--border-subtle)',
-              flexShrink: 0,
-            }}
-          >
-            <h3 style={{ fontSize: 16, fontWeight: 600, letterSpacing: '-0.01em' }}>SAR Draft</h3>
-            <span
+          {/* Raw JSON accordion */}
+          <div style={{ marginTop: 16 }}>
+            <button
+              onClick={() => setRawOpen((o) => !o)}
               style={{
-                height: 22,
-                padding: '0 10px',
-                background: 'var(--bg-elevated)',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--r-full)',
-                fontSize: 11,
-                fontFamily: 'var(--font-mono)',
-                color: 'var(--text-2)',
-                display: 'inline-flex',
+                display: 'flex',
                 alignItems: 'center',
+                gap: 6,
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-3)',
+                fontSize: 13,
+                cursor: 'pointer',
+                padding: 0,
               }}
             >
-              {draft ? `Groq · ${draft.llm_model.replace('-versatile', '')}` : 'No draft'}
-            </span>
+              <ChevronDown
+                size={14}
+                style={{ transition: 'transform 200ms', transform: rawOpen ? 'rotate(180deg)' : 'none' }}
+              />
+              Raw JSON
+            </button>
+            <div className="accordion-body" style={{ maxHeight: rawOpen ? 600 : 0, opacity: rawOpen ? 1 : 0 }}>
+              <div style={{ paddingTop: 12 }}>
+                <CodeBlock code={JSON.stringify(alert.raw_payload, null, 2)} language="json" maxHeight={420} />
+              </div>
+            </div>
           </div>
+        </aside>
 
-          <div style={{ flex: 1, overflowY: 'auto', padding: '8px 16px 0' }}>
-            <div
-              ref={editorRef}
-              className="sar-editor"
-              contentEditable={isPending}
-              suppressContentEditableWarning
-              spellCheck={false}
-              onInput={onEditorInput}
-              onBlur={saveDraft}
-            />
-          </div>
+        {/* Divider */}
+        <div className={`drag-handle${dragging ? ' dragging' : ''}`} onMouseDown={onHandleDown} />
 
+        {/* RIGHT — the document */}
+        <section
+          style={{
+            flex: 1,
+            minWidth: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            background: 'var(--bg-elevated)',
+            animation: 'fadeIn 200ms ease-out 60ms both',
+          }}
+        >
+          {/* Document toolbar */}
           <div
             style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              padding: '6px 24px',
-              fontSize: 12,
-              color: 'var(--text-4)',
-              flexShrink: 0,
-            }}
-          >
-            <span>{charCount.toLocaleString('en-IN')} characters</span>
-            <span>
-              {dirty
-                ? 'Unsaved edits — click outside to save'
-                : draft?.last_edited_at
-                  ? `Last edited by you, ${timeAgo(draft.last_edited_at)}`
-                  : 'No edits yet'}
-            </span>
-          </div>
-
-          {/* Action bar */}
-          <div
-            style={{
-              height: 64,
-              borderTop: '1px solid var(--border-subtle)',
-              padding: '0 24px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
+              padding: '12px 28px',
+              borderBottom: '1px solid var(--border-subtle)',
               flexShrink: 0,
               gap: 12,
             }}
           >
-            <span style={{ fontSize: 12, color: 'var(--text-4)', display: 'inline-flex', alignItems: 'center', gap: 6, minWidth: 0, overflow: 'hidden', whiteSpace: 'nowrap' }}>
+            <span style={{ fontSize: 13.5, fontWeight: 600, letterSpacing: '-0.01em' }}>SAR draft</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+              <span
+                style={{
+                  fontSize: 12,
+                  color: 'var(--text-4)',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                {dirty
+                  ? 'Unsaved edits — click outside to save'
+                  : draft?.last_edited_at
+                    ? `Last edited ${timeAgo(draft.last_edited_at)}`
+                    : 'No edits yet'}
+              </span>
+              <span
+                style={{
+                  height: 22,
+                  padding: '0 9px',
+                  background: 'var(--bg-surface)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--r-full)',
+                  fontSize: 11,
+                  fontFamily: 'var(--font-mono)',
+                  color: 'var(--text-2)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {draft ? `AI · ${draft.llm_model.replace('-versatile', '')}` : 'No draft'}
+              </span>
+            </div>
+          </div>
+
+          {/* Document canvas — the draft sits like a page on a desk */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '28px 28px 40px' }}>
+            <div
+              style={{
+                maxWidth: 760,
+                margin: '0 auto',
+                background: 'var(--bg-surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--r-lg)',
+                boxShadow: 'var(--shadow-sm)',
+                padding: '40px 48px',
+                minHeight: '100%',
+              }}
+            >
+              <div
+                ref={editorRef}
+                className="sar-editor"
+                contentEditable={isPending}
+                suppressContentEditableWarning
+                spellCheck={false}
+                onInput={onEditorInput}
+                onBlur={saveDraft}
+              />
+            </div>
+          </div>
+
+          {/* Meta strip */}
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '8px 28px',
+              borderTop: '1px solid var(--border-subtle)',
+              fontSize: 12,
+              color: 'var(--text-4)',
+              flexShrink: 0,
+              gap: 12,
+            }}
+          >
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minWidth: 0, overflow: 'hidden', whiteSpace: 'nowrap' }}>
               <Sparkles size={12} style={{ flexShrink: 0 }} />
               {draft
-                ? `Generated in ${(draft.generation_latency_ms / 1000).toFixed(1)}s · Groq ${draft.llm_model.replace('-versatile', '')}`
+                ? `Generated in ${(draft.generation_latency_ms / 1000).toFixed(1)}s · ${draft.llm_model.replace('-versatile', '')}`
                 : 'No SAR draft — this alert completed clean'}
             </span>
-            <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-              <Button variant="secondary" size="sm" icon={<Eye size={13} />} onClick={openPreview}>
-                Preview
-              </Button>
-              <Button
-                variant="danger-ghost"
-                size="sm"
-                icon={<XCircle size={13} />}
-                onClick={() => setRejectOpen(true)}
-                disabled={!isPending}
-              >
-                Reject
-              </Button>
-              <Button
-                icon={<Send size={14} />}
-                onClick={() => {
-                  saveDraft()
-                  setApprovePhase('confirm')
-                  setApproveOpen(true)
-                }}
-                disabled={!isPending}
-              >
-                Approve & Send ↗
-              </Button>
-            </div>
+            <span style={{ whiteSpace: 'nowrap' }}>{charCount.toLocaleString('en-IN')} characters</span>
           </div>
         </section>
       </div>
@@ -784,10 +759,10 @@ export function SARWorkspace() {
       >
         {approvePhase === 'confirm' && (
           <div className="anim-fade-in">
-            <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Confirm SAR Approval</h3>
+            <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 16 }}>Confirm SAR approval</h3>
             <div
               style={{
-                background: 'var(--bg-base)',
+                background: 'var(--bg-elevated)',
                 border: '1px solid var(--border-subtle)',
                 borderRadius: 'var(--r-md)',
                 padding: 16,
@@ -797,21 +772,19 @@ export function SARWorkspace() {
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span className="label-upper">Amount</span>
-                <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 500 }}>
+                <span style={{ fontSize: 13, color: 'var(--text-3)' }}>Amount</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 500 }}>
                   {formatINR(alert.transaction_amount)}
                 </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-                <span className="label-upper">Rules</span>
-                <span style={{ display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                  {alert.triggered_rules.map((r) => (
-                    <RulePill key={r} rule={r} />
-                  ))}
+                <span style={{ fontSize: 13, color: 'var(--text-3)' }}>Rules</span>
+                <span style={{ fontSize: 13, textAlign: 'right' }}>
+                  {alert.triggered_rules.join(', ') || '—'}
                 </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span className="label-upper">Officer</span>
+                <span style={{ fontSize: 13, color: 'var(--text-3)' }}>Officer</span>
                 <span style={{ fontSize: 13 }}>{user?.fullName}</span>
               </div>
             </div>
@@ -820,7 +793,7 @@ export function SARWorkspace() {
                 marginTop: 16,
                 padding: '10px 12px',
                 background: 'var(--warning-subtle)',
-                border: '1px solid rgba(160,116,26,0.3)',
+                border: '1px solid rgba(154,103,0,0.25)',
                 borderRadius: 'var(--r-md)',
                 fontSize: 13,
                 color: 'var(--warning)',
@@ -836,12 +809,7 @@ export function SARWorkspace() {
               <Button variant="secondary" onClick={() => setApproveOpen(false)}>
                 Cancel
               </Button>
-              <Button
-                style={{ background: 'var(--success)', color: '#fff' }}
-                onClick={startApproval}
-              >
-                Confirm Approval
-              </Button>
+              <Button onClick={startApproval}>Confirm approval</Button>
             </div>
           </div>
         )}
@@ -871,7 +839,7 @@ export function SARWorkspace() {
                       />
                     )}
                     <span style={{ color: done ? 'var(--text-2)' : 'var(--text-1)' }}>
-                      {i === 2 && done ? 'Delivered — HMAC Verified ✓' : `${step}${done ? '' : '...'}`}
+                      {i === 2 && done ? 'Delivered — HMAC verified ✓' : `${step}${done ? '' : '...'}`}
                     </span>
                   </div>
                 )
@@ -887,8 +855,6 @@ export function SARWorkspace() {
               padding: '24px 4px 8px',
               textAlign: 'center',
               position: 'relative',
-              animation: 'successGlow 2s ease-in-out infinite',
-              borderRadius: 'var(--r-lg)',
             }}
           >
             <div style={{ position: 'relative', width: 64, height: 64, margin: '0 auto' }}>
@@ -898,7 +864,7 @@ export function SARWorkspace() {
                   cy="32"
                   r="28"
                   stroke="var(--success)"
-                  strokeWidth="2.5"
+                  strokeWidth="2"
                   fill="var(--success-subtle)"
                 />
                 <polyline
@@ -917,13 +883,13 @@ export function SARWorkspace() {
             </div>
             <h3
               style={{
-                fontSize: 20,
+                fontSize: 18,
                 fontWeight: 600,
                 marginTop: 20,
                 animation: 'fadeInUp 250ms ease-out 700ms both',
               }}
             >
-              SAR Approved & Delivered
+              SAR approved &amp; delivered
             </h3>
             <div style={{ animation: 'fadeInUp 250ms ease-out 900ms both', marginTop: 10 }}>
               <div style={{ fontSize: 13, color: 'var(--text-3)' }}>
@@ -944,7 +910,7 @@ export function SARWorkspace() {
                   fontWeight: 600,
                 }}
               >
-                HMAC Verified ✓
+                HMAC verified ✓
               </span>
             </div>
             <div style={{ animation: 'fadeInUp 250ms ease-out 1200ms both', marginTop: 20, display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center' }}>
@@ -952,10 +918,10 @@ export function SARWorkspace() {
                 onClick={() => navigate('/settings/webhook')}
                 style={{ background: 'none', border: 'none', color: 'var(--accent-text)', fontSize: 13, cursor: 'pointer' }}
               >
-                View Delivery Receipt →
+                View delivery receipt →
               </button>
               <Button variant="secondary" onClick={() => navigate('/queue')}>
-                Back to Queue
+                Back to queue
               </Button>
             </div>
             <div
@@ -984,7 +950,7 @@ export function SARWorkspace() {
       <Modal
         open={rejectOpen}
         onClose={() => setRejectOpen(false)}
-        title="Reject Alert"
+        title="Reject alert"
         width={380}
         footer={
           <>
@@ -997,7 +963,7 @@ export function SARWorkspace() {
               loading={rejectMutation.isPending}
               disabled={!rejectReason.trim()}
             >
-              Reject Alert
+              Reject alert
             </Button>
           </>
         }
@@ -1007,7 +973,7 @@ export function SARWorkspace() {
         </p>
         <textarea
           className="input"
-          style={{ minHeight: 80, width: '100%' }}
+          style={{ minHeight: 80, width: '100%', padding: 10 }}
           placeholder="e.g. Reviewed — determined to be legitimate payroll disbursement."
           value={rejectReason}
           onChange={(e) => setRejectReason(e.target.value)}
@@ -1020,9 +986,9 @@ export function SARWorkspace() {
         <div style={{ margin: -20 }}>
           <div
             style={{
-              height: 48,
+              height: 44,
               background: 'var(--danger-subtle)',
-              borderBottom: '1px solid rgba(179,56,44,0.3)',
+              borderBottom: '1px solid rgba(192,57,43,0.25)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -1030,9 +996,9 @@ export function SARWorkspace() {
               gap: 12,
             }}
           >
-            <span style={{ fontSize: 13, color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-              <Lock size={14} style={{ flexShrink: 0 }} />
-              Confidential — Contains Real PII. For officer review only. Not stored by Aegis.
+            <span style={{ fontSize: 12.5, color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+              <Lock size={13} style={{ flexShrink: 0 }} />
+              Confidential — contains real PII. For officer review only. Not stored by Aegis.
             </span>
             <button
               onClick={() => setPreviewOpen(false)}
@@ -1042,7 +1008,7 @@ export function SARWorkspace() {
               <X size={16} />
             </button>
           </div>
-          <div style={{ padding: 20, maxHeight: 'calc(100vh - 220px)', overflowY: 'auto' }}>
+          <div style={{ padding: 20, maxHeight: 'calc(100vh - 220px)', overflowY: 'auto', background: 'var(--bg-elevated)' }}>
             {previewLoading ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <Skeleton height={28} width="50%" />

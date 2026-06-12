@@ -36,15 +36,15 @@ export function AdminSidebar() {
     },
     { to: '/admin/customers', label: 'Customers', icon: <Building2 size={16} /> },
     { to: '/admin/logs', label: 'API Logs', icon: <Activity size={16} /> },
-    { to: '/admin/groq', label: 'Groq Usage', icon: <Zap size={16} /> },
+    { to: '/admin/llm', label: 'LLM Usage', icon: <Zap size={16} /> },
   ]
 
   return (
     <aside
       style={{
-        width: collapsed ? 64 : 240,
+        width: collapsed ? 64 : 232,
         height: '100vh',
-        background: 'var(--bg-surface)',
+        background: 'var(--bg-elevated)',
         borderRight: '1px solid var(--border-subtle)',
         display: 'flex',
         flexDirection: 'column',
@@ -68,11 +68,11 @@ export function AdminSidebar() {
         <AegisShield size={24} />
         {!collapsed && (
           <div>
-            <div style={{ fontSize: 16, fontWeight: 700, lineHeight: 1.2, whiteSpace: 'nowrap' }}>
+            <div className="font-logo" style={{ fontSize: 13, lineHeight: 1.3, whiteSpace: 'nowrap' }}>
               <span style={{ color: 'var(--text-1)' }}>AEGIS</span>{' '}
               <span style={{ color: 'var(--accent)' }}>AML</span>
             </div>
-            <div style={{ fontSize: 12, color: 'var(--warning)', whiteSpace: 'nowrap' }}>
+            <div style={{ fontSize: 11, color: 'var(--text-3)', whiteSpace: 'nowrap' }}>
               Admin Console
             </div>
           </div>
@@ -165,9 +165,9 @@ export function AdminSidebar() {
             width: 32,
             height: 32,
             borderRadius: '50%',
-            background: 'var(--warning)',
-            color: '#000',
-            fontSize: 14,
+            background: 'var(--accent-subtle)',
+            color: 'var(--accent-text)',
+            fontSize: 13,
             fontWeight: 600,
             display: 'flex',
             alignItems: 'center',

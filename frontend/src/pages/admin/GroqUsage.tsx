@@ -48,26 +48,15 @@ function Stat({
   label: string
   index: number
 }) {
+  void iconBg
   return (
-    <div className="stat-card" style={{ animation: `fadeInUp 300ms ease-out ${index * 80}ms both` }}>
-      <div
-        style={{
-          width: 32,
-          height: 32,
-          borderRadius: '50%',
-          background: iconBg,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        {icon}
-      </div>
-      <div style={{ fontSize: 28, fontWeight: 700, marginTop: 12, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
-        {value}
-      </div>
-      <div className="label-upper" style={{ marginTop: 6 }}>
+    <div className="stat-card" style={{ padding: '20px 24px', animation: `fadeInUp 240ms ease-out ${index * 50}ms both` }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-3)' }}>
+        <span style={{ display: 'inline-flex', color: 'var(--text-3)' }}>{icon}</span>
         {label}
+      </div>
+      <div style={{ fontSize: 26, fontWeight: 600, marginTop: 8, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
+        {value}
       </div>
     </div>
   )
@@ -215,8 +204,8 @@ export function GroqUsage() {
             color: 'var(--text-4)',
           }}
         >
-          Costs estimated at $0.0015/1K input tokens, $0.002/1K output tokens (Groq pricing). Actual
-          billing may vary.
+          Costs estimated at $0.0015/1K input tokens, $0.002/1K output tokens (provider list
+          pricing). Actual billing may vary.
         </div>
       </div>
     </div>

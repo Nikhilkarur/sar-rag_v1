@@ -1,74 +1,69 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { ArrowRight, X } from 'lucide-react'
 import { AegisShield } from '../../components/AegisLogo'
 import { cls } from '../../utils/format'
 
 export default function LandingNav() {
   const [scrolled, setScrolled] = useState(false)
+  const [banner, setBanner] = useState(true)
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 40)
+    const onScroll = () => setScrolled(window.scrollY > 24)
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
   return (
-    <nav className={cls('landing-nav', scrolled && 'scrolled')}>
-      <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
-        <AegisShield size={22} />
-        <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: '0.08em', fontFamily: 'var(--font-logo)' }}>
-          <span style={{ color: 'var(--text-1)' }}>AEGIS</span>{' '}
-          <span style={{ color: 'var(--accent)' }}>AML</span>
-        </span>
-      </Link>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <Link
-          to="/login"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            height: 28,
-            padding: '0 10px',
-            borderRadius: 'var(--r-md)',
-            fontSize: 13,
-            fontWeight: 500,
-            color: 'var(--text-2)',
-            textDecoration: 'none',
-            transition: 'background var(--t-fast), color var(--t-fast)',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'var(--bg-elevated)'
-            e.currentTarget.style.color = 'var(--text-1)'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'transparent'
-            e.currentTarget.style.color = 'var(--text-2)'
-          }}
-        >
-          Sign In
-        </Link>
-        <Link
-          to="/signup"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            height: 28,
-            padding: '0 12px',
-            borderRadius: 'var(--r-md)',
-            fontSize: 13,
-            fontWeight: 500,
-            background: 'var(--accent)',
-            color: '#fff',
-            textDecoration: 'none',
-            transition: 'background var(--t-fast)',
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--accent-hover)')}
-          onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--accent)')}
-        >
-          Request Access →
-        </Link>
-      </div>
-    </nav>
+    <div className="landing-header">
+      {banner && (
+        <div className="lnav-banner">
+          <a href="#agents" className="lnav-banner-link">
+            Meet the Risk Engine — eight typologies, one pipeline
+            <ArrowRight size={14} strokeWidth={2} />
+          </a>
+          <button
+            className="lnav-banner-close"
+            aria-label="Dismiss announcement"
+            onClick={() => setBanner(false)}
+          >
+            <X size={15} strokeWidth={2} />
+          </button>
+        </div>
+      )}
+
+      <nav className={cls('landing-nav', scrolled && 'scrolled')}>
+        <div className="lnav-inner">
+          <Link to="/" className="lnav-brand">
+            <AegisShield size={20} />
+            <span className="lnav-brand-word">
+              AEGIS <em>AML</em>
+            </span>
+          </Link>
+
+          <div className="lnav-links">
+            <a href="#capabilities" className="lnav-link">
+              Platform
+            </a>
+            <a href="#how-it-works" className="lnav-link">
+              How it works
+            </a>
+            <a href="#customers" className="lnav-link">
+              Customers
+            </a>
+            <a href="#pricing" className="lnav-link">
+              Pricing
+            </a>
+          </div>
+
+          <div className="lnav-actions">
+            <Link to="/login" className="btn-landing btn-landing-secondary btn-landing-sm">
+              Sign in
+            </Link>
+          </div>
+        </div>
+      </nav>
+    </div>
   )
 }

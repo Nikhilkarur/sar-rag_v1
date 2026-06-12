@@ -15,7 +15,7 @@ type Filter = 'ALL' | 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED'
 
 const FILTERS: { key: Filter; label: string }[] = [
   { key: 'ALL', label: 'All' },
-  { key: 'PENDING_REVIEW', label: 'Pending Review' },
+  { key: 'PENDING_REVIEW', label: 'Pending' },
   { key: 'APPROVED', label: 'Approved' },
   { key: 'REJECTED', label: 'Rejected' },
 ]
@@ -60,46 +60,39 @@ export function Queue() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 600, letterSpacing: '-0.01em', fontFamily: 'var(--font-serif)' }}>Review Queue</h1>
-        {pendingCount > 0 && (
-          <span
-            style={{
-              height: 22,
-              padding: '0 10px',
-              borderRadius: 'var(--r-full)',
-              background: 'var(--warning-subtle)',
-              color: 'var(--warning)',
-              fontSize: 12,
-              fontWeight: 500,
-              display: 'inline-flex',
-              alignItems: 'center',
-            }}
-          >
-            {pendingCount} pending
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* Header row */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+          <h1 style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em' }}>Alerts</h1>
+          <span style={{ fontSize: 13, color: 'var(--text-3)' }}>
+            {pendingCount > 0 ? `${pendingCount} pending review` : 'Nothing pending'}
           </span>
-        )}
+        </div>
+        <Button size="sm" variant="secondary" icon={<Zap size={13} />} onClick={submitTestAlert} loading={submitTest.isPending}>
+          Submit test alert
+        </Button>
       </div>
 
-      {/* Filter bar */}
+      {/* Toolbar — segmented filters left, search + dates right */}
       <div
         style={{
-          position: 'sticky',
-          top: 64,
-          zIndex: 30,
-          height: 56,
-          background: 'var(--bg-base)',
-          borderBottom: '1px solid var(--border-subtle)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: 16,
+          gap: 12,
           flexWrap: 'wrap',
         }}
       >
-        <div style={{ display: 'flex', gap: 4 }}>
+        <div
+          style={{
+            display: 'inline-flex',
+            gap: 2,
+            padding: 2,
+            background: 'var(--bg-overlay)',
+            borderRadius: 'var(--r-md)',
+          }}
+        >
           {FILTERS.map((f) => (
             <button
               key={f.key}
@@ -111,9 +104,9 @@ export function Queue() {
           ))}
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <div style={{ width: 200 }}>
+          <div style={{ width: 220 }}>
             <Input
-              placeholder="Search by Transaction ID..."
+              placeholder="Search by transaction ID…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               onKeyDown={(e) => e.key === 'Escape' && setSearch('')}
@@ -140,36 +133,42 @@ export function Queue() {
         </div>
       </div>
 
-      {/* Table */}
+      {/* Table — Resend-style bordered panel, hairline rows */}
       {!isLoading && filtered.length === 0 ? (
         <EmptyState
           icon={<ShieldCheckIllustration size={64} />}
-          title="All Clear"
-          description="No pending alerts. Submit a test alert to try the pipeline."
+          title="All clear"
+          description="No alerts match. Submit a test alert to try the pipeline."
           action={
             <Button icon={<Zap size={14} />} onClick={submitTestAlert} loading={submitTest.isPending}>
-              Submit Test Alert
+              Submit test alert
             </Button>
           }
         />
       ) : (
-        <div className="tbl-scroll">
+        <div
+          className="tbl-scroll"
+          style={{
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--r-lg)',
+            background: 'var(--bg-surface)',
+          }}
+        >
           <table className="tbl tbl-clickable">
             <thead>
               <tr>
-                <th>Alert ID</th>
+                <th style={{ paddingLeft: 20 }}>Alert ID</th>
                 <th style={{ textAlign: 'right' }}>Amount</th>
                 <th>Type</th>
-                <th>Risk Score</th>
-                <th>Rules Triggered</th>
-                <th>Received</th>
+                <th>Risk</th>
+                <th>Rules</th>
                 <th>Status</th>
-                <th></th>
+                <th style={{ textAlign: 'right', paddingRight: 20 }}>Received</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
-                <SkeletonTableRows rows={6} cols={8} />
+                <SkeletonTableRows rows={6} cols={7} />
               ) : (
                 filtered.map((a, i) => {
                   const isNew =
@@ -180,28 +179,28 @@ export function Queue() {
                       key={a.id}
                       className={isNew ? 'row-new' : undefined}
                       style={{
-                        animation: `fadeInUp 420ms cubic-bezier(0.22, 1, 0.36, 1) ${Math.min(i, 14) * 50}ms both`,
+                        animation: `fadeInUp 240ms cubic-bezier(0.22, 1, 0.36, 1) ${Math.min(i, 12) * 25}ms both`,
                       }}
                       onClick={() => navigate(`/queue/${a.id}`)}
-                      onMouseEnter={(e) => {
-                        const btn = e.currentTarget.querySelector<HTMLElement>('.row-review-btn')
-                        if (btn) btn.style.opacity = '1'
-                      }}
-                      onMouseLeave={(e) => {
-                        const btn = e.currentTarget.querySelector<HTMLElement>('.row-review-btn')
-                        if (btn) btn.style.opacity = '0'
-                      }}
                     >
-                      <td style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text-3)' }}>
+                      <td
+                        style={{
+                          paddingLeft: 20,
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: 12.5,
+                          color: 'var(--text-2)',
+                        }}
+                      >
                         {truncId(a.id)}
                       </td>
                       <td
                         style={{
                           textAlign: 'right',
                           fontFamily: 'var(--font-mono)',
-                          fontSize: 14,
+                          fontSize: 13,
                           fontWeight: 500,
                           color: 'var(--text-1)',
+                          fontVariantNumeric: 'tabular-nums',
                         }}
                       >
                         {formatINR(a.transaction_amount)}
@@ -215,23 +214,19 @@ export function Queue() {
                       <td>
                         <RulePills rules={a.triggered_rules} />
                       </td>
-                      <td style={{ fontSize: 13, color: 'var(--text-3)' }}>{timeAgo(a.created_at)}</td>
                       <td>
                         <AlertStatusBadge status={a.status} />
                       </td>
-                      <td style={{ width: 80 }}>
-                        <span className="row-review-btn" style={{ opacity: 0, transition: 'opacity var(--t-fast)' }}>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              navigate(`/queue/${a.id}`)
-                            }}
-                          >
-                            Review
-                          </Button>
-                        </span>
+                      <td
+                        style={{
+                          textAlign: 'right',
+                          paddingRight: 20,
+                          fontSize: 12.5,
+                          color: 'var(--text-3)',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {timeAgo(a.created_at)}
                       </td>
                     </tr>
                   )

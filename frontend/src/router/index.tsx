@@ -111,7 +111,9 @@ export function AppRouter() {
         <Route path="/admin/verifications" element={<Verifications />} />
         <Route path="/admin/customers" element={<Customers />} />
         <Route path="/admin/logs" element={<Logs />} />
-        <Route path="/admin/groq" element={<GroqUsage />} />
+        <Route path="/admin/llm" element={<GroqUsage />} />
+        {/* legacy path — keep old bookmarks working */}
+        <Route path="/admin/groq" element={<Navigate to="/admin/llm" replace />} />
       </Route>
       <Route path="/admin" element={<Navigate to="/admin/verifications" replace />} />
 
