@@ -4,6 +4,9 @@ venv/
 __pycache__/
 *.pyc
 .env
+chroma_data/
+backend/chroma_data/
+outputs/
 backend_error.log
 .DS_Store
 .claude/

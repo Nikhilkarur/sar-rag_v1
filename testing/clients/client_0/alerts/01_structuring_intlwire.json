@@ -1,0 +1,30 @@
+{
+  "customer": {
+    "full_name": "Rohan Mehta",
+    "id": "CUST-884213"
+  },
+  "account": {
+    "number": "5012-7788-2231"
+  },
+  "txn": {
+    "ref_id": "TXN-EVAL-01",
+    "amount": 945000,
+    "currency": "INR",
+    "type": "INTERNATIONAL_WIRE",
+    "direction": "OUTBOUND",
+    "timestamp": "2026-04-16T11:42:07+05:30"
+  },
+  "counterparty": {
+    "account": "AE070331234567890123456",
+    "name": "Gulf Horizon Trading FZE",
+    "bank": "Emirates NBD"
+  },
+  "metadata": {
+    "ip": "203.0.113.57",
+    "device_id": "dev-9f3c1a77"
+  },
+  "risk": {
+    "score": 88,
+    "reason": "Large outbound transfer just below the reporting threshold to a newly added overseas beneficiary."
+  }
+}

@@ -27,6 +27,16 @@ class Settings(BaseSettings):
     # when empty, a key is derived from SECRET_KEY so dev works out of the box.
     PII_ENCRYPTION_KEY: str = ""
 
+    # --- RAG / embeddings ---
+    GROQ_MODEL: str = "llama-3.3-70b-versatile"
+    EMBEDDING_PROVIDER: str = "local"               # "local" (bge) | "openai"
+    LOCAL_EMBEDDING_MODEL: str = "BAAI/bge-small-en-v1.5"
+    OPENAI_API_KEY: str = ""                         # only for the "openai" provider
+    OPENAI_EMBEDDING_MODEL: str = "text-embedding-3-small"
+    CHROMA_PERSIST_DIR: str = "./chroma_data"
+    RAG_TOP_K_CHUNKS: int = 8
+    MAX_UPLOAD_FILE_SIZE_MB: int = 50
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 settings = Settings()

@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>MOCK_BANK_DEMO_BRIEF.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> or <div class="page"></div> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="mock-bank-demo--brief">Mock Bank Demo — Brief</h1>
+<p><strong>You build a fake bank app</strong> with a <strong>customer side</strong> (a customer makes transactions)
+and a <strong>bank-admin side</strong> (which automatically flags risky transactions, sends them to
+our system <strong>Aegis</strong>, and shows the reports we send back). We build everything in
+between.</p>
+<hr>
+<h2 id="what-aegis-is-1-minute">What Aegis is (1 minute)</h2>
+<p>Banks/fintechs in India must file a <strong>Suspicious Transaction Report (SAR)</strong> with the
+regulator when they spot a suspicious transaction. <strong>Aegis automates writing that
+report</strong> — a bank sends us a flagged transaction, and Aegis returns a ready report
+that cites the bank's own AML policy.</p>
+<p>For the demo we have no real bank, so <strong>your app plays the bank.</strong></p>
+<hr>
+<h2 id="the-flow-simple">The flow (simple)</h2>
+<ol>
+<li><strong>A customer makes a transaction</strong> (on the customer side of your app).</li>
+<li><strong>The bank's risk rules check it automatically.</strong> If it's <strong>risky</strong>, the app
+<strong>automatically sends it to Aegis</strong> as JSON (with our address + an API key) — no
+human action.</li>
+<li><strong>Aegis does its thing</strong> — masks personal data, finds the relevant policy, and an
+AI drafts the SAR. A <strong>compliance officer</strong> (the <strong>bank's</strong> officer, reviewing on
+the Aegis dashboard — we run this side for the demo) <strong>reviews &amp; approves it</strong> (a
+human gate; may be automated later).</li>
+<li><strong>Aegis sends the finished report back</strong> as a <strong>goAML JSON + a PDF</strong>.</li>
+<li><strong>The bank shows it</strong> in its inbox.</li>
+</ol>
+<hr>
+<h2 id="what-you-build--two-sides">What you build — two sides</h2>
+<p><strong>1. Customer side</strong> (where transactions come from)</p>
+<ul>
+<li>A simple banking screen where a <strong>customer makes a transaction</strong> (amount, recipient,
+type → &quot;Send&quot;). This just creates the transaction.</li>
+</ul>
+<p><strong>2. Bank admin / compliance side</strong> (a monitoring dashboard — the admin only <em>watches</em>)</p>
+<ul>
+<li><strong>Risk rules (automatic)</strong> — when a transaction comes in, the bank's hardcoded rules
+check it <strong>automatically</strong>. If it's <strong>risky</strong>, the app <strong>automatically POSTs it to
+Aegis</strong> — no human clicks anything. (This is how a real bank's monitoring system
+works.)</li>
+<li><strong>Monitoring view</strong> — a list of the flagged transactions with their status
+(<code>sent → processing → report received</code>).</li>
+<li><strong>Inbox</strong> — the reports Aegis sends back, displayed (goAML JSON + a button to open
+the PDF).</li>
+<li><em>(Optional, for now)</em> The admin can take an action on a received report — e.g. mark
+it <strong>Filed</strong> or <strong>Flag account</strong>. Keep this simple; it's not required for the demo.</li>
+</ul>
+<blockquote>
+<p>The admin <strong>does not</strong> send anything to Aegis by hand — the risky-transaction POST is
+<strong>automatic</strong>. And the report is <strong>never sent to the flagged customer</strong> (that's
+&quot;tipping-off,&quot; which is illegal in AML). The admin only <em>files</em> it or <em>flags the
+account</em> — never notifies the customer.</p>
+</blockquote>
+<p>Base the risk rules on common red flags (pick any, combine a couple):
+amount just under ₹10,00,000 (structuring) · high-risk type (<code>INTERNATIONAL_WIRE</code>,
+<code>CRYPTO_PURCHASE</code>, <code>HAWALA</code>, <code>FOREX_TRANSFER</code>) · large refund/reversal · dormant
+account suddenly active · shady counterparty bank · round-number amount · many
+transactions in a short time.</p>
+<blockquote>
+<p>You do <strong>not</strong> build any masking, AI, SAR drafting, or the officer approval — that's
+us. You build the <strong>customer side</strong> + the <strong>bank-admin side</strong> (rules, send, inbox).</p>
+</blockquote>
+<hr>
+<h2 id="who-the-report-is-for-important-context">Who the report is for (important context)</h2>
+<p>The report (SAR) is <strong>not for the customer</strong> — it's a <strong>legal filing the bank submits
+to the regulator, FIU-India</strong>, in the <strong>goAML</strong> format. So:</p>
+<ul>
+<li>The <strong>customer NEVER sees it.</strong> Telling a flagged customer is &quot;tipping-off,&quot; which is
+<strong>illegal</strong> in AML. So there is <strong>no &quot;send to customer&quot;</strong> anywhere.</li>
+<li>The report is written <strong>for the regulator</strong> (it explains the suspicion to FIU-India).
+That's why we output <strong>goAML JSON</strong> — the exact format FIU accepts.</li>
+<li>On the <strong>admin side</strong>, the report arrives → the admin reviews it → the admin <strong>files
+it with FIU</strong> (for the demo, a mock <strong>&quot;File with FIU&quot;</strong> button). The admin may also
+flag/freeze the account internally — but <strong>never notifies the customer</strong>.</li>
+</ul>
+<p>So the full chain is:
+<strong>customer makes a transaction → bank flags it → Aegis drafts the SAR (for FIU) →
+admin reviews → admin files it with FIU-India.</strong> The customer is never in this loop.</p>
+<hr>
+<h2 id="constraints-important">Constraints (important)</h2>
+<ul>
+<li><strong>Everything is local. Nothing is deployed.</strong> It all runs on one machine.</li>
+<li><strong>You deliver a ZIP</strong> with a short README and run steps (<code>npm install &amp;&amp; npm run dev</code>
+or similar). It must run offline, self-contained.</li>
+<li><strong>We run the Aegis backend ourselves</strong> (we &quot;paste it in&quot; on our side) at
+<code>http://localhost:8000</code>. You only build the bank app.</li>
+<li><strong>Ports:</strong> our Aegis frontend uses <code>5173</code>, so <strong>your bank app must use a different
+port</strong> (e.g. <code>5174</code> or <code>3000</code>). If you build a small receiver for the inbox, run it
+on another port (e.g. <code>8001</code>).</li>
+<li><strong>Make the URLs configurable</strong> (env values), e.g. <code>AEGIS_BASE_URL=http://localhost:8000</code>
+and your <code>BANK_WEBHOOK_URL</code>, so we can wire the two sides together on our machine.</li>
+<li>Keep the stack simple (plain React/Vite or even HTML+JS is fine).</li>
+</ul>
+<hr>
+<h2 id="how-to-talk-to-aegis">How to talk to Aegis</h2>
+<h3 id="a-send-a-transaction-your-app--aegis">A) Send a transaction (your app → Aegis)</h3>
+<pre class="hljs"><code><div>POST  http://localhost:8000/api/v1/ingest/
+Headers:
+  X-API-Key:    &lt;we give you this&gt;
+  X-Tenant-ID:  TEN-0001            (we give you this)
+  Content-Type: application/json
+</div></code></pre>
+<p><strong>Body</strong> (example — a risky international wire just under the threshold):</p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;customer&quot;</span><span class="hljs-punctuation">:</span>     <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;full_name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Rohan Mehta&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;CUST-884213&quot;</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;account&quot;</span><span class="hljs-punctuation">:</span>      <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;number&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;5012-7788-2231&quot;</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;txn&quot;</span><span class="hljs-punctuation">:</span>          <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;ref_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;TXN-001&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;amount&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">945000</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;currency&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;INR&quot;</span><span class="hljs-punctuation">,</span>
+                    <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;INTERNATIONAL_WIRE&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;direction&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;OUTBOUND&quot;</span><span class="hljs-punctuation">,</span>
+                    <span class="hljs-attr">&quot;timestamp&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-04-16T11:42:07+05:30&quot;</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;counterparty&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;account&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;AE0703...&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Gulf Horizon FZE&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;bank&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Emirates NBD&quot;</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;metadata&quot;</span><span class="hljs-punctuation">:</span>     <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;ip&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;203.0.113.57&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;device_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;dev-9f3c1a77&quot;</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;risk&quot;</span><span class="hljs-punctuation">:</span>         <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;score&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">88</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;reason&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Large outbound transfer just below the reporting threshold.&quot;</span> <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<p><strong>Response:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;status&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;success&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;alert_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;....&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;risk_score&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">100</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;message&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Ingested successfully. SAR generation triggered.&quot;</span> <span class="hljs-punctuation">}</span>
+</div></code></pre>
+<p>(<code>risk.score</code> is the score <em>your</em> rules produced. The <code>id</code>, names, account, etc. are
+just demo data you make up.)</p>
+<h3 id="b-receive-the-report-aegis--your-app">B) Receive the report (Aegis → your app)</h3>
+<p>After the officer approves, Aegis POSTs the finished report to your receiver URL. The
+body is <strong>JSON</strong> containing the <strong>goAML report data + a link to the PDF</strong>:</p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;event&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;sar.approved&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;sar_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;SAR-....&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;goaml_str&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;report&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;report_code&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;STR&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;...&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;...&quot;</span> <span class="hljs-punctuation">}</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;pdf_url&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;http://localhost:8000/files/sar/SAR-....pdf&quot;</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<p>Your inbox shows the fields and a button to open <code>pdf_url</code>. (We'll give you a sample of
+this payload so you can build the inbox before we wire it live.)</p>
+<blockquote>
+<p>Note: for the local demo you <strong>don't</strong> need to verify the webhook source. (In
+production that's done with a signature — not needed here.)</p>
+</blockquote>
+<hr>
+<h2 id="what-well-give-you">What we'll give you</h2>
+<ul>
+<li>The <strong>API key</strong> + <strong>tenant id</strong> (<code>TEN-0001</code>) + the confirmed <strong>base URL</strong>.</li>
+<li>A <strong>sample report payload</strong> so you can build the inbox early.</li>
+</ul>
+<hr>
+<h3 id="tldr">TL;DR</h3>
+<p>Build a <strong>bank app with two sides</strong>: a <strong>customer side</strong> (make a transaction) and a
+<strong>bank-admin side</strong> (risk rules flag it → send risky ones to Aegis → receive the report
+back as goAML JSON + PDF in an inbox). All local, delivered as a ZIP, on ports other
+than 5173. We do everything in between.</p>
+
+</body>
+</html>
