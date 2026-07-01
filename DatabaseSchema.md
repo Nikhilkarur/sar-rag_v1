@@ -6,6 +6,32 @@
 
 ---
 
+## Table of contents
+
+- [Design Principles](#design-principles)
+- [Entity Relationship Summary](#entity-relationship-summary)
+- [Table Definitions](#table-definitions)
+  - [1. tenants](#1-tenants)
+  - [2. users](#2-users)
+  - [3. ingestion_schemas](#3-ingestion_schemas)
+  - [4. webhook_configs](#4-webhook_configs)
+  - [5. llm_configs](#5-llm_configs)
+  - [6. alerts](#6-alerts)
+  - [7. pii_maps](#7-pii_maps)
+  - [8. compliance_matches](#8-compliance_matches)
+  - [9. sar_drafts](#9-sar_drafts)
+  - [10. webhook_deliveries](#10-webhook_deliveries)
+  - [11. webhook_sink_events](#11-webhook_sink_events)
+  - [12. audit_logs](#12-audit_logs)
+  - [13. api_logs](#13-api_logs)
+- [Seed Data](#seed-data)
+  - [Super Admin User](#super-admin-user)
+  - [Demo Tenant (Pre-approved for demo sessions)](#demo-tenant-pre-approved-for-demo-sessions)
+  - [Preset Schema Templates (Hardcoded in Backend)](#preset-schema-templates-hardcoded-in-backend)
+- [Migration Strategy](#migration-strategy)
+
+---
+
 ## Design Principles
 
 1. **Row-level multi-tenancy.** Every data table has a `tenant_id` FK. No cross-tenant queries are possible without explicitly providing the wrong tenant_id (enforced at service layer).

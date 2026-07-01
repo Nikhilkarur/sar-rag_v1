@@ -8,7 +8,8 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     GROQ_API_KEY: str = "your-groq-api-key"
     ENVIRONMENT: str = "development"
-    CORS_ORIGINS: str = "http://localhost:5173"
+    # 5173 = Aegis dashboard; 5174/3000 = mock bank UI origins (browser CORS)
+    CORS_ORIGINS: str = "http://localhost:5173,http://localhost:5174,http://localhost:3000"
 
     # Database connection pool (tune per deployment; pool_size * workers
     # must stay below Postgres max_connections)
@@ -36,6 +37,9 @@ class Settings(BaseSettings):
     CHROMA_PERSIST_DIR: str = "./chroma_data"
     RAG_TOP_K_CHUNKS: int = 8
     MAX_UPLOAD_FILE_SIZE_MB: int = 50
+
+    # Public base URL of this API (used to build the SAR pdf_url in webhooks).
+    PUBLIC_BASE_URL: str = "http://localhost:8000"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

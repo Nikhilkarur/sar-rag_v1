@@ -1,7 +1,8 @@
 """
 Generate a SAR report from the mock alert and SAVE it as files you can open:
-  outputs/sar_<txn>.json   -> the canonical structured record (narrative + JSON)
-  outputs/sar_<txn>.pdf    -> the human-readable, bank-facing report (rehydrated PII)
+  outputs/sar_<txn>.json                          -> structured record (narrative + JSON)
+  backend/storage/clients/client_0/sar/<sar_id>.pdf -> bank-facing report (rehydrated PII)
+  (the PDF lands in client_0's unified folder, same place the live path writes SARs)
 
 Full RAG pipeline, DB-free, uses the Groq key from backend/.env.
 Run from repo root:  python scripts/generate_sar_report.py
@@ -29,6 +30,7 @@ from app.data.schema_presets import SCHEMA_PRESETS                    # noqa: E4
 from app.services import document_ingestion_service as dis            # noqa: E402
 from app.services.rag_retrieval_service import retrieve_regulatory_context  # noqa: E402
 from app.services.llm_agent import generate_sar_core                  # noqa: E402
+from app.services import client_storage                               # noqa: E402
 
 from reportlab.lib.pagesizes import A4                                # noqa: E402
 from reportlab.lib.units import mm                                    # noqa: E402
@@ -38,8 +40,8 @@ from reportlab.platypus import (SimpleDocTemplate, Paragraph, Spacer,  # noqa: E
                                 Table, TableStyle, HRFlowable)
 from reportlab.lib import colors                                      # noqa: E402
 
-PDF_IN = os.path.join(ROOT, "testing", "corpus", "aegis_bank_aml_policy.pdf")
-MOCK = os.path.join(ROOT, "testing", "inputs", "alert_structuring_intlwire.json")
+PDF_IN = os.path.join(ROOT, "backend", "storage", "clients", "client_0", "policy.pdf")
+MOCK = os.path.join(ROOT, "backend", "storage", "clients", "client_0", "alerts", "01_structuring_intlwire.json")
 OUTDIR = os.path.join(ROOT, "outputs")
 TENANT = "client_0"   # dummy/test client (real clients start at client_1)
 
@@ -125,7 +127,8 @@ def main():
                               "aegis_bank_aml_policy.pdf", "aegis-policy-1")
     dis.index_document(TENANT, chunks)
 
-    raw = json.load(open(MOCK, encoding="utf-8"))
+    _rec = json.load(open(MOCK, encoding="utf-8"))
+    raw = _rec.get("raw_payload", _rec)
     preset = SCHEMA_PRESETS["STANDARD_FINTECH"]
     norm = normalize_payload(raw, preset["field_map"])
     masked, token_map = mask_payload(norm, preset["pii_fields"])
@@ -156,7 +159,9 @@ def main():
     }
 
     json_path = os.path.join(OUTDIR, f"sar_{txn}.json")
-    pdf_path = os.path.join(OUTDIR, f"sar_{txn}.pdf")
+    # PDF goes into client_0's unified folder (storage/clients/client_0/sar/<sar_id>.pdf),
+    # the SAME place the live approval path writes SARs.
+    pdf_path = client_storage.sar_path(TENANT, record["sar_id"])
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(record, f, indent=2, ensure_ascii=False)
     render_pdf(pdf_path, record)

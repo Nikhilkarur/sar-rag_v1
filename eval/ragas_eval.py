@@ -15,10 +15,17 @@ Metrics (both reference-free):
       generate questions the SAR answers (Groq) -> embed them + the real question
       (bge) -> score = mean cosine similarity to the real question.
 
-Per-client, like ir_metrics.py. MOCK (testing/clients) by default; --prod for real.
-  python eval/ragas_eval.py             # all MOCK clients
-  python eval/ragas_eval.py client_0    # one mock client
-  python eval/ragas_eval.py --prod      # all REAL clients (production/clients)
+Per-client, like ir_metrics.py. Reads the UNIFIED per-client storage:
+  backend/storage/clients/<client_id>/
+    ├── policy.pdf        (indexed into a temp collection for scoring)
+    └── alerts/*.json     ({"raw_payload": {...}} — mock seeds + live-logged requests)
+
+RAGAS is reference-free, so it needs NO answer key — any client with a policy.pdf +
+alerts/ is scored (mock client_0 and real TEN-xxxx alike). schema_preset is read from
+eval.json if present, else defaults to STANDARD_FINTECH.
+
+  python eval/ragas_eval.py             # all clients with policy.pdf + alerts
+  python eval/ragas_eval.py client_0    # one client
 """
 import glob
 import json
@@ -55,8 +62,7 @@ from app.services import embeddings                                   # noqa: E4
 from app.services.rag_retrieval_service import retrieve_regulatory_context  # noqa: E402
 from app.services.llm_agent import generate_sar_core                  # noqa: E402
 
-MOCK_DIR = os.path.join(ROOT, "testing", "clients")
-PROD_DIR = os.path.join(ROOT, "production", "clients")
+CLIENTS_DIR = os.path.join(ROOT, "backend", "storage", "clients")
 _FENCE = re.compile(r"^```(?:json)?\s*|\s*```$", re.IGNORECASE)
 
 
@@ -115,22 +121,34 @@ def answer_relevancy(question, answer, n=3):
 
 
 def evaluate_client(client_dir):
-    cfg = json.load(open(os.path.join(client_dir, "config.json"), encoding="utf-8"))
-    tid = cfg["tenant_id"]
-    policy = os.path.join(client_dir, cfg["policy_pdf"])
-    preset = SCHEMA_PRESETS[cfg["schema_preset"]]
-    fm, pii_fields = preset["field_map"], preset["pii_fields"]
+    cid = os.path.basename(client_dir)
+    policy = os.path.join(client_dir, "policy.pdf")
     alerts = sorted(glob.glob(os.path.join(client_dir, "alerts", "*.json")))
+    if not os.path.isfile(policy) or not alerts:
+        print(f"\n#### {cid}: missing policy.pdf or alerts — skipped"); return None
 
-    chunks = dis.build_chunks(policy, cfg.get("display_name", tid), cfg["policy_pdf"], f"{tid}-p")
-    dis.index_document(f"ragas-{tid}", chunks)
-    print(f"\n######## CLIENT: {tid} ({len(alerts)} alerts) ########")
+    # schema_preset from eval.json if the client has one, else the default fintech preset.
+    # RAGAS is reference-free, so no other answer-key fields are needed.
+    eval_cfg_path = os.path.join(client_dir, "eval.json")
+    schema_preset = "STANDARD_FINTECH"
+    if os.path.isfile(eval_cfg_path):
+        schema_preset = json.load(open(eval_cfg_path, encoding="utf-8")).get("schema_preset", schema_preset)
+    preset = SCHEMA_PRESETS[schema_preset]
+    fm, pii_fields = preset["field_map"], preset["pii_fields"]
+
+    chunks = dis.build_chunks(policy, f"{cid} AML Policy", "policy.pdf", "policy.pdf")
+    dis.index_document(f"ragas-{cid}", chunks)
+    print(f"\n######## CLIENT: {cid} ({len(alerts)} alerts) ########")
 
     rows = []
     for path in alerts:
-        raw = json.load(open(path, encoding="utf-8"))
-        norm = normalize_payload(raw, fm)
-        masked, _ = mask_payload(norm, pii_fields)
+        rec = json.load(open(path, encoding="utf-8"))
+        raw = rec.get("raw_payload", rec)
+        # Prefer the live-computed normalized/masked payloads (exported from the DB with
+        # the tenant's OWN schema) so we score EXACTLY what live produced. Only client_0
+        # fixtures lack them → fall back to normalizing/masking with the preset.
+        norm = rec.get("normalized_payload") or normalize_payload(raw, fm)
+        masked = rec.get("masked_payload") or mask_payload(norm, pii_fields)[0]
         fired = [r for r in analyze(norm) if r["triggered"]]
         base = max(0, min(100, int(float(norm.get("risk_score") or 0))))
         score = min(100, base + sum(20 if r["confidence"] == "HIGH" else 10 for r in fired))
@@ -139,7 +157,7 @@ def evaluate_client(client_dir):
         # instead of crashing the whole run.
         try:
             comp = [{"rule_name": r["rule_name"], "triggered": True} for r in fired]
-            hits = retrieve_regulatory_context(f"ragas-{tid}", {"transaction_type": norm.get("transaction_type")}, comp)
+            hits = retrieve_regulatory_context(f"ragas-{cid}", {"transaction_type": norm.get("transaction_type")}, comp)
             out = generate_sar_core(masked, score, settings.GROQ_MODEL, retrieved_chunks=hits)
             answer = out["narrative"]
 
@@ -170,31 +188,40 @@ def evaluate_client(client_dir):
     re_ = [r["answer_relevancy"] for r in rows if r["answer_relevancy"] is not None]
     agg = {"faithfulness": (sum(fa) / len(fa) if fa else None),
            "answer_relevancy": (sum(re_) / len(re_) if re_ else None)}
-    print(f"  >> {tid} MEAN: faithfulness={agg['faithfulness']:.3f} "
+    print(f"  >> {cid} MEAN: faithfulness={agg['faithfulness']:.3f} "
           f"answer_relevancy={agg['answer_relevancy']:.3f}"
-          if fa and re_ else f"  >> {tid} MEAN: n/a")
-    return {"tenant_id": tid, "per_alert": rows, "aggregate": agg}
+          if fa and re_ else f"  >> {cid} MEAN: n/a")
+    return {"client_id": cid, "per_alert": rows, "aggregate": agg}
 
 
 def main():
-    prod = "--prod" in sys.argv
-    positional = [a for a in sys.argv[1:] if not a.startswith("--")]
-    only = positional[0] if positional else None
-    base = PROD_DIR if prod else MOCK_DIR
-    print(f"Evaluating {'PRODUCTION' if prod else 'MOCK (testing)'} clients in "
-          f"{os.path.relpath(base, ROOT)}  (Groq judge + bge)")
+    only = sys.argv[1] if len(sys.argv) > 1 and not sys.argv[1].startswith("--") else None
 
-    client_dirs = sorted(d for d in glob.glob(os.path.join(base, "*"))
-                         if os.path.isfile(os.path.join(d, "config.json")))
+    # RAGAS uses Groq as the judge LLM — fail early with a clear message if no key.
+    key = (settings.GROQ_API_KEY or "").strip()
+    if not key or "placeholder" in key.lower() or key.lower() in ("changeme", "your-key-here"):
+        print("GROQ_API_KEY is not set in backend/.env — RAGAS needs a real Groq key to run.\n"
+              "(IR metrics need no key: python eval/ir_metrics.py)")
+        return
+
+    print(f"Evaluating clients in {os.path.relpath(CLIENTS_DIR, ROOT)}  (Groq judge + bge)")
+
+    # RAGAS needs no answer key: score any client with a policy.pdf + alerts/.
+    client_dirs = sorted(d for d in glob.glob(os.path.join(CLIENTS_DIR, "*"))
+                         if os.path.isfile(os.path.join(d, "policy.pdf"))
+                         and os.path.isdir(os.path.join(d, "alerts")))
     if only:
         client_dirs = [d for d in client_dirs if os.path.basename(d) == only]
     if not client_dirs:
-        print(f"No clients found in {os.path.relpath(base, ROOT)}"
+        print(f"No clients with policy.pdf + alerts/ in {os.path.relpath(CLIENTS_DIR, ROOT)}"
               + (f" matching '{only}'" if only else "")
-              + (". (production/ is empty until you add real clients.)" if prod else ""))
+              + ".  (Seed client_0 with scripts/seed_testing.py, or export a real "
+                "client's alerts into its folder.)")
         return
 
-    results = [evaluate_client(d) for d in client_dirs]
+    results = [r for r in (evaluate_client(d) for d in client_dirs) if r]
+    if not results:
+        print("No clients had both a policy.pdf and alerts to score."); return
 
     print("\n" + "=" * 56 + "\nOVERALL (mean across clients)\n" + "=" * 56)
     fa = [r["aggregate"]["faithfulness"] for r in results if r["aggregate"]["faithfulness"] is not None]

@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>PROJECT_REFERENCE.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> or <div class="page"></div> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="aegis--project-reference-single-source-of-truth-explains-everything--every-command">Aegis — Project Reference (single source of truth: explains everything + every command)</h1>
+<p><strong>This is the self-sufficient reference for the whole project</strong> — what it does, the RAG
+backend in detail, every command, evaluation, reset tooling, the unified storage model,
+the security architecture &amp; threat model, the decisions AND the reasoning. A future agent
+should be able to continue from this file alone. <strong>If you change something, update this
+file</strong> (and add a change-log entry at the bottom).</p>
+<p>The companion doc is <strong><code>STATUS_AND_MOCKBANK.md</code></strong> — what's done, what's left, and the
+mock-bank integration guide. Two more reference contracts stay standalone:
+<code>APISpec.md</code> (API) and <code>DatabaseSchema.md</code> (DB). Frontend lives in <code>frontend/</code>.</p>
+<blockquote>
+<p>This file consolidates the former <code>RAG_MASTER.md</code> + <code>explanation.md</code> (security) +
+<code>SCHEMA_FALLACY_FIX.md</code> (schema/edge-cases). Last updated: 2026-06-19.</p>
+</blockquote>
+<p>Contents: §0 commands · §1–§16 RAG concept/code/eval · §17 design journey ·
+§19 walkthrough · §20 security architecture &amp; threat model · §21 data schemas &amp;
+schema-faithful eval · §22 known edge cases &amp; hardening.</p>
+<hr>
+<h2 id="table-of-contents">Table of contents</h2>
+<ul>
+<li><a href="#0-quick-command-reference">0. Quick command reference</a></li>
+<li><a href="#1-what-this-is">1. What this is</a></li>
+<li><a href="#2-architecture--flow">2. Architecture &amp; flow</a></li>
+<li><a href="#3-backend-code-detailed">3. Backend code (detailed)</a></li>
+<li><a href="#4-where-chromadb-stores-local-no-server">4. Where ChromaDB stores (LOCAL, no server)</a></li>
+<li><a href="#5-multi-tenant-isolation">5. Multi-tenant isolation</a></li>
+<li><a href="#6-config--secrets">6. Config &amp; secrets</a></li>
+<li><a href="#7-test-data--the-dummy-client-client_0">7. Test data &amp; the DUMMY client (client_0)</a></li>
+<li><a href="#8-how-to-run">8. How to run</a></li>
+<li><a href="#9-reset-tooling--scriptsresetpy-the-reset-button">9. Reset tooling — scripts/reset.py (the reset button)</a></li>
+<li><a href="#10-evaluation--eval-deterministic-no-llm">10. Evaluation — eval/ (deterministic, NO LLM)</a></li>
+<li><a href="#11-results-client_0-5-alerts">11. Results (client_0, 5 alerts)</a></li>
+<li><a href="#12-key-decisions-at-a-glance--full-reasoning-in-17">12. Key decisions (at a glance — full reasoning in §17)</a></li>
+<li><a href="#13-anomaly-audit-fixed-2026-06-16">13. Anomaly audit (fixed 2026-06-16)</a></li>
+<li><a href="#14-known-issues-deferred-cosmetic">14. Known issues (deferred, cosmetic)</a></li>
+<li><a href="#15-frontend-light--see-existing-specs">15. Frontend (light — see existing specs)</a></li>
+<li><a href="#16-testing-vs-production--whats-code-data-and-api">16. Testing vs Production — what's code, data, and API</a></li>
+<li><a href="#16a-generation-eval--ragas-done-native-implementation">16a. Generation eval — RAGAS (DONE, native implementation)</a></li>
+<li><a href="#16b-live-api-status-and-remaining-work">16b. Live-API status and remaining work</a></li>
+<li><a href="#17-design-journey--reasoning-how-we-got-here-and-why">17. Design journey &amp; reasoning (how we got here, and why)</a></li>
+<li><a href="#18-change-log">18. Change log</a></li>
+<li><a href="#19-full-walkthrough-read-start-to-finish-goal--concepts--code--eval">19. Full walkthrough (read start-to-finish: goal → concepts → code → eval)</a></li>
+<li><a href="#20-security-architecture--threat-model">20. Security architecture &amp; threat model</a></li>
+<li><a href="#21-data-schemas--the-schema-faithful-eval">21. Data schemas &amp; the schema-faithful eval</a></li>
+<li><a href="#22-known-edge-cases--hardening-handled">22. Known edge cases &amp; hardening (handled)</a></li>
+</ul>
+<hr>
+<h2 id="0-quick-command-reference">0. Quick command reference</h2>
+<p>Always run from the repo root (<code>cd C:\Users\nkk77\Desktop\rgbackup\sar-rag_v1</code>).</p>
+<p>All client data lives under one root: <code>backend/storage/clients/&lt;client_id&gt;/</code>
+(<code>client_0</code> = dummy; <code>TEN-xxxx</code> = real). The eval reads the SAME folders the live
+system writes.</p>
+<pre class="hljs"><code><div><span class="hljs-comment"># ---- RETRIEVAL EVAL (deterministic, no Groq) — needs eval.json answer key ----</span>
+python <span class="hljs-built_in">eval</span>/ir_metrics.py                 <span class="hljs-comment"># every client that has an eval.json (= client_0)</span>
+python <span class="hljs-built_in">eval</span>/ir_metrics.py client_0        <span class="hljs-comment"># one client</span>
+
+<span class="hljs-comment"># ---- GENERATION EVAL (RAGAS-style, Groq judge + bge) — reference-free, any client ----</span>
+python <span class="hljs-built_in">eval</span>/ragas_eval.py client_0        <span class="hljs-comment"># the dummy</span>
+python <span class="hljs-built_in">eval</span>/ragas_eval.py TEN-0002        <span class="hljs-comment"># a real client (export its alerts first ↓)</span>
+
+<span class="hljs-comment"># ---- GENERATION (needs GROQ_API_KEY in backend/.env) ----</span>
+<span class="hljs-comment"># TEST-ONLY demo scripts — always use the dummy client_0&#x27;s policy + an alert.</span>
+python scripts/rag_smoke_test.py          <span class="hljs-comment"># retrieval only (top-8 + cosine distances)</span>
+python scripts/rag_generate_test.py       <span class="hljs-comment"># RAG vs no-RAG baseline</span>
+python scripts/generate_sar_report.py     <span class="hljs-comment"># SAR PDF -&gt; clients/client_0/sar/&lt;id&gt;.pdf (+ JSON in outputs/)</span>
+python scripts/demo_full_pipeline.py      <span class="hljs-comment"># full flow; approved PDF -&gt; client_0/sar/ (goAML+webhook in outputs/final/)</span>
+
+<span class="hljs-comment"># ---- DUMMY (client_0): seed / reset ----</span>
+python scripts/seed_testing.py            <span class="hljs-comment"># (re)build client_0 (policy + alerts + eval.json)</span>
+python scripts/build_policy.py            <span class="hljs-comment"># rebuild ONLY client_0&#x27;s synthetic policy PDF</span>
+python scripts/reset.py                   <span class="hljs-comment"># clear runtime (outputs + Chroma); client data kept</span>
+python scripts/reset.py --seed            <span class="hljs-comment"># clear runtime + rebuild client_0</span>
+python scripts/reset.py --barebone        <span class="hljs-comment"># delete the dummy client_0 (REAL clients kept)</span>
+python scripts/reset.py --barebone --seed <span class="hljs-comment"># wipe client_0, then rebuild it</span>
+python scripts/reset.py --barebone --all-clients  <span class="hljs-comment"># DANGER: delete EVERY client (incl. real policies)</span>
+
+<span class="hljs-comment"># ---- FULL CYCLE: delete -&gt; reseed -&gt; eval (standard sanity check) ----</span>
+python scripts/reset.py --barebone --seed <span class="hljs-comment"># wipe storage/clients/ + rebuild client_0</span>
+python <span class="hljs-built_in">eval</span>/ir_metrics.py                 <span class="hljs-comment"># IR — expect Recall@8 = 1.0</span>
+python <span class="hljs-built_in">eval</span>/ragas_eval.py client_0        <span class="hljs-comment"># RAGAS (needs the Groq key; makes its OWN SARs)</span>
+python scripts/generate_sar_report.py     <span class="hljs-comment"># (optional) viewable SAR PDF -&gt; client_0/sar/; NOT needed for RAGAS</span>
+
+<span class="hljs-comment"># ---- REAL client: export its DB alerts to disk for RAGAS ----</span>
+python scripts/export_alerts.py TEN-0002 --<span class="hljs-built_in">limit</span> 20            <span class="hljs-comment"># latest 20: alerts table -&gt; folder JSON</span>
+python scripts/export_alerts.py TEN-0002 --<span class="hljs-built_in">limit</span> 1 --oldest   <span class="hljs-comment"># just the client&#x27;s 1st request</span>
+python <span class="hljs-built_in">eval</span>/ragas_eval.py TEN-0002                            <span class="hljs-comment"># then score what was exported</span>
+</div></code></pre>
+<p>Rule of thumb: IR needs an <code>eval.json</code> (so it's <code>client_0</code> only); RAGAS needs none
+(any client). Eval/smoke need no Groq key; generation does.</p>
+<hr>
+<h2 id="1-what-this-is">1. What this is</h2>
+<p><strong>Aegis AML</strong> auto-drafts Suspicious Activity Reports (SARs/STRs) for Indian
+fintechs/brokers. A transaction → normalized → PII-masked → 8 typology rules →
+if risk ≥ 75, an LLM (Groq) writes a SAR → officer reviews/approves → filed to
+FIU-India via goAML.</p>
+<p><strong>RAG</strong> makes that SAR cite the <strong>tenant's actual AML policy</strong> instead of the
+LLM's general knowledge. It's plain (&quot;vanilla&quot;) RAG: parse → chunk → embed →
+store → cosine-retrieve → inject into the prompt. No reranking/hybrid/critic (we
+proved with metrics they aren't needed yet).</p>
+<hr>
+<h2 id="2-architecture--flow">2. Architecture &amp; flow</h2>
+<pre class="hljs"><code><div>config.py / .env  →  embeddings.py (encoder engine, used by BOTH sides)
+   │
+   ├ PHASE 1 (index, once per uploaded PDF)
+   │   document_ingestion_service.py: parse → sections → chunks → embed → chroma_client.store
+   │
+   ├ PHASE 2 (retrieve, per alert)
+   │   rag_retrieval_service.py: fired rules → sub-queries → embed → chroma_client.cosine → top-8
+   │
+   └ PHASE 3 (generate, per alert)
+       llm_agent.py: chunks + data → prompt → Groq → SAR (narrative + structured JSON)
+           → (real) dashboard → officer approves → rehydrate PII → goAML JSON + PDF → webhook
+           → (demo) simulated approval → files in outputs/final/
+</div></code></pre>
+<p>Two <strong>shared modules</strong> (<code>embeddings.py</code>, <code>chroma_client.py</code>) are called by both
+the index and retrieve sides, so the encoder and store can never drift apart.
+<strong>None of retrieval uses an LLM</strong> — bge is an encoder. Groq appears only in Phase 3.</p>
+<hr>
+<h2 id="3-backend-code-detailed">3. Backend code (detailed)</h2>
+<p>All RAG code lives in <code>backend/app/services/</code>.</p>
+<h3 id="embeddingspy--the-encoder-engine"><code>embeddings.py</code> — the encoder engine</h3>
+<ul>
+<li>Model: <code>BAAI/bge-small-en-v1.5</code> via sentence-transformers (SBERT). 384-dim,
+512-token max, cosine. Local, free, offline. Provider-swappable (<code>local</code>/<code>openai</code>).</li>
+<li>Singleton + lazy load (key perf detail):<pre class="hljs"><code><div><span class="hljs-meta">@lru_cache(<span class="hljs-params">maxsize=<span class="hljs-number">1</span></span>)</span>
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">_local_model</span>():
+    <span class="hljs-keyword">from</span> sentence_transformers <span class="hljs-keyword">import</span> SentenceTransformer   <span class="hljs-comment"># lazy: torch loads only when used</span>
+    <span class="hljs-keyword">return</span> SentenceTransformer(_LOCAL_MODEL_NAME)            <span class="hljs-comment"># loaded ONCE, reused</span>
+</div></code></pre>
+</li>
+<li>Asymmetric: query gets a prefix, chunks don't:<pre class="hljs"><code><div>QUERY_INSTRUCTION = <span class="hljs-string">&quot;Represent this sentence for searching relevant passages: &quot;</span>
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">embed_documents</span>(<span class="hljs-params">texts</span>): <span class="hljs-keyword">return</span> model.encode(texts, normalize_embeddings=<span class="hljs-literal">True</span>).tolist()
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">embed_query</span>(<span class="hljs-params">text</span>):      <span class="hljs-keyword">return</span> model.encode([QUERY_INSTRUCTION+text], normalize_embeddings=<span class="hljs-literal">True</span>)[<span class="hljs-number">0</span>].tolist()
+</div></code></pre>
+</li>
+<li><code>count_tokens()</code> uses bge's own tokenizer so the chunker respects the 512 limit.</li>
+</ul>
+<h3 id="chroma_clientpy--the-vector-store"><code>chroma_client.py</code> — the vector store</h3>
+<pre class="hljs"><code><div><span class="hljs-meta">@lru_cache(<span class="hljs-params">maxsize=<span class="hljs-number">1</span></span>)</span>
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">get_chroma_client</span>(): <span class="hljs-keyword">return</span> chromadb.PersistentClient(path=_PERSIST_DIR)   <span class="hljs-comment"># LOCAL files</span>
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">get_tenant_collection</span>(<span class="hljs-params">tenant_id</span>):
+    <span class="hljs-keyword">return</span> get_chroma_client().get_or_create_collection(
+        name=<span class="hljs-string">f&quot;tenant_<span class="hljs-subst">{tenant_id}</span>_docs&quot;</span>, metadata={<span class="hljs-string">&quot;hnsw:space&quot;</span>: <span class="hljs-string">&quot;cosine&quot;</span>})    <span class="hljs-comment"># per-tenant + cosine</span>
+</div></code></pre>
+<h3 id="document_ingestion_servicepy--phase-1-index"><code>document_ingestion_service.py</code> — Phase 1 (index)</h3>
+<p>Constants: <code>CHUNK_TARGET=350</code>, <code>CHUNK_OVERLAP=60</code>, <code>MAX_CHUNK_HARD=480</code>.</p>
+<ul>
+<li><code>parse_pdf</code> — PyMuPDF <code>get_text(&quot;dict&quot;)</code> → keeps font size (heading detection)
+<ul>
+<li>page number (citations). Body font size = the size covering the most text.</li>
+</ul>
+</li>
+<li><code>_running_lines</code> — GENERIC running-header/footer detection (lines repeated on
+≥50% of pages). No hardcoded client text.</li>
+<li><code>split_sections</code> — split on detected headings; skip page numbers + running
+furniture; <strong>drop front matter before the first numbered heading</strong> (removes
+cover bank name/title/doc-control table generically).</li>
+<li><code>_is_heading</code> — numbered headings always count; non-numbered must be short
+(≤60 chars) so the document title isn't mistaken for a section.</li>
+<li><code>chunk_section</code> — accumulate whole sentences to ~350 tokens, emit, carry ~60
+tokens of overlap into the next chunk; never cut mid-sentence. <code>_enforce_max_len</code>
+hard-splits any single sentence &gt; 480 tokens (prevents silent bge truncation).</li>
+<li><code>build_chunks</code> — prepend <code>[Context: &lt;doc&gt; - Section: &quot;&lt;heading&gt;&quot;]</code> to every
+chunk (so it's findable even without the keyword); attach metadata
+<code>{doc_id, filename, section_heading, chunk_index, page_number}</code>.</li>
+<li><code>index_document(tenant_id, chunks)</code> — <code>embed_documents</code> then <code>collection.add</code>.</li>
+</ul>
+<h3 id="rag_retrieval_servicepy--phase-2-retrieve"><code>rag_retrieval_service.py</code> — Phase 2 (retrieve)</h3>
+<ul>
+<li><code>RULE_TO_QUERY</code> — each real <code>rule_name</code> → a regulation-worded sub-query.</li>
+<li>We do NOT embed the JSON (masked tokens are semantic noise).</li>
+<li><code>build_sub_queries</code> — one sub-query per fired rule + a fallback from txn type.</li>
+<li><code>retrieve_regulatory_context(tenant_id, masked_payload, compliance_results, top_k=8)</code>:<pre class="hljs"><code><div>collection = get_tenant_collection(tenant_id)         <span class="hljs-comment"># ONLY this tenant&#x27;s docs</span>
+<span class="hljs-keyword">for</span> q <span class="hljs-keyword">in</span> sub_queries:
+    res = collection.query(query_embeddings=[embed_query(q)], n_results=<span class="hljs-number">5</span>)
+    <span class="hljs-comment"># merge into dict keyed by chunk_id, keep smallest distance (dedupe)</span>
+<span class="hljs-keyword">return</span> <span class="hljs-built_in">sorted</span>(merged.values(), key=distance)[:top_k]  <span class="hljs-comment"># top-8; lower distance = more relevant</span>
+</div></code></pre>
+</li>
+</ul>
+<h3 id="llm_agentpy--phase-3-generate"><code>llm_agent.py</code> — Phase 3 (generate)</h3>
+<ul>
+<li><code>_format_regulatory_context</code> — formats the 8 chunks into a REGULATORY CONTEXT block.</li>
+<li><code>build_sar_prompt</code> — injects that block AFTER <code>&lt;&lt;END DATA&gt;&gt;</code> (chunks are trusted;
+keeps them outside the untrusted-payload fence) and pins the JSON schema so
+<code>key_indicators</code> are always <code>{indicator, regulation, description}</code> objects.</li>
+<li><code>_parse_response</code> — fence-tolerant (strips ```json fences); a JSON parse failure
+never discards the narrative (bug we fixed).</li>
+<li><code>generate_sar_core(masked_payload, risk_score, model_name, retrieved_chunks)</code> —
+DB-free core (so tests run without Postgres). <code>generate_sar()</code> is the DB wrapper
+that persists the SARDraft and rehydrates PII for the bank-facing copy.</li>
+</ul>
+<hr>
+<h2 id="4-where-chromadb-stores-local-no-server">4. Where ChromaDB stores (LOCAL, no server)</h2>
+<p><code>PersistentClient(path=...)</code> writes files:</p>
+<pre class="hljs"><code><div>&lt;persist_dir&gt;/
+├── chroma.sqlite3                 # documents + metadata + ids + catalog
+└── &lt;collection-uuid&gt;/             # one folder per collection
+    ├── data_level0.bin            # 384-dim vectors + HNSW graph nodes
+    ├── header.bin / length.bin
+    └── link_lists.bin             # HNSW graph edges (fast approx-NN search)
+</div></code></pre>
+<p>Default path = <code>backend/chroma_data/</code> (gitignored). Test scripts override it to a
+temp dir so runs don't pollute the repo. Production: point <code>CHROMA_PERSIST_DIR</code> at
+a stable path, or move to Chroma server / pgvector — only that setting changes.</p>
+<hr>
+<h2 id="5-multi-tenant-isolation">5. Multi-tenant isolation</h2>
+<p><code>tenant_id</code> threads through: <code>index_document(&quot;client_0&quot;, …)</code> → <code>tenant_client_0_docs</code>;
+<code>retrieve_regulatory_context(&quot;client_0&quot;, …)</code> reads ONLY <code>tenant_client_0_docs</code>.
+Collections are physically separate — no query can cross tenants. In the live app,
+<code>tenant_id</code> comes from API-key auth in <code>ingest.py</code> (<code>alert.tenant_id</code>).</p>
+<hr>
+<h2 id="6-config--secrets">6. Config &amp; secrets</h2>
+<p><code>backend/app/config.py</code> (RAG keys): <code>GROQ_MODEL</code>, <code>EMBEDDING_PROVIDER</code>,
+<code>LOCAL_EMBEDDING_MODEL</code>, <code>CHROMA_PERSIST_DIR</code>, <code>RAG_TOP_K_CHUNKS</code>, <code>MAX_UPLOAD_FILE_SIZE_MB</code>.
+<code>backend/.env</code> (gitignored) holds the real <code>GROQ_API_KEY</code> + overrides.</p>
+<hr>
+<h2 id="7-test-data--the-dummy-client-client_0">7. Test data &amp; the DUMMY client (<code>client_0</code>)</h2>
+<p>The dummy/test client is named <strong><code>client_0</code></strong>; real clients use their tenant
+public id (<code>TEN-xxxx</code>).</p>
+<p><strong>UNIFIED per-client storage (one root, used by BOTH the live system and the eval):</strong></p>
+<pre class="hljs"><code><div>backend/storage/clients/&lt;client_id&gt;/
+├── policy.pdf          # raw AML policy (uploaded live, or built for client_0) — NOT in DB
+├── alerts/*.json       # {&quot;raw_payload&quot;: {...}} — client_0 fixtures, or DB exports for real clients
+├── sar/*.pdf           # generated SAR PDFs (live output)
+└── eval.json           # IR answer key (client_0 ONLY)
+</div></code></pre>
+<ul>
+<li><code>client_0</code> is the offline test bench — built by <code>scripts/seed_testing.py</code>
+(which calls <code>scripts/build_policy.py</code> to generate the synthetic policy).</li>
+<li>Real clients (<code>TEN-xxxx</code>) get their folder created <strong>live</strong> by the upload endpoint
+(<code>policy.pdf</code> + chunks into Chroma). Their transactions go to the Postgres <code>alerts</code>
+table — NOT mirrored to disk. To eval them, export with <code>scripts/export_alerts.py</code>.</li>
+<li>All generation demo scripts use <code>client_0</code>'s <code>policy.pdf</code> + an alert.</li>
+</ul>
+<hr>
+<h2 id="8-how-to-run">8. How to run</h2>
+<p>All commands are in <strong>§0 (Quick command reference)</strong> at the top. Rule of thumb:</p>
+<ul>
+<li>Always run from the repo root.</li>
+<li><code>eval/*.py</code> read <code>backend/storage/clients/</code>; an optional client id narrows to one.
+IR needs an <code>eval.json</code> (client_0); RAGAS needs none (any client).</li>
+<li><code>scripts/</code> generation = TEST-ONLY (<code>client_0</code>); eval (<code>ir_metrics</code>, <code>ragas_eval</code>)
+need no key except <code>ragas_eval</code> (Groq judge); generation needs the Groq key.</li>
+</ul>
+<hr>
+<h2 id="9-reset-tooling--scriptsresetpy-the-reset-button">9. Reset tooling — <code>scripts/reset.py</code> (the reset button)</h2>
+<p>One command to get a clean, known state at any point:</p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>python scripts/reset.py</code></td>
+<td><strong>Wipe runtime only:</strong> <code>outputs/</code> + all Chroma stores (repo + temp). Client data KEPT. Safe, re-runnable any time.</td>
+</tr>
+<tr>
+<td><code>python scripts/reset.py --seed</code></td>
+<td>Wipe runtime, then <strong>rebuild client_0</strong> under <code>backend/storage/clients/client_0/</code> (policy + alerts + eval.json).</td>
+</tr>
+<tr>
+<td><code>python scripts/reset.py --barebone</code></td>
+<td>Also deletes the <strong>dummy <code>client_0</code></strong> only — REAL clients are KEPT (safe default).</td>
+</tr>
+<tr>
+<td><code>python scripts/reset.py --barebone --seed</code></td>
+<td>Wipe client_0, then rebuild it from scratch.</td>
+</tr>
+<tr>
+<td><code>python scripts/reset.py --barebone --all-clients</code></td>
+<td><strong>DANGER:</strong> deletes EVERY client folder incl. real clients' uploaded <code>policy.pdf</code> + SARs (their DB + Chroma survive).</td>
+</tr>
+</tbody>
+</table>
+<p><code>scripts/seed_testing.py</code> is the single source of the <code>client_0</code> fixtures (it embeds
+the 5 eval alerts + <code>eval.json</code> and calls <code>build_policy.py</code>), so <code>--barebone</code> is
+always reversible for <code>client_0</code> with <code>--seed</code>. Never touches: <code>backend/app</code>,
+<code>scripts/</code>, <code>*.md</code>, or PostgreSQL (<code>backend/clear_db.py</code> for SQL).</p>
+<blockquote>
+<p>The vector store rebuilds automatically the next time you run any script, so a
+plain <code>python scripts/reset.py</code> mid-development is always safe.</p>
+</blockquote>
+<hr>
+<h2 id="10-evaluation--eval-deterministic-no-llm">10. Evaluation — <code>eval/</code> (deterministic, NO LLM)</h2>
+<p>Per-client, because the answer key (section numbers) is document-specific. All
+clients live under <code>backend/storage/clients/&lt;client_id&gt;/</code>. IR scores any client that
+has an <code>eval.json</code> — in practice <code>client_0</code>.</p>
+<pre class="hljs"><code><div>backend/storage/clients/client_0/
+├── eval.json     # schema_preset + rule_to_section (ANSWER KEY) + always_relevant
+├── policy.pdf    # this client's doc → indexed into a temp collection
+└── alerts/*.json # {&quot;raw_payload&quot;: {...}} — this client's test alerts
+</div></code></pre>
+<p><strong>Ground truth = stored map + live rule firing.</strong> The <code>rule_to_section</code> map (in
+<code>eval.json</code>) is stored; per-alert relevance is derived at runtime by running the
+real rule engine: <code>relevant = {section of each fired rule} ∪ {5.1}</code>. No hand-labeling.</p>
+<p><strong>Metrics (pure arithmetic):</strong></p>
+<pre class="hljs"><code><div>precision@k = (<span class="hljs-comment"># relevant in top-k) / k</span>
+recall@k    = (<span class="hljs-comment"># relevant in top-k) / (# relevant)</span>
+ndcg@k      = DCG/IDCG,  DCG = Σ rel_i / log2(i+<span class="hljs-number">2</span>)
+mrr         = <span class="hljs-number">1</span> / (rank of first relevant)
+</div></code></pre>
+<p>Run: <code>python eval/ir_metrics.py [client_id]</code>. It loops every tenant, prints
+per-alert + per-tenant means + an OVERALL (mean across tenants), and saves
+<code>outputs/ir_metrics.json</code>.</p>
+<p><strong>Score a real client's retrieval later (optional, manual):</strong> add an <code>eval.json</code> to
+<code>backend/storage/clients/&lt;id&gt;/</code> whose <code>rule_to_section</code> uses THEIR section numbers
+(plus their <code>policy.pdf</code> + some <code>alerts/*.json</code>). Run <code>python eval/ir_metrics.py &lt;id&gt;</code>
+— it auto-discovers any client with an <code>eval.json</code> and scores against its own answer
+key. (For generation quality, RAGAS needs no answer key — see §0.)</p>
+<hr>
+<h2 id="11-results-client_0-5-alerts">11. Results (client_0, 5 alerts)</h2>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Value</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Recall@8</td>
+<td><strong>1.000</strong></td>
+<td>finds every relevant section</td>
+</tr>
+<tr>
+<td>MRR</td>
+<td><strong>1.000</strong></td>
+<td>#1 hit always relevant</td>
+</tr>
+<tr>
+<td>nDCG@8</td>
+<td><strong>0.955</strong></td>
+<td>relevant chunks ranked high</td>
+</tr>
+<tr>
+<td>nDCG@3</td>
+<td>0.765</td>
+<td>a plausible-but-unlabeled section (5.3) sometimes enters top-3</td>
+</tr>
+<tr>
+<td>P@8</td>
+<td>0.425</td>
+<td>capped (only 3-4 relevant per alert; ignore as a signal)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Verdict:</strong> retrieval is near-optimal → reranking/hybrid NOT needed yet. Re-run
+whenever the corpus changes; let numbers decide future layers.</p>
+<hr>
+<h2 id="12-key-decisions-at-a-glance--full-reasoning-in-17">12. Key decisions (at a glance — full reasoning in §17)</h2>
+<ul>
+<li>Encoder: <strong>bge-small</strong> local (SBERT bi-encoder), 384-dim, cosine, no PII egress.</li>
+<li>Vector store: <strong>ChromaDB</strong> local, per-tenant collections.</li>
+<li>Chunking: ~350 tok, 60 overlap, sentence-aligned, heading sections, context prefix.</li>
+<li>Queries: <strong>rule-derived sub-queries</strong> (not the JSON); chunks injected after <code>&lt;&lt;END DATA&gt;&gt;</code>.</li>
+<li>Eval-first: IR (retrieval) + RAGAS (generation) → <strong>no reranking/hybrid yet</strong>.</li>
+<li><strong>Mock vs real</strong> split; generation fixed to one input until real clients exist.</li>
+</ul>
+<hr>
+<h2 id="13-anomaly-audit-fixed-2026-06-16">13. Anomaly audit (fixed 2026-06-16)</h2>
+<ul>
+<li>Hardcoded footer skip → generic running-header/footer detection (multi-client).</li>
+<li><code>MAX_CHUNK_HARD</code> unused → over-long sentences hard-split (no silent truncation).</li>
+<li>Cover/front-matter (bank name, title) → dropped before first numbered heading.</li>
+<li>Heading detection tightened (non-numbered must be ≤60 chars).</li>
+<li>Dummy client renamed <code>client_1</code> → <code>client_0</code>; all scripts use <code>client_0</code>.</li>
+<li>After fixes: 28 chunks (was 29), metrics unchanged → removed chunks were noise.</li>
+</ul>
+<hr>
+<h2 id="14-known-issues-deferred-cosmetic">14. Known issues (deferred, cosmetic)</h2>
+<ul>
+<li><strong>SAR PDF table clipping:</strong> long cells in <code>render_pdf</code> don't word-wrap → clipped.
+Fix = wrap cell strings in <code>Paragraph()</code>. Data correct; rendering only.</li>
+<li><strong>LLM structured-output shape</strong> varied; mitigated by pinned JSON schema +
+<code>normalize_structured</code>.</li>
+<li>Eval uses client <code>display_name</code> in the context-line; demo scripts use a fixed
+title. Both retrieve near-perfectly; minor.</li>
+</ul>
+<hr>
+<h2 id="15-frontend-light--see-existing-specs">15. Frontend (light — see existing specs)</h2>
+<p>The React/Vite frontend (<code>frontend/</code>) and its specs (<code>LandingPageSpec.md</code>,
+<code>MVP.md</code>) are separate. RAG touch-points the frontend will need: a document-upload
+page (Phase-1 trigger) and the SAR review/approve workspace (reads the canonical
+SAR record; approve fires goAML serialize → webhook). Not built yet.</p>
+<hr>
+<h2 id="16-testing-vs-production--whats-code-data-and-api">16. Testing vs Production — what's code, data, and API</h2>
+<p>This is the key mental model. There are TWO different worlds:</p>
+<p><strong>A. Offline tooling (eval + demo scripts)</strong> — folder-driven:</p>
+<ul>
+<li>Everything reads <code>backend/storage/clients/&lt;client_id&gt;/</code> — the SAME root the live
+system writes. <code>client_0</code> is the dummy; real clients use <code>TEN-xxxx</code>.</li>
+<li><code>python eval/ir_metrics.py</code> scores any client with an <code>eval.json</code> (= <code>client_0</code>).
+<code>ragas_eval.py &lt;id&gt;</code> scores any client (no answer key).</li>
+<li>The demo scripts (<code>scripts/*.py</code>) are TEST-ONLY and use <code>client_0</code>. They are not
+how real clients are served.</li>
+</ul>
+<p><strong>B. The live API (real production path)</strong> — NOT folder/command-driven:</p>
+<ul>
+<li>A running FastAPI app serves ALL real tenants at once. The tenant is decided by
+the <strong>API key</strong> on each request (<code>ingest.py</code> → <code>alert.tenant_id</code>).</li>
+<li>A client's <strong>policy.pdf</strong> is stored under <code>backend/storage/clients/&lt;public_id&gt;/</code>
+(uploaded live) + chunks in per-tenant Chroma. Their <strong>alerts</strong> live in the
+Postgres <code>alerts</code> table (NOT mirrored to disk).</li>
+<li>&quot;Test vs prod&quot; here means separate DEPLOYMENTS/databases, NOT a folder.</li>
+</ul>
+<p><strong>The RAG code itself is environment-agnostic.</strong> <code>embeddings.py</code>, <code>chroma_client.py</code>,
+<code>document_ingestion_service.py</code>, <code>rag_retrieval_service.py</code>, <code>llm_agent.py</code> behave
+identically for any tenant, mock or real. Embeddings + Chroma are LOCAL; Groq works
+(watch rate limits at high volume).</p>
+<p>So: <em>whatever the pipeline does on the dummy doc, it does identically on a real doc.</em>
+The eval just reads each client's folder.</p>
+<p><strong>To IR-score a real client</strong> you author their <code>eval.json</code> <code>rule_to_section</code> with
+THEIR section numbers (manual, optional). RAGAS needs none — just export their alerts
+(<code>scripts/export_alerts.py</code>).</p>
+<hr>
+<h2 id="16a-generation-eval--ragas-done-native-implementation">16a. Generation eval — RAGAS (DONE, native implementation)</h2>
+<p><code>eval/ragas_eval.py</code> measures GENERATION quality (what IR metrics can't):</p>
+<ul>
+<li><strong>Faithfulness</strong> — extract atomic claims from the SAR (Groq), check each against
+the grounding = (transaction data + retrieved policy chunks). Score = supported/total.</li>
+<li><strong>Answer Relevancy</strong> — generate questions the SAR answers (Groq), embed them + the
+real question (bge), score = mean cosine similarity.</li>
+</ul>
+<p>Result (client_0, 5 alerts): <strong>Faithfulness ≈ 0.81, Answer Relevancy ≈ 0.70</strong> →
+generation is grounded and on-topic. Combined with IR (Recall@8=1.0), the whole
+pipeline is validated → no reranking/hybrid justified yet.</p>
+<p><strong>Why native, not the <code>ragas</code> package:</strong> ragas 0.4.x imports a <code>langchain_community</code>
+path removed in LangChain 1.x → won't import on this env. We implement the same
+two metrics directly with Groq + bge (more robust, same methodology).</p>
+<p><strong>Gotchas (encoded in the script):</strong> create the Groq client LAZILY (module-level
+creation before torch loads segfaults); set <code>OMP_NUM_THREADS=1</code>,
+<code>TOKENIZERS_PARALLELISM=false</code>, <code>KMP_DUPLICATE_LIB_OK=TRUE</code> (the ragas/langchain
+install bumped numpy/torch → intermittent segfaults without these); faithfulness
+grounding MUST include the transaction data, not just policy chunks (else true
+transaction facts score as &quot;unsupported&quot;).</p>
+<hr>
+<h2 id="16b-live-api-status-and-remaining-work">16b. Live-API status and remaining work</h2>
+<p><strong>Live-API plumbing — now BUILT</strong> (verified against the routers; the earlier
+&quot;deferred&quot; note here was stale):</p>
+<ul>
+<li><code>documents.py</code> upload router — a real client uploads their policy via
+<code>POST /api/v1/documents/upload</code>; it is stored to the client folder and indexed
+into THEIR Chroma collection (re-upload resets the collection first). Indexing no
+longer depends on scripts. (A dedicated <code>TenantDocument</code> audit table is still
+optional/deferred — the upload writes to folder + Chroma, not a DB row.)</li>
+<li><code>retrieve_regulatory_context</code> is wired into <code>ingest.py</code> <code>process_alert_background</code>:
+the live alert path runs RAG and passes the retrieved chunks into <code>generate_sar()</code>,
+so policy-cited SARs fire on real alerts through the API. A RAG failure degrades to
+no-context generation and never fails the alert.</li>
+<li>Real approval → goAML → webhook delivery is live:
+<code>POST /api/v1/alerts/queue/{id}/approve</code> rehydrates PII, builds the goAML STR,
+renders the PDF, and POSTs the HMAC-signed webhook to the bank.</li>
+<li>The live path is exercised end-to-end by <code>scripts/simulator_client.py</code> and
+<code>scripts/verify_stack.py</code>.</li>
+</ul>
+<p><strong>Generation eval (RAGAS): DONE</strong> — implemented natively (Groq judge + bge); see
+§16a. Faithfulness ≈ 0.81, Answer Relevancy ≈ 0.70.</p>
+<p><strong>Genuinely remaining (not blockers; see also <code>STATUS_AND_MOCKBANK.md</code> §3):</strong></p>
+<ul>
+<li>LLM-outage retry queue (Celery/Redis); background (async) webhook delivery.</li>
+<li>Optional <code>TenantDocument</code> table for richer upload audit.</li>
+<li>Optional per-client <code>eval.json</code> to run IR (not just RAGAS) on a real tenant.</li>
+</ul>
+<hr>
+<h2 id="17-design-journey--reasoning-how-we-got-here-and-why">17. Design journey &amp; reasoning (how we got here, and why)</h2>
+<p>This captures the <em>thinking</em> — so a future agent understands not just what exists
+but why each choice was made.</p>
+<p><strong>The build order (chronological):</strong></p>
+<ol>
+<li>Read the goal (cite the tenant's real AML policy, not the LLM's general
+knowledge) and confirmed nothing existed yet.</li>
+<li>Locked the encoder/similarity/chunking decisions FIRST (they ripple through
+every file), before writing code.</li>
+<li>Built a <em>synthetic</em> test policy we control (so we know exactly what retrieval
+<em>should</em> return) with thresholds matching the rule engine.</li>
+<li>Wrote a mock alert, validated it against the REAL rule engine (not assumed).</li>
+<li>Built the 4 services + proved retrieval with a smoke test (no DB, no Groq) —
+isolate failures to one layer.</li>
+<li>Added generation (Groq) → saw a real cited SAR; fixed a JSON-parse bug found.</li>
+<li>Built the full demo (→ goAML) for colleagues; pinned the JSON schema after
+seeing the LLM's output shape vary.</li>
+<li>Built deterministic IR eval <em>because</em> the question arose: &quot;do we need
+reranking/hybrid?&quot; — we wanted numbers, not vibes.</li>
+<li>Made eval per-tenant (real clients each have a different policy doc).</li>
+<li>Split mock vs real data into <code>testing/</code> and <code>production/</code> + a one-command
+seed/reset, so the dummy env is reproducible and wipeable.</li>
+</ol>
+<p><strong>The conceptual reasoning (the &quot;why&quot; behind the design):</strong></p>
+<ul>
+<li><strong>Bi-encoder, not cross-encoder.</strong> A bi-encoder encodes chunk and query
+separately → store chunk vectors once → cheap cosine (<code>queries + chunks</code>). A
+cross-encoder scores every pair live (<code>queries × chunks</code>) and can't back a
+vector DB. (A reranker IS a cross-encoder on the top ~50 — a later option.)</li>
+<li><strong>bge/SBERT, not raw BERT.</strong> Raw BERT's pooled vectors are anisotropic (collapsed
+cone) → cosine is meaningless. SBERT/bge is BERT <em>fine-tuned</em> so cosine reflects
+meaning. bge IS a BERT, trained the right way. Same model encodes both sides
+(mandatory — else vectors live in different spaces).</li>
+<li><strong>We embed rule-derived sub-queries, NOT the JSON.</strong> Masked tokens + numbers are
+semantic noise; the policy contains none of them. The compliance rules already
+decided which fields matter, so each fired rule → a regulation-worded query.</li>
+<li><strong>Contextual chunking.</strong> Prepending <code>[Context: doc - section]</code> makes a chunk
+findable even when its body lacks the query keyword. (The prefix text is part of
+the embedding — changing its wording shifts rankings slightly.)</li>
+<li><strong>Inject chunks AFTER <code>&lt;&lt;END DATA&gt;&gt;</code>.</strong> Chunks are trusted policy text; keeping
+them outside the untrusted-payload fence preserves prompt-injection safety.</li>
+<li><strong>Eval-first, then decide.</strong> Don't add reranking/hybrid/CRAG speculatively. IR
+metrics (exact, no LLM, because we own the labels) showed retrieval is
+near-optimal (Recall@8=1.0, nDCG@8≈0.97) → those layers aren't justified yet.
+RAGAS (LLM-judge) comes next for the GENERATION side, which IR can't measure.</li>
+<li><strong>PII never reaches RAG.</strong> Masking happens before retrieval; the policy has no
+PII; Groq sees only tokens. Rehydration happens only at officer approval. So a
+TEE isn't load-bearing for RAG (it would matter only for the masker/PDF side).</li>
+<li><strong>Mock vs real separation.</strong> <code>testing/</code> (regeneratable mock) vs <code>production/</code>
+(empty, real) keeps synthetic data from ever mixing with real clients — standard
+practice in finance where you can't test on real customer data. <code>seed_testing.py</code>
+embeds the fixtures so the whole mock env is reproducible from code.</li>
+</ul>
+<p><strong>Lessons / gotchas encountered:</strong></p>
+<ul>
+<li>LLM wraps JSON in ``````
+&lt;persist_dir&gt;/
+├── chroma.sqlite3                 # documents + metadata + ids + catalog
+└── <collection-uuid>/             # one folder per collection
+├── data_level0.bin            # 384-dim vectors + HNSW graph nodes
+├── header.bin / length.bin
+└── link_lists.bin             # HNSW graph edges (fast approx-NN search)</li>
+</ul>
+<pre class="hljs"><code><div>Default path = `backend/chroma_data/` (gitignored). Test scripts override it to a
+temp dir so runs don't pollute the repo. Production: point `CHROMA_PERSIST_DIR` at
+a stable path, or move to Chroma server / pgvector — only that setting changes.
+
+---
+
+## 5. Multi-tenant isolation
+
+`tenant_id` threads through: `index_document(&quot;client_0&quot;, …)` → `tenant_client_0_docs`;
+`retrieve_regulatory_context(&quot;client_0&quot;, …)` reads ONLY `tenant_client_0_docs`.
+Collections are physically separate — no query can cross tenants. In the live app,
+`tenant_id` comes from API-key auth in `ingest.py` (`alert.tenant_id`).
+
+---
+
+## 6. Config &amp; secrets
+
+`backend/app/config.py` (RAG keys): `GROQ_MODEL`, `EMBEDDING_PROVIDER`,
+`LOCAL_EMBEDDING_MODEL`, `CHROMA_PERSIST_DIR`, `RAG_TOP_K_CHUNKS`, `MAX_UPLOAD_FILE_SIZE_MB`.
+`backend/.env` (gitignored) holds the real `GROQ_API_KEY` + overrides.
+
+---
+
+## 7. Test data &amp; the DUMMY client (`client_0`)
+
+The dummy/test client is named **`client_0`**; real clients use their tenant
+public id (`TEN-xxxx`).
+
+**UNIFIED per-client storage (one root, used by BOTH the live system and the eval):**
+
+</div></code></pre>
+<p>backend/storage/clients/&lt;client_id&gt;/
+├── policy.pdf          # raw AML policy (uploaded live, or built for client_0) — NOT in DB
+├── alerts/<em>.json       # {&quot;raw_payload&quot;: {...}} — client_0 fixtures, or DB exports for real clients
+├── sar/</em>.pdf           # generated SAR PDFs (live output)
+└── eval.json           # IR answer key (client_0 ONLY)</p>
+<pre class="hljs"><code><div>
+- `client_0` is the offline test bench — built by `scripts/seed_testing.py`
+  (which calls `scripts/build_policy.py` to generate the synthetic policy).
+- Real clients (`TEN-xxxx`) get their folder created **live** by the upload endpoint
+  (`policy.pdf` + chunks into Chroma). Their transactions go to the Postgres `alerts`
+  table — NOT mirrored to disk. To eval them, export with `scripts/export_alerts.py`.
+- All generation demo scripts use `client_0`'s `policy.pdf` + an alert.
+
+---
+
+## 8. How to run
+
+All commands are in **§0 (Quick command reference)** at the top. Rule of thumb:
+- Always run from the repo root.
+- `eval/*.py` read `backend/storage/clients/`; an optional client id narrows to one.
+  IR needs an `eval.json` (client_0); RAGAS needs none (any client).
+- `scripts/` generation = TEST-ONLY (`client_0`); eval (`ir_metrics`, `ragas_eval`)
+  need no key except `ragas_eval` (Groq judge); generation needs the Groq key.
+
+---
+
+## 9. Reset tooling — `scripts/reset.py` (the reset button)
+
+One command to get a clean, known state at any point:
+
+| Command | Effect |
+|---------|--------|
+| `python scripts/reset.py` | **Wipe runtime only:** `outputs/` + all Chroma stores (repo + temp). Client data KEPT. Safe, re-runnable any time. |
+| `python scripts/reset.py --seed` | Wipe runtime, then **rebuild client_0** under `backend/storage/clients/client_0/` (policy + alerts + eval.json). |
+| `python scripts/reset.py --barebone` | Also deletes the **dummy `client_0`** only — REAL clients are KEPT (safe default). |
+| `python scripts/reset.py --barebone --seed` | Wipe client_0, then rebuild it from scratch. |
+| `python scripts/reset.py --barebone --all-clients` | **DANGER:** deletes EVERY client folder incl. real clients' uploaded `policy.pdf` + SARs (their DB + Chroma survive). |
+
+`scripts/seed_testing.py` is the single source of the `client_0` fixtures (it embeds
+the 5 eval alerts + `eval.json` and calls `build_policy.py`), so `--barebone` is
+always reversible for `client_0` with `--seed`. Never touches: `backend/app`,
+`scripts/`, `*.md`, or PostgreSQL (`backend/clear_db.py` for SQL).
+
+&gt; The vector store rebuilds automatically the next time you run any script, so a
+&gt; plain `python scripts/reset.py` mid-development is always safe.
+
+---
+
+## 10. Evaluation — `eval/` (deterministic, NO LLM)
+
+Per-client, because the answer key (section numbers) is document-specific. All
+clients live under `backend/storage/clients/&lt;client_id&gt;/`. IR scores any client that
+has an `eval.json` — in practice `client_0`.
+</div></code></pre>
+<p>backend/storage/clients/client_0/
+├── eval.json     # schema_preset + rule_to_section (ANSWER KEY) + always_relevant
+├── policy.pdf    # this client's doc → indexed into a temp collection
+└── alerts/*.json # {&quot;raw_payload&quot;: {...}} — this client's test alerts</p>
+<pre class="hljs"><code><div>
+**Ground truth = stored map + live rule firing.** The `rule_to_section` map (in
+`eval.json`) is stored; per-alert relevance is derived at runtime by running the
+real rule engine: `relevant = {section of each fired rule} ∪ {5.1}`. No hand-labeling.
+
+**Metrics (pure arithmetic):**
+```python
+precision@k = (# relevant in top-k) / k
+recall@k    = (# relevant in top-k) / (# relevant)
+ndcg@k      = DCG/IDCG,  DCG = Σ rel_i / log2(i+2)
+mrr         = 1 / (rank of first relevant)
+</div></code></pre>
+<p>Run: <code>python eval/ir_metrics.py [client_id]</code>. It loops every tenant, prints
+per-alert + per-tenant means + an OVERALL (mean across tenants), and saves
+<code>outputs/ir_metrics.json</code>.</p>
+<p><strong>Score a real client's retrieval later (optional, manual):</strong> add an <code>eval.json</code> to
+<code>backend/storage/clients/&lt;id&gt;/</code> whose <code>rule_to_section</code> uses THEIR section numbers
+(plus their <code>policy.pdf</code> + some <code>alerts/*.json</code>). Run <code>python eval/ir_metrics.py &lt;id&gt;</code>
+— it auto-discovers any client with an <code>eval.json</code> and scores against its own answer
+key. (For generation quality, RAGAS needs no answer key — see §0.)</p>
+<hr>
+<h2 id="11-results-client_0-5-alerts-1">11. Results (client_0, 5 alerts)</h2>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Value</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Recall@8</td>
+<td><strong>1.000</strong></td>
+<td>finds every relevant section</td>
+</tr>
+<tr>
+<td>MRR</td>
+<td><strong>1.000</strong></td>
+<td>#1 hit always relevant</td>
+</tr>
+<tr>
+<td>nDCG@8</td>
+<td><strong>0.955</strong></td>
+<td>relevant chunks ranked high</td>
+</tr>
+<tr>
+<td>nDCG@3</td>
+<td>0.765</td>
+<td>a plausible-but-unlabeled section (5.3) sometimes enters top-3</td>
+</tr>
+<tr>
+<td>P@8</td>
+<td>0.425</td>
+<td>capped (only 3-4 relevant per alert; ignore as a signal)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Verdict:</strong> retrieval is near-optimal → reranking/hybrid NOT needed yet. Re-run
+whenever the corpus changes; let numbers decide future layers.</p>
+<hr>
+<h2 id="12-key-decisions-at-a-glance--full-reasoning-in-17-1">12. Key decisions (at a glance — full reasoning in §17)</h2>
+<ul>
+<li>Encoder: <strong>bge-small</strong> local (SBERT bi-encoder), 384-dim, cosine, no PII egress.</li>
+<li>Vector store: <strong>ChromaDB</strong> local, per-tenant collections.</li>
+<li>Chunking: ~350 tok, 60 overlap, sentence-aligned, heading sections, context prefix.</li>
+<li>Queries: <strong>rule-derived sub-queries</strong> (not the JSON); chunks injected after <code>&lt;&lt;END DATA&gt;&gt;</code>.</li>
+<li>Eval-first: IR (retrieval) + RAGAS (generation) → <strong>no reranking/hybrid yet</strong>.</li>
+<li><strong>Mock vs real</strong> split; generation fixed to one input until real clients exist.</li>
+</ul>
+<hr>
+<h2 id="13-anomaly-audit-fixed-2026-06-16-1">13. Anomaly audit (fixed 2026-06-16)</h2>
+<ul>
+<li>Hardcoded footer skip → generic running-header/footer detection (multi-client).</li>
+<li><code>MAX_CHUNK_HARD</code> unused → over-long sentences hard-split (no silent truncation).</li>
+<li>Cover/front-matter (bank name, title) → dropped before first numbered heading.</li>
+<li>Heading detection tightened (non-numbered must be ≤60 chars).</li>
+<li>Dummy client renamed <code>client_1</code> → <code>client_0</code>; all scripts use <code>client_0</code>.</li>
+<li>After fixes: 28 chunks (was 29), metrics unchanged → removed chunks were noise.</li>
+</ul>
+<hr>
+<h2 id="14-known-issues-deferred-cosmetic-1">14. Known issues (deferred, cosmetic)</h2>
+<ul>
+<li><strong>SAR PDF table clipping:</strong> long cells in <code>render_pdf</code> don't word-wrap → clipped.
+Fix = wrap cell strings in <code>Paragraph()</code>. Data correct; rendering only.</li>
+<li><strong>LLM structured-output shape</strong> varied; mitigated by pinned JSON schema +
+<code>normalize_structured</code>.</li>
+<li>Eval uses client <code>display_name</code> in the context-line; demo scripts use a fixed
+title. Both retrieve near-perfectly; minor.</li>
+</ul>
+<hr>
+<h2 id="15-frontend-light--see-existing-specs-1">15. Frontend (light — see existing specs)</h2>
+<p>The React/Vite frontend (<code>frontend/</code>) and its specs (<code>LandingPageSpec.md</code>,
+<code>MVP.md</code>) are separate. RAG touch-points the frontend will need: a document-upload
+page (Phase-1 trigger) and the SAR review/approve workspace (reads the canonical
+SAR record; approve fires goAML serialize → webhook). Not built yet.</p>
+<hr>
+<h2 id="16-testing-vs-production--whats-code-data-and-api-1">16. Testing vs Production — what's code, data, and API</h2>
+<p>This is the key mental model. There are TWO different worlds:</p>
+<p><strong>A. Offline tooling (eval + demo scripts)</strong> — folder-driven:</p>
+<ul>
+<li>Everything reads <code>backend/storage/clients/&lt;client_id&gt;/</code> — the SAME root the live
+system writes. <code>client_0</code> is the dummy; real clients use <code>TEN-xxxx</code>.</li>
+<li><code>python eval/ir_metrics.py</code> scores any client with an <code>eval.json</code> (= <code>client_0</code>).
+<code>ragas_eval.py &lt;id&gt;</code> scores any client (no answer key).</li>
+<li>The demo scripts (<code>scripts/*.py</code>) are TEST-ONLY and use <code>client_0</code>. They are not
+how real clients are served.</li>
+</ul>
+<p><strong>B. The live API (real production path)</strong> — NOT folder/command-driven:</p>
+<ul>
+<li>A running FastAPI app serves ALL real tenants at once. The tenant is decided by
+the <strong>API key</strong> on each request (<code>ingest.py</code> → <code>alert.tenant_id</code>).</li>
+<li>A client's <strong>policy.pdf</strong> is stored under <code>backend/storage/clients/&lt;public_id&gt;/</code>
+(uploaded live) + chunks in per-tenant Chroma. Their <strong>alerts</strong> live in the
+Postgres <code>alerts</code> table (NOT mirrored to disk).</li>
+<li>&quot;Test vs prod&quot; here means separate DEPLOYMENTS/databases, NOT a folder.</li>
+</ul>
+<p><strong>The RAG code itself is environment-agnostic.</strong> <code>embeddings.py</code>, <code>chroma_client.py</code>,
+<code>document_ingestion_service.py</code>, <code>rag_retrieval_service.py</code>, <code>llm_agent.py</code> behave
+identically for any tenant, mock or real. Embeddings + Chroma are LOCAL; Groq works
+(watch rate limits at high volume).</p>
+<p>So: <em>whatever the pipeline does on the dummy doc, it does identically on a real doc.</em>
+The eval just reads each client's folder.</p>
+<p><strong>To IR-score a real client</strong> you author their <code>eval.json</code> <code>rule_to_section</code> with
+THEIR section numbers (manual, optional). RAGAS needs none — just export their alerts
+(<code>scripts/export_alerts.py</code>).</p>
+<hr>
+<h2 id="16a-generation-eval--ragas-done-native-implementation-1">16a. Generation eval — RAGAS (DONE, native implementation)</h2>
+<p><code>eval/ragas_eval.py</code> measures GENERATION quality (what IR metrics can't):</p>
+<ul>
+<li><strong>Faithfulness</strong> — extract atomic claims from the SAR (Groq), check each against
+the grounding = (transaction data + retrieved policy chunks). Score = supported/total.</li>
+<li><strong>Answer Relevancy</strong> — generate questions the SAR answers (Groq), embed them + the
+real question (bge), score = mean cosine similarity.</li>
+</ul>
+<p>Result (client_0, 5 alerts): <strong>Faithfulness ≈ 0.81, Answer Relevancy ≈ 0.70</strong> →
+generation is grounded and on-topic. Combined with IR (Recall@8=1.0), the whole
+pipeline is validated → no reranking/hybrid justified yet.</p>
+<p><strong>Why native, not the <code>ragas</code> package:</strong> ragas 0.4.x imports a <code>langchain_community</code>
+path removed in LangChain 1.x → won't import on this env. We implement the same
+two metrics directly with Groq + bge (more robust, same methodology).</p>
+<p><strong>Gotchas (encoded in the script):</strong> create the Groq client LAZILY (module-level
+creation before torch loads segfaults); set <code>OMP_NUM_THREADS=1</code>,
+<code>TOKENIZERS_PARALLELISM=false</code>, <code>KMP_DUPLICATE_LIB_OK=TRUE</code> (the ragas/langchain
+install bumped numpy/torch → intermittent segfaults without these); faithfulness
+grounding MUST include the transaction data, not just policy chunks (else true
+transaction facts score as &quot;unsupported&quot;).</p>
+<hr>
+<h2 id="16b-live-api-status-and-remaining-work-1">16b. Live-API status and remaining work</h2>
+<p><strong>Live-API plumbing — now BUILT</strong> (verified against the routers; the earlier
+&quot;deferred&quot; note here was stale):</p>
+<ul>
+<li><code>documents.py</code> upload router — a real client uploads their policy via
+<code>POST /api/v1/documents/upload</code>; it is stored to the client folder and indexed
+into THEIR Chroma collection (re-upload resets the collection first). Indexing no
+longer depends on scripts. (A dedicated <code>TenantDocument</code> audit table is still
+optional/deferred — the upload writes to folder + Chroma, not a DB row.)</li>
+<li><code>retrieve_regulatory_context</code> is wired into <code>ingest.py</code> <code>process_alert_background</code>:
+the live alert path runs RAG and passes the retrieved chunks into <code>generate_sar()</code>,
+so policy-cited SARs fire on real alerts through the API. A RAG failure degrades to
+no-context generation and never fails the alert.</li>
+<li>Real approval → goAML → webhook delivery is live:
+<code>POST /api/v1/alerts/queue/{id}/approve</code> rehydrates PII, builds the goAML STR,
+renders the PDF, and POSTs the HMAC-signed webhook to the bank.</li>
+<li>The live path is exercised end-to-end by <code>scripts/simulator_client.py</code> and
+<code>scripts/verify_stack.py</code>.</li>
+</ul>
+<p><strong>Generation eval (RAGAS): DONE</strong> — implemented natively (Groq judge + bge); see
+§16a. Faithfulness ≈ 0.81, Answer Relevancy ≈ 0.70.</p>
+<p><strong>Genuinely remaining (not blockers; see also <code>STATUS_AND_MOCKBANK.md</code> §3):</strong></p>
+<ul>
+<li>LLM-outage retry queue (Celery/Redis); background (async) webhook delivery.</li>
+<li>Optional <code>TenantDocument</code> table for richer upload audit.</li>
+<li>Optional per-client <code>eval.json</code> to run IR (not just RAGAS) on a real tenant.</li>
+</ul>
+<hr>
+<h2 id="17-design-journey--reasoning-how-we-got-here-and-why-1">17. Design journey &amp; reasoning (how we got here, and why)</h2>
+<p>This captures the <em>thinking</em> — so a future agent understands not just what exists
+but why each choice was made.</p>
+<p><strong>The build order (chronological):</strong></p>
+<ol>
+<li>Read the goal (cite the tenant's real AML policy, not the LLM's general
+knowledge) and confirmed nothing existed yet.</li>
+<li>Locked the encoder/similarity/chunking decisions FIRST (they ripple through
+every file), before writing code.</li>
+<li>Built a <em>synthetic</em> test policy we control (so we know exactly what retrieval
+<em>should</em> return) with thresholds matching the rule engine.</li>
+<li>Wrote a mock alert, validated it against the REAL rule engine (not assumed).</li>
+<li>Built the 4 services + proved retrieval with a smoke test (no DB, no Groq) —
+isolate failures to one layer.</li>
+<li>Added generation (Groq) → saw a real cited SAR; fixed a JSON-parse bug found.</li>
+<li>Built the full demo (→ goAML) for colleagues; pinned the JSON schema after
+seeing the LLM's output shape vary.</li>
+<li>Built deterministic IR eval <em>because</em> the question arose: &quot;do we need
+reranking/hybrid?&quot; — we wanted numbers, not vibes.</li>
+<li>Made eval per-tenant (real clients each have a different policy doc).</li>
+<li>Split mock vs real data into <code>testing/</code> and <code>production/</code> + a one-command
+seed/reset, so the dummy env is reproducible and wipeable.</li>
+</ol>
+<p><strong>The conceptual reasoning (the &quot;why&quot; behind the design):</strong></p>
+<ul>
+<li><strong>Bi-encoder, not cross-encoder.</strong> A bi-encoder encodes chunk and query
+separately → store chunk vectors once → cheap cosine (<code>queries + chunks</code>). A
+cross-encoder scores every pair live (<code>queries × chunks</code>) and can't back a
+vector DB. (A reranker IS a cross-encoder on the top ~50 — a later option.)</li>
+<li><strong>bge/SBERT, not raw BERT.</strong> Raw BERT's pooled vectors are anisotropic (collapsed
+cone) → cosine is meaningless. SBERT/bge is BERT <em>fine-tuned</em> so cosine reflects
+meaning. bge IS a BERT, trained the right way. Same model encodes both sides
+(mandatory — else vectors live in different spaces).</li>
+<li><strong>We embed rule-derived sub-queries, NOT the JSON.</strong> Masked tokens + numbers are
+semantic noise; the policy contains none of them. The compliance rules already
+decided which fields matter, so each fired rule → a regulation-worded query.</li>
+<li><strong>Contextual chunking.</strong> Prepending <code>[Context: doc - section]</code> makes a chunk
+findable even when its body lacks the query keyword. (The prefix text is part of
+the embedding — changing its wording shifts rankings slightly.)</li>
+<li><strong>Inject chunks AFTER <code>&lt;&lt;END DATA&gt;&gt;</code>.</strong> Chunks are trusted policy text; keeping
+them outside the untrusted-payload fence preserves prompt-injection safety.</li>
+<li><strong>Eval-first, then decide.</strong> Don't add reranking/hybrid/CRAG speculatively. IR
+metrics (exact, no LLM, because we own the labels) showed retrieval is
+near-optimal (Recall@8=1.0, nDCG@8≈0.97) → those layers aren't justified yet.
+RAGAS (LLM-judge) comes next for the GENERATION side, which IR can't measure.</li>
+<li><strong>PII never reaches RAG.</strong> Masking happens before retrieval; the policy has no
+PII; Groq sees only tokens. Rehydration happens only at officer approval. So a
+TEE isn't load-bearing for RAG (it would matter only for the masker/PDF side).</li>
+<li><strong>Mock vs real separation.</strong> <code>testing/</code> (regeneratable mock) vs <code>production/</code>
+(empty, real) keeps synthetic data from ever mixing with real clients — standard
+practice in finance where you can't test on real customer data. <code>seed_testing.py</code>
+embeds the fixtures so the whole mock env is reproducible from code.</li>
+</ul>
+<p><strong>Lessons / gotchas encountered:</strong></p>
+<ul>
+<li>LLM wraps JSON in ```json fences → parser must strip them and never discard the
+narrative on a JSON failure.</li>
+<li>LLM structured-output shape varies → pin the schema in the prompt + normalize on
+approval.</li>
+<li>Hardcoding one client's footer text breaks multi-client → detect running
+headers/footers generically.</li>
+<li>An unused <code>MAX_CHUNK_HARD</code> meant a giant sentence could silently truncate → hard-split.</li>
+<li>The context-line <code>doc_title</code> affects embeddings → eval vs demo can differ slightly.</li>
+</ul>
+<hr>
+<h2 id="18-change-log">18. Change log</h2>
+<ul>
+<li>2026-06-16: Built vanilla RAG (Phases 1-3), demo, per-tenant IR eval. Anomaly
+audit + fixes. Renamed dummy client to <code>client_0</code>. Added <code>scripts/reset.py</code>.
+Consolidated docs into this file (replaced RAG_TECHNICAL_NOTES / RAG_WALKTHROUGH
+/ PRE_RAGAS).</li>
+<li>2026-06-16 (later 4): RAGAS done — <code>eval/ragas_eval.py</code> (native, Groq judge + bge).
+Faithfulness≈0.81, Answer Relevancy≈0.70. ragas pip pkg incompatible w/ LangChain
+1.x; segfault fixes (lazy Groq + OMP/tokenizer env guards); faithfulness grounds on
+transaction data + chunks. Pipeline fully validated; no reranking/hybrid needed.</li>
+<li>2026-06-16 (later 3): User deleted the older root docs (BuildOrder/LandingPageSpec/
+MVP/PRD/RAG_HANDOFF/README). Made THIS file fully self-sufficient: added §17
+&quot;Design journey &amp; reasoning&quot; (the thinking + lessons), ensured §0 has every
+command. Remaining root md: APISpec, DatabaseSchema, RAG_MASTER, explanation.</li>
+<li>2026-06-16 (later 2): Added §0 quick command reference and §16 &quot;Testing vs
+Production&quot; mental model (offline tooling is folder/flag-driven; the live API is
+tenant-keyed, not folder-driven; RAG code is environment-agnostic).</li>
+<li>2026-06-16 (later): Split mock vs real data into <code>testing/</code> (regeneratable mock)
+and <code>production/</code> (empty, real). Moved policy→<code>testing/corpus</code>,
+input→<code>testing/inputs</code>, eval client_0→<code>testing/clients</code>; removed <code>aml_corpus/</code>,
+<code>mock_inputs/</code>, <code>eval/tenants/</code>. Added <code>scripts/seed_testing.py</code> (embeds all mock
+fixtures, fully regenerates). <code>reset.py --seed</code> now rebuilds the whole mock env;
+<code>--barebone</code> wipes <code>testing/</code> data. <code>eval/ir_metrics.py --prod</code> evaluates
+<code>production/</code> clients. Verified full wipe→regenerate→eval cycle.</li>
+<li>2026-06-17: Added §19 &quot;Full walkthrough&quot; (read-it-start-to-finish narrative:
+goal → concepts → code → eval). RAGAS made per-client + <code>--prod</code>. Slimmed §8/§12
+to remove duplication.</li>
+<li>2026-06-19: <strong>Unified per-client storage.</strong> Replaced the <code>testing/</code> vs <code>production/</code>
+split with ONE root <code>backend/storage/clients/&lt;client_id&gt;/</code> (policy.pdf + alerts/ +
+sar/ + eval.json), the SAME place the live upload writes and the eval reads. Decisions:
+policy PDF = bank self-serve upload → folder + Chroma (NOT in DB); alerts → Postgres
+<code>alerts</code> table (removed the disk-mirror from ingest.py); IR needs an <code>eval.json</code> so it
+runs on <code>client_0</code> only; RAGAS is reference-free so it runs on any client. RAGAS lost
+<code>--prod</code>/<code>config.json</code> (reads the unified folders, schema_preset from eval.json or
+default). Added <code>scripts/export_alerts.py</code> (DB alerts → folder JSON for real-client
+RAGAS). Moved <code>build_policy.py</code> → <code>scripts/</code>. DELETED <code>testing/</code>, <code>production/</code>,
+<code>backend/storage/{policies,sar}</code>. Verified IR Recall@8=1.0 + smoke oracle on the new
+layout.</li>
+<li>2026-06-22: Documentation accuracy pass (no code changes). Corrected §16b, which
+still described the live-API plumbing as &quot;not built yet&quot;: the <code>documents.py</code> upload
+router, RAG wired into <code>ingest.py</code> <code>process_alert_background</code>, and approval → goAML →
+webhook delivery are all built and verified against the routers. RAGAS is done (§16a),
+not pending. Also normalised the doc set: added tables of contents, removed emoji
+markers, and fixed minor syntax. <code>AEGIS_KNOWLEDGE_BASE.md</code> remains the code-verified
+source of truth.</li>
+</ul>
+<hr>
+<h2 id="19-full-walkthrough-read-start-to-finish-goal--concepts--code--eval">19. Full walkthrough (read start-to-finish: goal → concepts → code → eval)</h2>
+<p>A single narrative explainer. The earlier sections are the structured reference;
+this is the teaching version for someone learning the whole thing cold.</p>
+<h3 id="1-the-goal">1. The goal</h3>
+<p>Aegis writes SARs with Groq. Without RAG the LLM uses general knowledge and can't
+cite the tenant's policy. RAG fetches the relevant policy slices and feeds them to
+the LLM, so the SAR cites e.g. &quot;Section 4.1&quot; instead of vague prose.
+RAG = Retrieve relevant policy → Augment the prompt → Generate the cited SAR.</p>
+<h3 id="2-core-concepts">2. Core concepts</h3>
+<ul>
+<li><strong>Embeddings:</strong> text → 384-number vector; similar meaning → similar direction;
+compared by <strong>cosine similarity</strong> (angle; small angle = similar).</li>
+<li><strong>Bi-encoder vs cross-encoder:</strong> a bi-encoder encodes chunk and query SEPARATELY
+→ store chunk vectors once → cheap cosine (<code>chunks + queries</code>). A cross-encoder
+scores each (query,chunk) PAIR live (<code>chunks × queries</code>) and can't back a vector
+DB. (A reranker is a cross-encoder on the top ~50 — a later option.)</li>
+<li><strong>BERT vs SBERT:</strong> raw BERT vectors are anisotropic (cosine meaningless); bge is
+BERT fine-tuned so cosine reflects meaning. bge IS a BERT, trained right.</li>
+<li><strong>Asymmetric:</strong> prefix the QUERY only (&quot;Represent this sentence for searching
+relevant passages: &quot;); chunks raw.</li>
+<li><strong>Contextual chunking:</strong> prepend <code>[Context: doc - section]</code> to each chunk → it's
+findable even without the keyword.</li>
+<li><strong>Don't embed the JSON:</strong> masked tokens/numbers are noise → embed rule-derived
+sub-queries instead.</li>
+</ul>
+<h3 id="3-the-pipeline--code-3-phases">3. The pipeline + code (3 phases)</h3>
+<p>Shared engine: <code>embeddings.py</code> (make vectors) + <code>chroma_client.py</code> (per-tenant store).</p>
+<pre class="hljs"><code><div><span class="hljs-comment"># embeddings.py — one model, loaded once, used by BOTH sides</span>
+<span class="hljs-meta">@lru_cache(<span class="hljs-params">maxsize=<span class="hljs-number">1</span></span>)</span>
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">_local_model</span>():
+    <span class="hljs-keyword">from</span> sentence_transformers <span class="hljs-keyword">import</span> SentenceTransformer
+    <span class="hljs-keyword">return</span> SentenceTransformer(<span class="hljs-string">&quot;BAAI/bge-small-en-v1.5&quot;</span>)
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">embed_documents</span>(<span class="hljs-params">texts</span>): <span class="hljs-keyword">return</span> _local_model().encode(texts, normalize_embeddings=<span class="hljs-literal">True</span>).tolist()
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">embed_query</span>(<span class="hljs-params">text</span>): <span class="hljs-keyword">return</span> _local_model().encode([<span class="hljs-string">&quot;Represent this sentence for searching relevant passages: &quot;</span>+text], normalize_embeddings=<span class="hljs-literal">True</span>)[<span class="hljs-number">0</span>].tolist()
+
+<span class="hljs-comment"># chroma_client.py — per-tenant isolation + cosine</span>
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">get_tenant_collection</span>(<span class="hljs-params">tid</span>):
+    <span class="hljs-keyword">return</span> chromadb.PersistentClient(path=_PERSIST_DIR).get_or_create_collection(
+        name=<span class="hljs-string">f&quot;tenant_<span class="hljs-subst">{tid}</span>_docs&quot;</span>, metadata={<span class="hljs-string">&quot;hnsw:space&quot;</span>: <span class="hljs-string">&quot;cosine&quot;</span>})
+</div></code></pre>
+<p><strong>Phase 1 (index) — document_ingestion_service.py:</strong> PyMuPDF parse (keep font size</p>
+<ul>
+<li>page) → split on headings → ~350-token sentence-aligned chunks w/ 60 overlap →
+prepend context line → embed → <code>collection.add(...)</code>.
+<strong>Phase 2 (retrieve) — rag_retrieval_service.py:</strong> fired rules → <code>RULE_TO_QUERY</code>
+sub-queries → embed each → <code>collection.query(n_results=5)</code> → merge/dedupe → top-8.
+<strong>Phase 3 (generate) — llm_agent.py:</strong> inject chunks AFTER <code>&lt;&lt;END DATA&gt;&gt;</code> (trusted
+text) → Groq → parse narrative + structured JSON → rehydrate PII at approval.</li>
+</ul>
+<h3 id="4-where-data-lives">4. Where data lives</h3>
+<p>ChromaDB local files: <code>chroma.sqlite3</code> (docs+metadata) + per-collection HNSW
+binaries. No server. Tests use a temp dir.</p>
+<h3 id="5-multi-tenant">5. Multi-tenant</h3>
+<p><code>tenant_id</code> keys the collection name, so <code>index_document(&quot;client_0&quot;,…)</code> and
+<code>retrieve_regulatory_context(&quot;client_0&quot;,…)</code> only ever touch <code>tenant_client_0_docs</code>.
+No query crosses tenants. Live app gets <code>tenant_id</code> from the API key.</p>
+<h3 id="6-evaluation-both-halves">6. Evaluation (both halves)</h3>
+<ul>
+<li><strong>Retrieval — ir_metrics.py (no LLM):</strong> we own the labels (rule → section in
+<code>eval.json</code>), so Precision@k/Recall@k/nDCG/MRR are pure arithmetic. Result:
+Recall@8=1.0, nDCG@8=0.98, MRR=1.0.</li>
+<li><strong>Generation — ragas_eval.py (Groq judge + bge):</strong> Faithfulness (Groq extracts
+claims, checks each vs transaction-data+chunks) = 0.81; Answer Relevancy (Groq
+makes questions from the SAR, bge cosine-compares to the real question) = 0.70.</li>
+</ul>
+<h3 id="7-test-infrastructure">7. Test infrastructure</h3>
+<p>ONE root <code>backend/storage/clients/&lt;client_id&gt;/</code> for every client (dummy = <code>client_0</code>,
+real = <code>TEN-xxxx</code>) — the same folders the live system writes and the eval reads.
+<code>scripts/reset.py</code> (+<code>--seed</code>/<code>--barebone</code>) and <code>scripts/seed_testing.py</code> make the
+<code>client_0</code> test bench fully wipeable and reproducible.</p>
+<h3 id="8-outcome">8. Outcome</h3>
+<p><strong>Vanilla RAG was sufficient — proven by metrics, not assumed.</strong> No reranking/
+hybrid/CRAG needed (retrieval perfect, generation grounded). Caveat: re-evaluate
+when real multi-doc corpora arrive. Remaining work = wire RAG into the live app
+(API endpoints + frontend); the RAG brain itself is done.</p>
+<p><strong>One line:</strong> embeddings make vectors → ingestion fills Chroma (P1) → retrieval
+cosine-searches it (P2) → llm_agent writes the cited SAR (P3) → ir_metrics proves
+retrieval + ragas_eval proves generation → all per-tenant, unified storage, resettable.</p>
+<hr>
+<h2 id="20-security-architecture--threat-model">20. Security architecture &amp; threat model</h2>
+<p>The backend is a decoupled FastAPI + SQLAlchemy + PostgreSQL app. Request lifecycle:
+routers (RBAC via <code>Depends</code>) → services (the &quot;brain&quot;) → models (SQL tables).</p>
+<p><strong>The AML pipeline</strong> (<code>app/services/</code>, called from <code>routers/ingest.py</code>):</p>
+<ol>
+<li><strong>Normalizer</strong> (<code>schema_normalizer.py</code>) — proprietary bank JSON → standard Aegis fields
+using the tenant's own <code>IngestionSchema.field_map</code>.</li>
+<li><strong>Rule engine</strong> (<code>compliance_analyzer.py</code>) — deterministic typology rules → factual
+evidence (so the LLM doesn't hallucinate the suspicion).</li>
+<li><strong>PII masker</strong> (<code>pii_masker.py</code>) — replaces names/accounts with <code>&lt;&lt;TOKEN&gt;&gt;</code> before any
+external AI call; deterministic SHA-256 tokens so the same entity links across txns.</li>
+<li><strong>AI agent</strong> (<code>llm_agent.py</code>) — packages masked data + evidence + retrieved policy,
+sanitizes against prompt injection, asks Groq for the SAR, then rehydrates PII.</li>
+</ol>
+<p><strong>Implemented security patches (live):</strong></p>
+<ul>
+<li>Timing-attack-safe auth (dummy bcrypt round on invalid tenant/email; constant-time API
+key compare via <code>secrets.compare_digest</code>).</li>
+<li>Pre-auth in-process rate limiting (sliding window, per tenant/IP, 429 + Retry-After,
+bounded to 10k buckets so random-key floods can't OOM).</li>
+<li>Idempotency / replay protection (<code>Idempotency-Key</code> or body SHA-256 + a DB
+<code>UniqueConstraint</code>; <code>IntegrityError</code> caught for the same-millisecond race).</li>
+<li>Isolated background DB sessions (own <code>SessionLocal</code>, closed in <code>finally</code>).</li>
+<li>Synthetic test alerts flagged <code>is_synthetic=True</code> (excluded from compliance metrics).</li>
+<li>LLM prompt-injection defense (<code>&lt;&lt;DATA&gt;&gt;</code> boundary markers + untrusted-data instruction).</li>
+<li>Webhook SSRF guard (DNS-resolves the URL, blocks private/loopback/link-local; dev carve-out).</li>
+<li>JWT token-type confusion prevention (<code>access</code> vs <code>refresh</code> in the payload).</li>
+<li>PII encryption at rest (<code>cryptography.fernet</code> over the <code>token_map</code>).</li>
+<li>Payload size caps (Content-Length + byte recount) to prevent OOM.</li>
+<li>Async non-blocking ingest (returns <code>202</code> fast, offloads LLM to a background task).</li>
+</ul>
+<p><strong>Threat-model status (was a TODO list; current state):</strong></p>
+<ul>
+<li><strong>Addressed:</strong> Prompt injection, Webhook SSRF, OOM payload cap, PII vault encryption,
+Replay attacks (idempotency), API-key rotation (refresh-token rotation invariant),
+DB concurrency (Postgres + IntegrityError handling; SQLite no longer used).</li>
+<li><strong>Deferred — LLM outage/rate-limit resilience</strong> — a Groq outage makes the background SAR task
+fail; there's a safe degrade-to-no-context path, but no retry queue (Celery/Redis) yet.
+This is the main open hardening item for high volume.</li>
+</ul>
+<hr>
+<h2 id="21-data-schemas--the-schema-faithful-eval">21. Data schemas &amp; the schema-faithful eval</h2>
+<p>There are <strong>3 ingestion schemas</strong> (<code>app/data/schema_presets.py</code>), each a different shape:</p>
+<table>
+<thead>
+<tr>
+<th>Schema</th>
+<th>&quot;customer name&quot;</th>
+<th>&quot;amount&quot;</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>STANDARD_FINTECH</code></td>
+<td><code>customer.full_name</code></td>
+<td><code>txn.amount</code></td>
+</tr>
+<tr>
+<td><code>SEBI_BROKER</code></td>
+<td><code>client.name</code></td>
+<td><code>trade.value</code></td>
+</tr>
+<tr>
+<td><code>PAYMENT_GW</code></td>
+<td><code>payer.name</code></td>
+<td><code>txn.amount</code></td>
+</tr>
+</tbody>
+</table>
+<p>The live ingest normalizes each alert with the <strong>tenant's own</strong> schema (<code>ingest.py</code>) and
+stores the result as <code>normalized_payload</code> + <code>masked_payload</code> on the alert row.</p>
+<p><strong>Why the eval must respect this:</strong> the eval used to hardcode <code>STANDARD_FINTECH</code>, so a
+non-fintech client (e.g. a SEBI broker) would be scored against the wrong field map →
+all fields <code>None</code> → no rules fire → silently meaningless scores. <strong>Fix:</strong>
+<code>scripts/export_alerts.py</code> exports the DB-computed <code>normalized_payload</code>/<code>masked_payload</code>,
+and <code>ir_metrics.py</code>/<code>ragas_eval.py</code> use them (falling back to preset-normalize only for
+the <code>client_0</code> fixtures, which carry only <code>raw_payload</code>). The eval now scores exactly
+what live produced, for any schema.</p>
+<hr>
+<h2 id="22-known-edge-cases--hardening-handled">22. Known edge cases &amp; hardening (handled)</h2>
+<ul>
+<li><strong>Eval on partial data:</strong> a client folder missing <code>policy.pdf</code> or <code>alerts/</code> is skipped
+with a message; an alert with <code>normalized_payload=None</code> falls back to preset-normalize.</li>
+<li><strong>RAGAS without a Groq key:</strong> <code>ragas_eval.py</code> exits with one clear message instead of
+erroring per alert. IR needs no key.</li>
+<li><strong><code>reset.py --barebone</code> foot-gun:</strong> now wipes ONLY the dummy <code>client_0</code>; the full nuke
+(incl. real clients' policies) requires the explicit <code>--all-clients</code> flag.</li>
+<li><strong>Super-admin policy upload:</strong> a <code>SUPER_ADMIN</code> (no <code>tenant_id</code>) hitting the upload
+endpoint used to write to <code>clients/None/</code>; now returns <code>400</code> (must be a tenant user).</li>
+<li><strong>Non-UUID <code>sar_id</code></strong> on <code>GET /files/sar/{id}.pdf</code> now returns <code>404</code> (was a <code>500</code> from
+the Postgres UUID cast).</li>
+<li><strong>Webhook/PDF failures on approve</strong> are non-fatal (wrapped) — approval still succeeds.</li>
+<li><strong>Curly-quote build break:</strong> keep JS string quotes ASCII in the frontend (bit us once).</li>
+<li><strong>Deferred — Synchronous webhook on approve:</strong> <code>_deliver_webhook</code> POSTs with an 8s timeout
+inline, so approving blocks up to 8s on a slow bank. Fine locally; background it for prod.</li>
+</ul>
+
+</body>
+</html>

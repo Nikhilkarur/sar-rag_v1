@@ -32,8 +32,8 @@ from app.services import document_ingestion_service as dis            # noqa: E4
 from app.services.rag_retrieval_service import retrieve_regulatory_context  # noqa: E402
 from app.services.llm_agent import generate_sar_core                  # noqa: E402
 
-PDF = os.path.join(ROOT, "testing", "corpus", "aegis_bank_aml_policy.pdf")
-MOCK = os.path.join(ROOT, "testing", "inputs", "alert_structuring_intlwire.json")
+PDF = os.path.join(ROOT, "backend", "storage", "clients", "client_0", "policy.pdf")
+MOCK = os.path.join(ROOT, "backend", "storage", "clients", "client_0", "alerts", "01_structuring_intlwire.json")
 TENANT = "client_0"   # dummy/test client (real clients start at client_1)
 
 
@@ -49,7 +49,8 @@ def main():
     print(f"Indexed {len(chunks)} chunks.")
 
     hr("Mock alert -> normalize -> mask -> analyze")
-    raw = json.load(open(MOCK, encoding="utf-8"))
+    _rec = json.load(open(MOCK, encoding="utf-8"))
+    raw = _rec.get("raw_payload", _rec)
     preset = SCHEMA_PRESETS["STANDARD_FINTECH"]
     norm = normalize_payload(raw, preset["field_map"])
     masked, token_map = mask_payload(norm, preset["pii_fields"])

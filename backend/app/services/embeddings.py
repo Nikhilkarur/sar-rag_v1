@@ -10,6 +10,15 @@ switch.
 Default: BAAI/bge-small-en-v1.5 via sentence-transformers (SBERT) — local, free,
 384-dim, 512-token max, asymmetric (query gets an instruction prefix; chunks raw).
 """
+import os
+
+# Stabilize the native ML stack BEFORE torch/sentence-transformers ever load.
+# The ragas/langchain install bumped numpy/torch, which causes intermittent
+# segfaults on this Windows/CPU env. Set centrally here so every consumer is safe.
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+
 from functools import lru_cache
 from typing import List
 

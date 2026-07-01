@@ -1,7 +1,7 @@
 """
 End-to-end RAG smoke test WITHOUT the DB, router, or Groq.
 
-  1. Index aml_corpus/generated/aegis_bank_aml_policy.pdf into a temp Chroma dir
+  1. Index backend/storage/clients/client_0/policy.pdf into a temp Chroma dir
   2. Take a mock alert, run the REAL normalizer + analyzer to get triggered rules
   3. Run retrieval and print which policy sections came back
 
@@ -32,8 +32,8 @@ from app.services.rag_retrieval_service import (                       # noqa: E
     retrieve_regulatory_context, build_sub_queries,
 )
 
-PDF = os.path.join(ROOT, "testing", "corpus", "aegis_bank_aml_policy.pdf")
-MOCK = os.path.join(ROOT, "testing", "inputs", "alert_structuring_intlwire.json")
+PDF = os.path.join(ROOT, "backend", "storage", "clients", "client_0", "policy.pdf")
+MOCK = os.path.join(ROOT, "backend", "storage", "clients", "client_0", "alerts", "01_structuring_intlwire.json")
 TENANT = "client_0"   # dummy/test client (real clients start at client_1)
 
 
@@ -58,7 +58,8 @@ def main():
     print("=" * 70)
     print("STEP 2 — Run mock alert through the REAL rule engine")
     print("=" * 70)
-    raw = json.load(open(MOCK, encoding="utf-8"))
+    _rec = json.load(open(MOCK, encoding="utf-8"))
+    raw = _rec.get("raw_payload", _rec)
     fm = SCHEMA_PRESETS["STANDARD_FINTECH"]["field_map"]
     norm = normalize_payload(raw, fm)
     results = analyze(norm)

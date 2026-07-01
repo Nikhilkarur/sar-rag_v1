@@ -3,6 +3,66 @@
 **Base URL:** `https://api.aegis-aml.com` (local: `http://localhost:8000`)
 **Last Updated:** 2026-06-10
 
+> **Status — original MVP design (2026-06-10).** Several endpoints changed during
+> implementation. For the authoritative, code-verified API reference, see
+> `AEGIS_KNOWLEDGE_BASE.md` §13 (paths) and Appendix A (real request/response shapes);
+> the deviations are catalogued in §21. Where this document and the code disagree, the
+> code wins. Notable changes already in the code:
+> - Ingestion is `POST /api/v1/ingest/` returning `200` — not `POST /api/v1/alerts/ingest` → `202`.
+> - The review queue lives under `/api/v1/alerts/queue...` (not `/api/v1/queue...`).
+> - The simulator is `POST /api/v1/alerts/simulator/submit-test-alert`.
+> - There is no standalone `/api/v1/webhooks/sink/...` router; sink events are read via `GET /api/v1/tenant/webhook/events`.
+> - Live handlers return FastAPI's `{detail: ...}` error shape (same HTTP codes), not the `{error:{code,message}}` envelope shown below.
+
+---
+
+## Table of contents
+
+- [Auth Schemes](#auth-schemes)
+- [Standard Error Response](#standard-error-response)
+- [Domain 1: Authentication](#domain-1-authentication)
+  - [POST /api/v1/auth/signup](#post-apiv1authsignup)
+  - [POST /api/v1/auth/login](#post-apiv1authlogin)
+  - [POST /api/v1/auth/refresh](#post-apiv1authrefresh)
+  - [GET /api/v1/auth/me](#get-apiv1authme)
+- [Domain 2: Super Admin](#domain-2-super-admin)
+  - [GET /api/v1/admin/verifications](#get-apiv1adminverifications)
+  - [POST /api/v1/admin/tenants/{tenant_id}/approve](#post-apiv1admintenantstenant_idapprove)
+  - [POST /api/v1/admin/tenants/{tenant_id}/reject](#post-apiv1admintenantstenant_idreject)
+  - [GET /api/v1/admin/tenants](#get-apiv1admintenants)
+  - [POST /api/v1/admin/tenants/{tenant_id}/suspend](#post-apiv1admintenantstenant_idsuspend)
+  - [POST /api/v1/admin/tenants/{tenant_id}/reinstate](#post-apiv1admintenantstenant_idreinstate)
+  - [GET /api/v1/admin/logs](#get-apiv1adminlogs)
+  - [GET /api/v1/admin/groq-usage](#get-apiv1admingroq-usage)
+- [Domain 3: Tenant Configuration](#domain-3-tenant-configuration)
+  - [GET /api/v1/tenant/profile](#get-apiv1tenantprofile)
+  - [GET /api/v1/tenant/credentials](#get-apiv1tenantcredentials)
+  - [POST /api/v1/tenant/credentials/rotate](#post-apiv1tenantcredentialsrotate)
+  - [GET /api/v1/tenant/webhook](#get-apiv1tenantwebhook)
+  - [PUT /api/v1/tenant/webhook](#put-apiv1tenantwebhook)
+  - [POST /api/v1/tenant/webhook/test](#post-apiv1tenantwebhooktest)
+  - [GET /api/v1/tenant/schemas](#get-apiv1tenantschemas)
+  - [POST /api/v1/tenant/schemas/select-preset](#post-apiv1tenantschemasselect-preset)
+  - [GET /api/v1/tenant/llm-config](#get-apiv1tenantllm-config)
+  - [PUT /api/v1/tenant/llm-config](#put-apiv1tenantllm-config)
+  - [GET /api/v1/tenant/usage](#get-apiv1tenantusage)
+- [Domain 4: Alert Ingestion](#domain-4-alert-ingestion)
+  - [POST /api/v1/alerts/ingest](#post-apiv1alertsingest)
+- [Domain 5: SAR Review Queue](#domain-5-sar-review-queue)
+  - [GET /api/v1/queue](#get-apiv1queue)
+  - [GET /api/v1/queue/{alert_id}](#get-apiv1queuealert_id)
+  - [PUT /api/v1/queue/{alert_id}/draft](#put-apiv1queuealert_iddraft)
+  - [GET /api/v1/queue/{alert_id}/preview-rehydrated](#get-apiv1queuealert_idpreview-rehydrated)
+  - [POST /api/v1/queue/{alert_id}/approve](#post-apiv1queuealert_idapprove)
+  - [POST /api/v1/queue/{alert_id}/reject](#post-apiv1queuealert_idreject)
+- [Domain 6: Webhook Sink (Built-in Test Receiver)](#domain-6-webhook-sink-built-in-test-receiver)
+  - [POST /api/v1/webhooks/sink/{tenant_id_public}](#post-apiv1webhookssinktenant_id_public)
+  - [GET /api/v1/webhooks/sink/{tenant_id_public}/events](#get-apiv1webhookssinktenant_id_publicevents)
+- [Domain 7: Simulator](#domain-7-simulator)
+  - [POST /api/v1/simulator/submit-test-alert](#post-apiv1simulatorsubmit-test-alert)
+- [Webhook Payload Verification (Client-Side Reference)](#webhook-payload-verification-client-side-reference)
+- [Rate Limits (MVP defaults, not enforced per-tenant)](#rate-limits-mvp-defaults-not-enforced-per-tenant)
+
 ---
 
 ## Auth Schemes
@@ -237,7 +297,7 @@ Pending tenant applications.
 
 **Business Logic:**
 1. Validate tenant is in `PENDING_VERIFICATION` status
-2. Generate cryptographically secure 40-char hex API key
+2. Generate cryptographically secure API key (`sk-ae-` + 34 hex chars)
 3. bcrypt-hash and store the key; store only the prefix for display
 4. Generate `tenant_id_public` (format: `TEN-XXXX`, auto-incremented)
 5. Update tenant status to `ACTIVE`, set `approved_at`, `approved_by`
@@ -612,7 +672,7 @@ Content-Type: application/json
   },
   "metadata": {
     "ip": "192.168.1.100",
-    "device_id": "MOB-a1b2c3d4e5f6",
+    "device_id": "MOB-a1b2c3d4e5f6"
   },
   "risk": {
     "score": 87,

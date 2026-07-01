@@ -45,10 +45,11 @@ from app.data.schema_presets import SCHEMA_PRESETS                    # noqa: E4
 from app.services import document_ingestion_service as dis            # noqa: E402
 from app.services.rag_retrieval_service import retrieve_regulatory_context  # noqa: E402
 from app.services.llm_agent import generate_sar_core                  # noqa: E402
+from app.services import client_storage                               # noqa: E402
 
 # Single fixed input + single fixed policy doc for the demo (avoids confusion).
-POLICY_PDF = os.path.join(ROOT, "testing", "corpus", "aegis_bank_aml_policy.pdf")
-MOCK = os.path.join(ROOT, "testing", "inputs", "alert_structuring_intlwire.json")
+POLICY_PDF = os.path.join(ROOT, "backend", "storage", "clients", "client_0", "policy.pdf")
+MOCK = os.path.join(ROOT, "backend", "storage", "clients", "client_0", "alerts", "01_structuring_intlwire.json")
 OUTDIR = os.path.join(ROOT, "outputs", "final")
 TENANT = "client_0"   # dummy/test client (real clients start at client_1)
 
@@ -238,7 +239,8 @@ def main():
 
     # ---- STAGE 1: ingest ----
     banner(1, "Ingest mock alert (normalize -> mask PII -> rules -> score)")
-    raw = json.load(open(MOCK, encoding="utf-8"))
+    _rec = json.load(open(MOCK, encoding="utf-8"))
+    raw = _rec.get("raw_payload", _rec)
     preset = SCHEMA_PRESETS["STANDARD_FINTECH"]
     norm = normalize_payload(raw, preset["field_map"])
     masked, token_map = mask_payload(norm, preset["pii_fields"])
@@ -294,7 +296,9 @@ def main():
     banner(6, "Build goAML STR filing + webhook envelope + approved PDF")
     goaml = build_goaml_str(record, norm, [r["rule_name"] for r in triggered], structured)
     txn = norm.get("transaction_id")
-    pdf_path = os.path.join(OUTDIR, f"sar_approved_{txn}.pdf")
+    # approved SAR PDF -> client_0's unified folder (same place the live path writes);
+    # the goAML + webhook JSON stay in outputs/final/ as demo artifacts.
+    pdf_path = client_storage.sar_path(TENANT, record["sar_id"])
     render_pdf(pdf_path, record, structured, goaml)
     pdf_sha = hashlib.sha256(open(pdf_path, "rb").read()).hexdigest()
 
@@ -314,8 +318,8 @@ def main():
     json.dump(goaml, open(goaml_path, "w", encoding="utf-8"), indent=2, ensure_ascii=False)
     json.dump(webhook, open(wh_path, "w", encoding="utf-8"), indent=2, ensure_ascii=False)
 
-    print("FINAL ARTIFACTS (in outputs/final/):")
-    print("  approved PDF :", pdf_path)
+    print("FINAL ARTIFACTS:")
+    print("  approved PDF :", pdf_path, "(client_0 unified folder)")
     print("  goAML STR    :", goaml_path)
     print("  webhook body :", wh_path, f"(pdf sha256={pdf_sha[:16]}...)")
     print("\n----- FINAL goAML STR STRUCTURE (what gets filed) -----\n")

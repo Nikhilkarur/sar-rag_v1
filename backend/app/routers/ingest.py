@@ -12,6 +12,7 @@ from app.services.schema_normalizer import normalize_payload
 from app.services.pii_masker import mask_payload
 from app.services.compliance_analyzer import analyze
 from app.services.llm_agent import generate_sar
+from app.services.rag_retrieval_service import retrieve_regulatory_context
 import hashlib
 import json
 import threading
@@ -90,8 +91,25 @@ def process_alert_background(alert_id: str):
             return
 
         try:
-            # 4. Generate SAR Narrative
-            sar = generate_sar(alert.id, db)
+            # 4a. RAG retrieval (best-effort). A failure here must NOT fail the alert —
+            #     we degrade to generating without policy context (general AML knowledge).
+            retrieved_chunks = None
+            try:
+                matches = db.query(ComplianceMatch).filter(
+                    ComplianceMatch.alert_id == alert_id,
+                    ComplianceMatch.triggered == True
+                ).all()
+                compliance_results = [
+                    {"rule_name": m.rule_name, "triggered": True} for m in matches
+                ]
+                retrieved_chunks = retrieve_regulatory_context(
+                    str(alert.tenant_id), alert.masked_payload or {}, compliance_results
+                )
+            except Exception:
+                retrieved_chunks = None  # RAG unavailable → fall back to no-context generation
+
+            # 4b. Generate SAR Narrative (with the tenant's policy context, if retrieved)
+            sar = generate_sar(alert.id, db, retrieved_chunks=retrieved_chunks)
 
             # 5. Mark Complete
             alert.status = "PROCESSING_COMPLETED"
@@ -231,7 +249,11 @@ async def ingest_payload(
             db.add(match)
             
     db.commit()
-    
+
+    # NOTE: the alert is now persisted in Postgres (alerts table) — the source of
+    # truth for live transactions. We deliberately do NOT mirror it to the per-client
+    # folder here; for offline eval, export a sample from the DB on demand instead.
+
     if alert.risk_score >= 75:
         # Threshold met, trigger SAR generation
         background_tasks.add_task(process_alert_background, alert.id)

@@ -1,0 +1,1779 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>MOCKBANK_BRIEF.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> or <div class="page"></div> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="mock-bank--build--integration-brief">Mock Bank — Build &amp; Integration Brief</h1>
+<p><strong>Audience:</strong> the teammate building the <em>mock bank</em> app. You do <strong>not</strong> need any prior
+knowledge of our project — this document explains everything you need.</p>
+<p><strong>Goal:</strong> you build a small, self-contained &quot;fake bank&quot; app and send it to us as a ZIP.
+We unzip it, run it on one laptop next to our system, and demonstrate the <strong>whole
+pipeline live</strong>: a bank customer makes a transaction → the bank auto-flags it and sends
+it to our system → our system drafts a regulator-ready report → our compliance officer
+approves it → the finished report lands back in the bank's inbox.</p>
+<p>Everything runs <strong>locally on one laptop</strong>. Nothing is deployed to the cloud.</p>
+<blockquote>
+<p>Three golden rules, read these first:</p>
+<ol>
+<li><strong>The report is a legal filing for the regulator (FIU-India). The customer NEVER
+sees it.</strong> Telling a customer they've been reported is a crime (&quot;tipping-off&quot;).
+So: <strong>no &quot;send report to customer&quot; feature anywhere.</strong> The report only ever goes to
+the <em>bank admin's</em> inbox.</li>
+<li><strong>You never need our real API key while building.</strong> Leave an empty placeholder for
+it in your backend config (<code>AEGIS_API_KEY=</code> in <code>.env</code>). The Aegis team registers
+your app and pastes the real key in <em>ourselves</em> after you send the ZIP — you never
+receive or handle the secret. Wherever the key lives, it must be in your <em>backend</em>,
+never in browser JavaScript. (More on this in Section 8.)</li>
+<li><strong>Make it look like a real bank.</strong> This isn't a bare form — it's a believable
+banking website: a customer net-banking portal and an internal bank/compliance
+console. Polished and professional enough to demo to outsiders. (See Section 6, Section 7.)</li>
+</ol>
+</blockquote>
+<hr>
+<h2 id="table-of-contents">Table of contents</h2>
+<ul>
+<li><a href="#0-tldr">0. TL;DR (the one-paragraph version)</a></li>
+<li><a href="#1-what-our-system-aegis-is">1. What our system (&quot;Aegis&quot;) is</a></li>
+<li><a href="#2-the-demo-we-are-building-together">2. The demo we are building together</a></li>
+<li><a href="#3-scope-what-you-build-vs-what-we-built">3. Scope: what YOU build vs what WE already built</a>
+<ul>
+<li><a href="#31-what-you-can-hardcode-or-fake">3.1 What you can hardcode or fake</a></li>
+<li><a href="#32-what-you-must-build-for-real">3.2 What you must build for real</a></li>
+</ul>
+</li>
+<li><a href="#4-how-to-structure-your-mock-bank">4. How to structure your mock bank (architecture)</a></li>
+<li><a href="#5-the-integration-contract">5. The integration contract (the ONLY two connection points)</a>
+<ul>
+<li><a href="#51-send-a-transaction-to-aegis-bank--aegis">5.1 Send a transaction to Aegis (Bank → Aegis)</a></li>
+<li><a href="#52-receive-the-finished-report-aegis--bank">5.2 Receive the finished report (Aegis → Bank)</a></li>
+</ul>
+</li>
+<li><a href="#6-build-the-customer-side">6. Build the Customer side</a></li>
+<li><a href="#7-build-the-bank-admin-side">7. Build the Bank-Admin side</a>
+<ul>
+<li><a href="#71-the-bank-aml-rule-engine-flag-and-forward">7.1 The bank AML rule engine (flag and forward)</a></li>
+<li><a href="#72-best-practice-advice">7.2 Best-practice advice</a></li>
+</ul>
+</li>
+<li><a href="#8-config-ports--security-rules">8. Config, ports &amp; security rules</a></li>
+<li><a href="#9-what-to-deliver-zip--readme">9. What to deliver (ZIP + README)</a></li>
+<li><a href="#10-how-we-will-run-it-after-you-send-the-zip">10. How WE will run it after you send the ZIP</a></li>
+<li><a href="#11-definition-of-done">11. Definition of Done (acceptance checklist)</a></li>
+<li><a href="#appendix-a--ready-to-use-transaction-payloads">Appendix A — Ready-to-use transaction payloads</a></li>
+<li><a href="#appendix-b--exact-webhook-payload-you-will-receive">Appendix B — Exact webhook payload you will receive</a></li>
+<li><a href="#appendix-c--faq--gotchas">Appendix C — FAQ &amp; gotchas</a></li>
+<li><a href="#appendix-d--full-scenario-matrix-cover-all-these">Appendix D — Full scenario matrix (cover all these)</a></li>
+<li><a href="#appendix-e--copy-paste-integration-code-node-and-python">Appendix E — Copy-paste integration code (Node and Python)</a></li>
+</ul>
+<hr>
+<h2 id="0-tldr">0. TL;DR</h2>
+<p>Build a fake bank with <strong>two screens</strong> and a <strong>tiny backend</strong>:</p>
+<ul>
+<li><strong>Customer screen</strong> — a person fills in a transaction (amount, recipient, type) and clicks Send.</li>
+<li><strong>Bank-admin screen</strong> — automatically risk-checks each transaction; risky ones are
+auto-sent to our API (<code>POST /api/v1/ingest/</code>); a list shows their status; an <strong>inbox</strong>
+shows the finished reports our system sends back (with a button to open the PDF).</li>
+<li><strong>Your backend</strong> — holds the secret API key, sends flagged transactions to us, and
+exposes one URL that <em>receives</em> our finished report (a &quot;webhook&quot;).</li>
+</ul>
+<p>You do <strong>not</strong> build any AI, PII masking, report writing, or the approval screen — that's
+our system. You only build the bank around it. Deliver a ZIP + a README with run steps.
+Use any stack you like; keep ports off <code>5173</code> (see Section 8).</p>
+<p><strong>Make it look like an actual bank</strong> (real login, dashboard, balances, a proper transfer
+flow; the admin side looks like an internal compliance console) — see Section 6/Section 7. And <strong>don't
+hardcode the bank's name/branding</strong> — read it from config so it can be re-skinned later
+for other banks/fintechs. You don't need our API key to build; you leave a blank slot for
+it and we fill it in (see golden rule #2).</p>
+<hr>
+<h2 id="1-what-our-system-aegis-is">1. What our system (&quot;Aegis&quot;) is</h2>
+<p>Banks and fintechs in India are legally required to file a <strong>Suspicious Transaction
+Report (STR)</strong> — also called a SAR (Suspicious Activity Report) — with the financial
+regulator (<strong>FIU-India</strong>) whenever they detect a suspicious transaction.</p>
+<p>Writing that report by hand is slow and inconsistent. <strong>Our system, Aegis, automates it:</strong></p>
+<ol>
+<li>A bank sends us a flagged transaction (raw JSON).</li>
+<li>Aegis <strong>masks the personal data</strong> (names, account numbers) so no private data leaks to
+the AI.</li>
+<li>Aegis runs <strong>rule checks</strong> (e.g. &quot;amount just under the reporting limit&quot;,
+&quot;international wire&quot;, &quot;dormant account suddenly active&quot;) to gather evidence.</li>
+<li>Aegis retrieves the <strong>bank's own AML policy</strong> and asks an LLM to draft a report that
+<strong>cites the relevant policy sections</strong> (not generic text).</li>
+<li>The drafted report is reviewed and approved on the Aegis side (today, by a compliance
+officer on the Aegis dashboard). <strong>This approval step is not finalized</strong> — exactly who
+approves, and where, may change. (It doesn't affect your build — see Section 2.)</li>
+<li>On approval, Aegis builds a <strong>regulator-formatted report (goAML JSON) + a PDF</strong> and
+<strong>sends it back to the bank</strong>.</li>
+</ol>
+<p>For this demo there is <strong>no real bank</strong>, so <strong>your app plays the bank.</strong> We provide
+everything from step 2 to step 6. You provide steps 1 (sending the transaction) and the
+final receiving/inbox part of step 6.</p>
+<hr>
+<h2 id="2-the-demo-we-are-building-together">2. The demo we are building together</h2>
+<pre><code class="language-mermaid"><div class="mermaid">sequenceDiagram
+    participant C as Customer (your UI)
+    participant BB as Bank backend (yours)
+    participant A as Aegis API (ours, :8000)
+    participant O as Compliance Officer (our dashboard, :5173)
+    participant BA as Bank Admin inbox (your UI)
+
+    C->>BB: 1. Make a transaction (amount, recipient, type)
+    BB->>BB: 2. Auto risk-check (your rules)
+    Note over BB: If risky → send it on. If clean → just record it.
+    BB->>A: 3. POST /api/v1/ingest/ (the transaction JSON)
+    A-->>BB: { status, alert_id, risk_score }
+    A->>A: 4. mask PII → rules → retrieve policy → LLM drafts report
+    Note over A,O: Step 5 is TENTATIVE / not finalized —<br/>who approves the report, and where, is not locked in yet
+    O->>A: 5. (tentative) the report is reviewed & approved on the Aegis side
+    A->>BB: 6. POST your webhook (the finished report + PDF link)
+    BB->>BA: 7. Show it in the bank's inbox (bank staff watch HERE, in the bank UI)
+    BA->>A: 8. (optional) Open the PDF link in a browser
+</div></code></pre>
+<p>The single end-to-end story we will show on stage:</p>
+<blockquote>
+<p>&quot;A customer sends ₹9,45,000 abroad. The bank's system instantly flags it and forwards
+it to Aegis. Seconds later a fully-drafted suspicious-transaction report appears in the
+compliance officer's queue, already citing the bank's AML policy. The officer approves
+it in one click — and the finished, regulator-ready report (with PDF) drops straight
+into the bank's inbox.&quot;</p>
+</blockquote>
+<blockquote>
+<p><strong>Note — not finalized:</strong> <em>who</em> approves the report and <em>where</em> (step 5) is still being
+decided on the Aegis side, so treat it as tentative. <strong>It does not change what you
+build.</strong> The bank's staff watch their transactions in <strong>your</strong> bank UI (the monitoring
+list + inbox) — <strong>not</strong> in the Aegis UI. Your app only sends transactions and waits for
+the webhook; however the approval ends up working on our side, the webhook stays the
+trigger that drops the finished report into your inbox.</p>
+</blockquote>
+<hr>
+<h2 id="3-scope-what-you-build-vs-what-we-built">3. Scope: what YOU build vs what WE built</h2>
+<table>
+<thead>
+<tr>
+<th>Capability</th>
+<th>Built by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Customer screen to create a transaction</td>
+<td><strong>You</strong></td>
+</tr>
+<tr>
+<td>Auto risk-check rules in the bank that decide &quot;is this risky?&quot;</td>
+<td><strong>You</strong></td>
+</tr>
+<tr>
+<td>Sending the flagged transaction to Aegis (<code>POST /api/v1/ingest/</code>)</td>
+<td><strong>You</strong></td>
+</tr>
+<tr>
+<td>A monitoring list (sent → processing → report received)</td>
+<td><strong>You</strong></td>
+</tr>
+<tr>
+<td>A webhook <strong>receiver</strong> endpoint that accepts our finished report</td>
+<td><strong>You</strong></td>
+</tr>
+<tr>
+<td>An <strong>inbox</strong> that displays the received report + opens the PDF</td>
+<td><strong>You</strong></td>
+</tr>
+<tr>
+<td>PII masking, rule engine, policy retrieval (RAG), LLM report drafting</td>
+<td><strong>We</strong> (done)</td>
+</tr>
+<tr>
+<td>The report review/approve step on the Aegis side</td>
+<td><strong>We</strong> (tentative — not finalized)</td>
+</tr>
+<tr>
+<td>Building the goAML report + PDF + sending the webhook</td>
+<td><strong>We</strong> (done)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>You do NOT build:</strong> any AI/LLM, any PII masking, the report itself, or the approval UI.
+Treat Aegis as a black box with exactly two connection points (Section 5).</p>
+<h3 id="31-what-you-can-hardcode-or-fake">3.1 What you can hardcode or fake</h3>
+<p>Keep it lean — none of these need to be &quot;real&quot;. Faking them is expected:</p>
+<table>
+<thead>
+<tr>
+<th>Area</th>
+<th>Just fake it like this</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Customer login / auth</td>
+<td>A demo user, hardcoded credentials, or no login at all</td>
+</tr>
+<tr>
+<td>Account balance</td>
+<td>A static number, or decrement it naively after a transfer</td>
+</tr>
+<tr>
+<td>Customers</td>
+<td>One or two demo customers is enough (incl. <strong>one &quot;dormant&quot; account</strong> for rule R5)</td>
+</tr>
+<tr>
+<td>Storage</td>
+<td>In-memory, or a small SQLite file — no real database needed</td>
+</tr>
+<tr>
+<td>Persistence across restarts</td>
+<td>Not required</td>
+</tr>
+<tr>
+<td>Account numbers / IBANs / device id / IP</td>
+<td>Any plausible-looking strings; auto-generate them</td>
+</tr>
+<tr>
+<td>Currency</td>
+<td>INR only</td>
+</tr>
+<tr>
+<td>HMAC signature check on the webhook</td>
+<td>Skip it (optional hardening)</td>
+</tr>
+<tr>
+<td>&quot;File with FIU&quot; / &quot;Flag account&quot; buttons</td>
+<td>Cosmetic no-ops</td>
+</tr>
+<tr>
+<td>Multiple banks / tenants</td>
+<td>Just one bank; keep its name in <code>BANK_NAME</code> config for future reuse</td>
+</tr>
+<tr>
+<td>Polling Aegis for status</td>
+<td>Not needed — rely on the webhook</td>
+</tr>
+</tbody>
+</table>
+<h3 id="32-what-you-must-build-for-real">3.2 What you must build for real</h3>
+<p>These are the spine of the demo — they must actually work:</p>
+<ul>
+<li>The <strong>POST to Aegis</strong> with the correct headers + body shape (Section 5.1).</li>
+<li>The bank's <strong>AML rule engine</strong> that decides forward-vs-clear (Section 7.1) — at least the rules
+needed to demo each case in Appendix D.</li>
+<li>The <strong>webhook receiver</strong> that returns <code>200</code> and stores the report (Section 5.2).</li>
+<li>The <strong>monitoring list</strong> status transitions and the <strong>inbox</strong> with a working <strong>Open PDF</strong>.</li>
+<li>The <strong>two-tier split</strong> with the <strong>API key in the backend</strong> (read from env, shipped blank).</li>
+<li><strong>Env-var config</strong> + a <code>.env.example</code>.</li>
+</ul>
+<hr>
+<h2 id="4-how-to-structure-your-mock-bank">4. How to structure your mock bank</h2>
+<p>Build it in <strong>two tiers</strong>. This is important — it's not optional decoration, it's what
+keeps the API key safe and avoids browser security (CORS) problems.</p>
+<pre class="hljs"><code><div>  ┌──────────────────────────────┐         ┌───────────────────────────────┐
+  │  Bank FRONTEND (browser UI)  │  HTTP   │  Bank BACKEND (your server)   │
+  │  - Customer screen           │ ──────► │  - holds the AEGIS_API_KEY    │
+  │  - Bank-admin screen + inbox │         │  - runs the risk rules        │
+  │  Port: 5174 (or 3000)        │ ◄────── │  - POSTs flagged txns to Aegis│
+  └──────────────────────────────┘         │  - receives Aegis's webhook   │
+                                            │  - stores received reports    │
+                                            │  Port: 8001                   │
+                                            └───────────────┬───────────────┘
+                                                            │  HTTP
+                                            ┌───────────────▼───────────────┐
+                                            │  AEGIS API (ours)  Port: 8000  │
+                                            └────────────────────────────────┘
+</div></code></pre>
+<p>Why a backend and not just a frontend calling Aegis directly?</p>
+<ul>
+<li><strong>The API key must stay secret.</strong> If the browser called Aegis directly, anyone could
+open dev-tools and steal the key. Your backend holds it; the browser never sees it.</li>
+<li><strong>Browser security (CORS).</strong> Our API only accepts browser calls from a known list of
+origins. Server-to-server calls (your backend → Aegis) have no such restriction, so
+routing through your backend &quot;just works&quot;.</li>
+<li><strong>The webhook needs a server.</strong> Our system calls a URL on <em>your</em> side to deliver the
+finished report. Only a backend can listen for an incoming HTTP request; a browser
+cannot.</li>
+</ul>
+<p>You can use <strong>any stack</strong> (Node/Express, Python/FastAPI or Flask, etc.). A single
+full-stack framework (e.g. Next.js with API routes) is also fine, as long as the API key
+and the webhook receiver live on the server side.</p>
+<hr>
+<h2 id="5-the-integration-contract">5. The integration contract</h2>
+<p>There are <strong>exactly two</strong> connection points. Get these right and everything works.</p>
+<h3 id="51-send-a-transaction-to-aegis-bank--aegis">5.1 Send a transaction to Aegis (Bank → Aegis)</h3>
+<p>Your <strong>backend</strong> sends each flagged transaction to:</p>
+<pre class="hljs"><code><div>POST  http://localhost:8000/api/v1/ingest/
+</div></code></pre>
+<p><strong>Required headers</strong> (all three):</p>
+<table>
+<thead>
+<tr>
+<th>Header</th>
+<th>Value</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Content-Type</code></td>
+<td><code>application/json</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>X-API-Key</code></td>
+<td><em>(read from your backend env; you leave it blank, we paste it)</em></td>
+<td>the secret key — backend only</td>
+</tr>
+<tr>
+<td><code>X-Tenant-ID</code></td>
+<td><code>TEN-0001</code></td>
+<td>identifies which bank you are</td>
+</tr>
+</tbody>
+</table>
+<p>Optional headers:</p>
+<table>
+<thead>
+<tr>
+<th>Header</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Idempotency-Key</code></td>
+<td>A unique string per transaction. If you resend the same one, Aegis returns <code>409</code> instead of creating a duplicate. If you omit it, Aegis hashes the body — so a byte-identical resend is still rejected. Best practice: send a fresh unique id (e.g. your transaction ref) per real transaction.</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>Your HTTP client must send a normal request with a <code>Content-Length</code> header (every
+standard library does this automatically for a JSON body). Do <strong>not</strong> use chunked
+transfer encoding. Max body size is <strong>5 MB</strong>.</p>
+</blockquote>
+<p><strong>Request body</strong> — must match the field layout below (this is the schema <code>TEN-0001</code> uses,
+called <code>STANDARD_FINTECH</code>). Send exactly these nested keys:</p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;customer&quot;</span><span class="hljs-punctuation">:</span>     <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;full_name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Rohan Mehta&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;CUST-884213&quot;</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;account&quot;</span><span class="hljs-punctuation">:</span>      <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;number&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;5012-7788-2231&quot;</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;txn&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;ref_id&quot;</span><span class="hljs-punctuation">:</span>    <span class="hljs-string">&quot;TXN-20260616-0001&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;amount&quot;</span><span class="hljs-punctuation">:</span>    <span class="hljs-number">945000</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;currency&quot;</span><span class="hljs-punctuation">:</span>  <span class="hljs-string">&quot;INR&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span>      <span class="hljs-string">&quot;INTERNATIONAL_WIRE&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;direction&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;OUTBOUND&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;timestamp&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-04-16T11:42:07+05:30&quot;</span>
+  <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;counterparty&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;account&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;AE070331234567&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Gulf Horizon FZE&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;bank&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Emirates NBD&quot;</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;metadata&quot;</span><span class="hljs-punctuation">:</span>     <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;ip&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;203.0.113.57&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;device_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;dev-9f3c1a77&quot;</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;risk&quot;</span><span class="hljs-punctuation">:</span>         <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;score&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">70</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;reason&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Large outbound transfer just below threshold.&quot;</span> <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<p><strong>Full field reference</strong> (what each key means and whether it matters):</p>
+<table>
+<thead>
+<tr>
+<th>JSON path</th>
+<th>Meaning</th>
+<th>Required?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>customer.full_name</code></td>
+<td>Customer's name (will be masked by us)</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>customer.id</code></td>
+<td>Your internal customer id</td>
+<td>Recommended</td>
+</tr>
+<tr>
+<td><code>account.number</code></td>
+<td>Customer's account number (masked by us)</td>
+<td>Recommended</td>
+</tr>
+<tr>
+<td><code>txn.ref_id</code></td>
+<td>Your unique transaction id</td>
+<td>Recommended (use it as the <code>Idempotency-Key</code> too)</td>
+</tr>
+<tr>
+<td><code>txn.amount</code></td>
+<td>Numeric amount (no commas, no currency symbol)</td>
+<td><strong>Yes</strong></td>
+</tr>
+<tr>
+<td><code>txn.currency</code></td>
+<td>e.g. <code>&quot;INR&quot;</code></td>
+<td>Recommended</td>
+</tr>
+<tr>
+<td><code>txn.type</code></td>
+<td>One of the types below</td>
+<td><strong>Yes</strong></td>
+</tr>
+<tr>
+<td><code>txn.direction</code></td>
+<td><code>&quot;OUTBOUND&quot;</code> / <code>&quot;INBOUND&quot;</code> (free text)</td>
+<td>Optional</td>
+</tr>
+<tr>
+<td><code>txn.timestamp</code></td>
+<td>ISO-8601 datetime</td>
+<td>Recommended</td>
+</tr>
+<tr>
+<td><code>counterparty.account</code></td>
+<td>The other party's account</td>
+<td>Optional</td>
+</tr>
+<tr>
+<td><code>counterparty.name</code></td>
+<td>The other party's name</td>
+<td>Optional</td>
+</tr>
+<tr>
+<td><code>counterparty.bank</code></td>
+<td>The other party's bank/institution</td>
+<td>Optional (can trigger a rule, see below)</td>
+</tr>
+<tr>
+<td><code>metadata.ip</code></td>
+<td>Customer IP</td>
+<td>Optional</td>
+</tr>
+<tr>
+<td><code>metadata.device_id</code></td>
+<td>Customer device id</td>
+<td>Optional</td>
+</tr>
+<tr>
+<td><code>risk.score</code></td>
+<td><strong>Your</strong> preliminary risk score, 0–100</td>
+<td><strong>Important</strong> (see scoring below)</td>
+</tr>
+<tr>
+<td><code>risk.reason</code></td>
+<td>One-line reason your rules flagged it</td>
+<td>Recommended (some text triggers rules)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Response</strong> you get back immediately:</p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;status&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;success&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;alert_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;f1e2d3c4-....-uuid&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;risk_score&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">100</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;message&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Ingested successfully. SAR generation triggered.&quot;</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<ul>
+<li>Save <code>alert_id</code> — it identifies this transaction inside Aegis; use it to track status in
+your monitoring list.</li>
+<li>If <code>message</code> says <strong>&quot;SAR generation triggered&quot;</strong>, a report is being drafted and you
+<em>will</em> receive a webhook later (after the officer approves). If it says <strong>&quot;No SAR
+required&quot;</strong>, Aegis judged it not suspicious enough and <strong>no webhook will come</strong> — show
+it as &quot;cleared&quot; in your UI.</li>
+</ul>
+<p><strong>Status codes you may get back</strong> (handle these in your backend):</p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Meaning</th>
+<th>What you should do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>200</code></td>
+<td>Accepted</td>
+<td>read <code>message</code> to set the row status (see above)</td>
+</tr>
+<tr>
+<td><code>400</code></td>
+<td>Bad JSON / not an object / no active schema</td>
+<td>log it; it's a bug in your request shape</td>
+</tr>
+<tr>
+<td><code>401</code></td>
+<td>Bad/missing <code>X-API-Key</code> or <code>X-Tenant-ID</code></td>
+<td>check the key is set in your backend env</td>
+</tr>
+<tr>
+<td><code>409</code></td>
+<td>Duplicate (same <code>Idempotency-Key</code> / identical body)</td>
+<td>treat as already-sent; don't resend</td>
+</tr>
+<tr>
+<td><code>411</code></td>
+<td>Missing <code>Content-Length</code></td>
+<td>use a normal JSON client (not chunked)</td>
+</tr>
+<tr>
+<td><code>413</code></td>
+<td>Body over 5 MB</td>
+<td>shouldn't happen for a transaction</td>
+</tr>
+<tr>
+<td><code>429</code></td>
+<td>Rate limited (120 requests/min)</td>
+<td>back off and retry after <code>Retry-After</code> seconds</td>
+</tr>
+</tbody>
+</table>
+<h4 id="when-does-aegis-actually-produce-a-report-so-your-demo-always-works">When does Aegis actually produce a report? (so your demo always works)</h4>
+<p>Aegis computes a <strong>final score</strong> and only drafts a report (and later sends you a webhook)
+when that final score is <strong>&gt;= 75</strong>. The math:</p>
+<pre class="hljs"><code><div>final_score = your risk.score (clamped to 0–100)
+              + 20 for each HIGH-confidence rule that fires
+              + 10 for each MEDIUM-confidence rule that fires
+              (capped at 100)
+</div></code></pre>
+<p>The rules Aegis runs and what makes them fire:</p>
+<table>
+<thead>
+<tr>
+<th>Rule</th>
+<th>Fires when</th>
+<th>Confidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Structuring</td>
+<td><code>txn.amount</code> between <strong>800,000 and 999,999</strong></td>
+<td>HIGH if 900,000–999,999, else MEDIUM</td>
+</tr>
+<tr>
+<td>High-risk type</td>
+<td><code>txn.type</code> is <code>INTERNATIONAL_WIRE</code>, <code>CRYPTO_PURCHASE</code>, <code>FOREX_TRANSFER</code>, or <code>HAWALA</code></td>
+<td>HIGH</td>
+</tr>
+<tr>
+<td>Rapid movement</td>
+<td><code>txn.type</code> is <code>REVERSAL</code> or <code>REFUND</code> <strong>and</strong> amount &gt; 100,000</td>
+<td>MEDIUM</td>
+</tr>
+<tr>
+<td>Large round number</td>
+<td><code>txn.amount</code> is an exact multiple of 100,000 (e.g. 500000)</td>
+<td>MEDIUM if &gt;= 500,000</td>
+</tr>
+<tr>
+<td>Dormant activation</td>
+<td><code>risk.reason</code> text contains the word <strong>&quot;dormant&quot;</strong></td>
+<td>HIGH</td>
+</tr>
+<tr>
+<td>High velocity</td>
+<td><code>risk.reason</code> contains <strong>&quot;velocity&quot;</strong>, or <code>risk.score</code> &gt;= 90</td>
+<td>HIGH if score &gt;= 90</td>
+</tr>
+<tr>
+<td>High-risk counterparty</td>
+<td><code>counterparty.bank</code> contains &quot;Unknown Bank&quot;, &quot;Shell Bank&quot;, &quot;Offshore Co.&quot;, or &quot;Anonymous&quot;</td>
+<td>MEDIUM</td>
+</tr>
+<tr>
+<td>Risk-score threshold</td>
+<td><code>risk.score</code> &gt;= 75</td>
+<td>HIGH if &gt;= 85</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Easiest guarantees for the demo:</strong></p>
+<ul>
+<li>Send any transaction with <strong><code>risk.score</code> &gt;= 75</strong> → guaranteed report.</li>
+<li>Or send an <code>INTERNATIONAL_WIRE</code>/<code>HAWALA</code>/<code>CRYPTO_PURCHASE</code> with amount 900,000–999,999
+and <code>risk.score</code> 40+ → two HIGH rules (+40) → guaranteed report.</li>
+<li>To demo the <strong>&quot;clean / no report&quot;</strong> path, send e.g. <code>txn.type: &quot;TRANSFER&quot;</code>,
+<code>txn.amount: 25000</code>, <code>risk.score: 30</code> → final 30 → no report.</li>
+</ul>
+<p>(Worked examples are in <a href="#appendix-a--ready-to-use-transaction-payloads">Appendix A</a>.)</p>
+<blockquote>
+<p>Your bank's own auto-flag rules decide <strong>whether you send a transaction at all</strong> — they
+can be as simple or fancy as you like (see the red-flag ideas in Section 7). Aegis then
+<em>independently</em> scores it. For a smooth demo, make the transactions you auto-send land
+in the &quot;report&quot; zone above.</p>
+</blockquote>
+<h3 id="52-receive-the-finished-report-aegis--bank">5.2 Receive the finished report (Aegis → Bank)</h3>
+<p>After the compliance officer approves a draft on <em>our</em> dashboard, <strong>Aegis sends an HTTP
+POST to a URL on your backend</strong> (the &quot;webhook&quot;). You decide the path; tell us what it is.
+We suggest:</p>
+<pre class="hljs"><code><div>POST  http://localhost:8001/aegis/webhook
+</div></code></pre>
+<p><strong>You build this endpoint.</strong> It should:</p>
+<ul>
+<li>Accept a JSON <code>POST</code>,</li>
+<li>Store the report (in memory, a file, or a small SQLite DB — your choice),</li>
+<li>Respond quickly with <strong>HTTP 200</strong> (so our &quot;Test webhook&quot; button shows success). We do
+not require any particular response body.</li>
+</ul>
+<p><strong>Headers we send you:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Header</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Content-Type</code></td>
+<td><code>application/json</code></td>
+</tr>
+<tr>
+<td><code>X-Aegis-Event</code></td>
+<td><code>sar.approved</code></td>
+</tr>
+<tr>
+<td><code>X-Aegis-Signature</code></td>
+<td><code>sha256=&lt;hmac&gt;</code> — an HMAC-SHA256 of the raw body using a shared secret</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>You do NOT need to verify the signature for the local demo.</strong> It's there for
+production. (If you want to: HMAC-SHA256 the raw request body with the secret we give
+you and compare to the header. We can provide the secret on request.)</p>
+</blockquote>
+<p><strong>Timing &amp; retries:</strong> the webhook fires <strong>once</strong>, the moment the officer clicks Approve on
+our dashboard — which could be seconds to a few minutes after you sent the transaction.
+There is <strong>no automatic retry</strong> and our call times out after ~8 seconds, so your receiver
+should answer <code>200</code> quickly and not do slow work before responding. Keep the matching row
+on <code>processing</code> until it arrives.</p>
+<p><strong>Build your receiver before the full loop works:</strong> we can fire a <strong>test webhook</strong> at your
+URL on demand (from our dashboard's &quot;Test webhook&quot; button). The test payload is a
+connectivity check and has a slightly different shape — e.g. <code>{&quot;event&quot;: &quot;...&quot;, &quot;test&quot;: true, &quot;sar_id&quot;: &quot;...&quot;, &quot;narrative_text&quot;: &quot;...&quot;, &quot;compliance_rules_triggered&quot;: [...]}</code> — so write
+your handler <strong>defensively</strong>: read fields with safe defaults and don't crash if <code>goaml_str</code>
+or <code>pdf_url</code> is missing. Just store whatever arrives and return <code>200</code>.</p>
+<p><strong>The JSON body we send</strong> (this is the finished report — full real example in
+<a href="#appendix-b--exact-webhook-payload-you-will-receive">Appendix B</a>):</p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;event&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;sar.approved&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;sar_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;9b2c....-uuid&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;alert_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;f1e2....-uuid&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;approved_at&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-06-27T10:15:03.123Z&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;approved_by&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Test Fintech Admin&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;goaml_str&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;report&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;report_code&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;STR&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;...&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;...&quot;</span> <span class="hljs-punctuation">}</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;pdf_url&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;http://localhost:8000/files/sar/9b2c....-uuid.pdf&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;compliance_rules_triggered&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-string">&quot;STRUCTURING&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-string">&quot;HIGH_RISK_TYPE&quot;</span><span class="hljs-punctuation">]</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<p>What to do with the fields:</p>
+<ul>
+<li><code>alert_id</code> — match it to the transaction in your monitoring list and flip its status to
+<strong>&quot;report received&quot;</strong>.</li>
+<li><code>goaml_str</code> — the regulator-formatted report. Show its key fields in the inbox (it's a
+nested JSON object; see Appendix B for the shape). You don't have to render all of it —
+a few headline fields + &quot;view raw JSON&quot; is plenty.</li>
+<li><code>pdf_url</code> — a direct link to the PDF. Put a <strong>&quot;Open PDF&quot;</strong> button that opens this URL in
+a new browser tab. (The PDF is served by <em>our</em> API, openly, on localhost.)</li>
+<li><code>compliance_rules_triggered</code> — the list of rule codes that fired; show them as tags.</li>
+</ul>
+<p>Optional extra actions the bank admin can have (cosmetic, no real effect): a <strong>&quot;File with
+FIU&quot;</strong> button and a <strong>&quot;Flag account&quot;</strong> toggle. These are just bank-side UI; they do not
+call us.</p>
+<hr>
+<h2 id="6-build-the-customer-side">6. Build the Customer side</h2>
+<p>This is the <strong>customer's net-banking portal</strong> — it should look like a real bank's online
+banking, not a bare form. Aim for a believable, professional look:</p>
+<ul>
+<li>A simple <strong>login</strong> (a demo customer is fine — no real auth needed).</li>
+<li>A <strong>dashboard</strong>: account number, a (fake) balance, recent transactions list, bank
+name/logo from config (don't hardcode).</li>
+<li>A <strong>&quot;New transfer / Send money&quot;</strong> flow that contains the transaction form below.</li>
+<li>Clean, modern styling (it's going on screen in front of people).</li>
+</ul>
+<p>The transaction form itself:</p>
+<p><strong>Fields:</strong></p>
+<ul>
+<li>Amount (number, INR)</li>
+<li>Recipient name + (optional) recipient account + (optional) recipient bank</li>
+<li>Transaction type — a dropdown. Include normal ones (<code>TRANSFER</code>, <code>DEPOSIT</code>,
+<code>WITHDRAWAL</code>) <strong>and</strong> the high-risk ones so the demo can trigger reports:
+<code>INTERNATIONAL_WIRE</code>, <code>CRYPTO_PURCHASE</code>, <code>FOREX_TRANSFER</code>, <code>HAWALA</code>, <code>REVERSAL</code>,
+<code>REFUND</code>.</li>
+<li>(optional) a &quot;customer name&quot; field, or hardcode a logged-in demo customer.</li>
+</ul>
+<p><strong>Behavior:</strong></p>
+<ul>
+<li>On <strong>Send</strong>, call <em>your own backend</em> (not Aegis directly). Your backend records the
+transaction and runs the risk check (Section 7). Show the customer a normal confirmation like
+&quot;Transaction submitted.&quot;</li>
+<li><strong>The customer must NEVER see anything about suspicion, reports, or flagging.</strong> From the
+customer's point of view it's an ordinary transaction app. (This is the tipping-off
+rule.)</li>
+</ul>
+<hr>
+<h2 id="7-build-the-bank-admin-side">7. Build the Bank-Admin side</h2>
+<p>This is the <strong>bank's internal compliance/monitoring console</strong> — a separate, more
+&quot;operational&quot; looking area from the customer portal (think an internal back-office tool:
+data tables, filters, status badges). It has two parts: a <strong>monitoring list</strong> and an
+<strong>inbox</strong>.</p>
+<p><strong>Auto risk-check (your backend, on every transaction).</strong> This is the bank's own AML
+engine: when a customer's transaction <em>breaks</em> one or more rules, you score it, attach a
+human-readable reason, and <strong>auto-forward it to Aegis</strong> (Section 5.1) — no human clicks. If it's
+clean, store it locally and mark it &quot;OK&quot;. Full design in <strong>Section 7.1</strong>; in one breath:</p>
+<ul>
+<li>Compute a <code>risk.score</code> (0–100) and a <code>risk.reason</code> from the rules in Section 7.1.</li>
+<li><strong>Forward to Aegis</strong> if the score crosses your bank threshold (suggested <strong>&gt;= 50</strong>);
+otherwise mark it cleared and don't send.</li>
+<li>Send your computed <code>risk.score</code> + <code>risk.reason</code> in the payload — Aegis re-scores
+independently, and your reason <em>text</em> can itself trigger Aegis rules (see Section 7.1).</li>
+</ul>
+<p><strong>Monitoring list:</strong> a table of forwarded transactions with a status that progresses:</p>
+<pre class="hljs"><code><div>sent  →  processing  →  report received
+</div></code></pre>
+<ul>
+<li><code>sent</code> once you POST to Aegis and get back an <code>alert_id</code>.</li>
+<li><code>processing</code> while you wait (you can keep it on <code>processing</code> until the webhook arrives;
+you don't need to poll Aegis).</li>
+<li><code>report received</code> when the webhook for that <code>alert_id</code> lands.</li>
+</ul>
+<p>(If Aegis replied &quot;No SAR required&quot;, mark that row <strong>&quot;cleared — no report&quot;</strong> and don't
+expect a webhook.)</p>
+<p><strong>Inbox:</strong> a list of received reports. For each:</p>
+<ul>
+<li>Headline fields from <code>goaml_str.report</code> (report code = STR, the amount, the customer &amp;
+counterparty names, the indicators, the approving officer, the date).</li>
+<li>The <code>compliance_rules_triggered</code> tags.</li>
+<li>An <strong>&quot;Open PDF&quot;</strong> button → opens <code>pdf_url</code> in a new tab.</li>
+<li>(optional) &quot;View raw goAML JSON&quot;, &quot;File with FIU&quot;, &quot;Flag account&quot;.</li>
+</ul>
+<h3 id="71-the-bank-aml-rule-engine-flag-and-forward">7.1 The bank AML rule engine (flag and forward)</h3>
+<p>A transaction is &quot;suspicious&quot; when it <strong>breaks an AML rule</strong>. Implement the rules below in
+your backend. They are deliberately <strong>aligned with what Aegis checks</strong>, so anything your
+bank forwards as risky will reliably produce a report in the demo. For each rule that
+matches, add points and append a reason.</p>
+<table>
+<thead>
+<tr>
+<th>Bank rule</th>
+<th>Condition (on the transaction)</th>
+<th>What you set in the payload</th>
+<th>Points</th>
+<th>Aligns with Aegis rule</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>R1 Structuring</strong></td>
+<td><code>amount</code> between <strong>800,000 and 999,999</strong></td>
+<td><code>txn.amount</code></td>
+<td><strong>+60</strong></td>
+<td>Structuring (HIGH if &gt;= 900,000)</td>
+</tr>
+<tr>
+<td><strong>R2 High-risk type</strong></td>
+<td><code>type</code> in <code>INTERNATIONAL_WIRE</code>, <code>CRYPTO_PURCHASE</code>, <code>FOREX_TRANSFER</code>, <code>HAWALA</code></td>
+<td><code>txn.type</code></td>
+<td><strong>+60</strong></td>
+<td>High-risk type (HIGH)</td>
+</tr>
+<tr>
+<td><strong>R3 Rapid movement</strong></td>
+<td><code>type</code> in <code>REVERSAL</code>, <code>REFUND</code> <strong>and</strong> <code>amount</code> &gt; 100,000</td>
+<td><code>txn.type</code>, <code>txn.amount</code></td>
+<td><strong>+30</strong></td>
+<td>Rapid movement (MEDIUM)</td>
+</tr>
+<tr>
+<td><strong>R4 Round number</strong></td>
+<td><code>amount</code> &gt;= 500,000 <strong>and</strong> a multiple of 100,000</td>
+<td><code>txn.amount</code></td>
+<td><strong>+30</strong></td>
+<td>Large round number (MEDIUM)</td>
+</tr>
+<tr>
+<td><strong>R5 Dormant</strong></td>
+<td>account is dormant</td>
+<td>put the word <strong>&quot;dormant&quot;</strong> in <code>risk.reason</code></td>
+<td><strong>+60</strong></td>
+<td>Dormant activation (HIGH)</td>
+</tr>
+<tr>
+<td><strong>R6 Velocity</strong></td>
+<td><strong>&gt;= 5</strong> txns from one account within 1 hour</td>
+<td>put the word <strong>&quot;velocity&quot;</strong> in <code>risk.reason</code></td>
+<td><strong>+60</strong></td>
+<td>High velocity (HIGH)</td>
+</tr>
+<tr>
+<td><strong>R7 Counterparty</strong></td>
+<td>counterparty bank in <code>Unknown Bank</code>, <code>Shell Bank</code>, <code>Offshore Co.</code>, <code>Anonymous</code></td>
+<td><code>counterparty.bank</code></td>
+<td><strong>+30</strong></td>
+<td>High-risk counterparty (MEDIUM)</td>
+</tr>
+</tbody>
+</table>
+<p>Reference implementation:</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">def</span> <span class="hljs-title function_">assess</span>(<span class="hljs-params">txn, account, history</span>):
+    score, reasons = <span class="hljs-number">0</span>, []
+    amt = txn.amount
+    typ = txn.<span class="hljs-built_in">type</span>.upper()
+
+    <span class="hljs-comment"># R1 Structuring — amount just below the 10,00,000 reporting threshold</span>
+    <span class="hljs-keyword">if</span> <span class="hljs-number">800000</span> &lt;= amt &lt;= <span class="hljs-number">999999</span>:
+        score += <span class="hljs-number">60</span>; reasons.append(<span class="hljs-string">&quot;Amount just below the 10,00,000 reporting threshold (structuring)&quot;</span>)
+
+    <span class="hljs-comment"># R2 High-risk instrument</span>
+    <span class="hljs-keyword">if</span> typ <span class="hljs-keyword">in</span> (<span class="hljs-string">&quot;INTERNATIONAL_WIRE&quot;</span>, <span class="hljs-string">&quot;CRYPTO_PURCHASE&quot;</span>, <span class="hljs-string">&quot;FOREX_TRANSFER&quot;</span>, <span class="hljs-string">&quot;HAWALA&quot;</span>):
+        score += <span class="hljs-number">60</span>; reasons.append(<span class="hljs-string">f&quot;High-risk transaction type: <span class="hljs-subst">{typ}</span>&quot;</span>)
+
+    <span class="hljs-comment"># R3 Rapid movement — large reversal/refund</span>
+    <span class="hljs-keyword">if</span> typ <span class="hljs-keyword">in</span> (<span class="hljs-string">&quot;REVERSAL&quot;</span>, <span class="hljs-string">&quot;REFUND&quot;</span>) <span class="hljs-keyword">and</span> amt &gt; <span class="hljs-number">100000</span>:
+        score += <span class="hljs-number">30</span>; reasons.append(<span class="hljs-string">&quot;Large reversal/refund (rapid movement of funds)&quot;</span>)
+
+    <span class="hljs-comment"># R4 Large round number</span>
+    <span class="hljs-keyword">if</span> amt &gt;= <span class="hljs-number">500000</span> <span class="hljs-keyword">and</span> amt % <span class="hljs-number">100000</span> == <span class="hljs-number">0</span>:
+        score += <span class="hljs-number">30</span>; reasons.append(<span class="hljs-string">&quot;Large round-number amount&quot;</span>)
+
+    <span class="hljs-comment"># R5 Dormant account suddenly active  (the word &quot;dormant&quot; MUST be in the reason)</span>
+    <span class="hljs-keyword">if</span> account.is_dormant:
+        score += <span class="hljs-number">60</span>; reasons.append(<span class="hljs-string">&quot;Dormant account suddenly active&quot;</span>)
+
+    <span class="hljs-comment"># R6 High velocity  (the word &quot;velocity&quot; MUST be in the reason)</span>
+    <span class="hljs-keyword">if</span> history.count_last_hour(account) &gt;= <span class="hljs-number">5</span>:
+        score += <span class="hljs-number">60</span>; reasons.append(<span class="hljs-string">&quot;High velocity - multiple transactions in a short window&quot;</span>)
+
+    <span class="hljs-comment"># R7 High-risk counterparty institution</span>
+    <span class="hljs-keyword">if</span> txn.counterparty_bank <span class="hljs-keyword">in</span> (<span class="hljs-string">&quot;Unknown Bank&quot;</span>, <span class="hljs-string">&quot;Shell Bank&quot;</span>, <span class="hljs-string">&quot;Offshore Co.&quot;</span>, <span class="hljs-string">&quot;Anonymous&quot;</span>):
+        score += <span class="hljs-number">30</span>; reasons.append(<span class="hljs-string">&quot;High-risk counterparty institution&quot;</span>)
+
+    score   = <span class="hljs-built_in">min</span>(score, <span class="hljs-number">100</span>)
+    forward = score &gt;= <span class="hljs-number">50</span>                      <span class="hljs-comment"># the bank&#x27;s own forwarding threshold</span>
+    reason  = <span class="hljs-string">&quot;; &quot;</span>.join(reasons) <span class="hljs-keyword">or</span> <span class="hljs-string">&quot;Routine transfer&quot;</span>
+    <span class="hljs-keyword">return</span> forward, score, reason
+</div></code></pre>
+<p>When <code>forward</code> is true, POST to Aegis (Section 5.1) with <code>risk.score = score</code> and
+<code>risk.reason = reason</code>.</p>
+<p><strong>Three alignment details — do not skip:</strong></p>
+<ol>
+<li><strong>Words matter.</strong> Aegis detects <strong>dormant</strong> and <strong>velocity</strong> by reading those <em>words</em>
+in <code>risk.reason</code> (velocity also fires automatically if <code>risk.score &gt;= 90</code>). Keep the
+words in the reason for those cases.</li>
+<li><strong>Aegis re-scores on its own</strong> and adds points for the indicators it detects, so a
+single HIGH flag scored 60 by you becomes 60 + 20 = 80 in Aegis → a report. A single
+MEDIUM flag (30) won't even cross your forward threshold of 50, so it's cleared — that's
+correct and realistic (banks don't file on every round number).</li>
+<li><strong>Structuring is HIGH only at &gt;= 900,000.</strong> A structuring amount of 800,000–899,999 is
+MEDIUM in Aegis (+10), so 60 + 10 = 70 &lt; 75 → no report. Use <strong>900,000–999,999</strong> when
+you want structuring to reliably produce a report.</li>
+</ol>
+<p><strong>State you need for two rules</strong> (both fine in-memory):</p>
+<ul>
+<li><em>Dormant (R5):</em> seed at least one account with <code>is_dormant = true</code> (a &quot;dormant customer&quot;)
+so you can demo it.</li>
+<li><em>Velocity (R6):</em> keep a per-account list of recent transaction timestamps and count how
+many fall in the last hour.</li>
+</ul>
+<h3 id="72-best-practice-advice">7.2 Best-practice advice</h3>
+<ul>
+<li><strong>Unique <code>txn.ref_id</code> per transaction</strong>, reused as the <code>Idempotency-Key</code> header — retries
+never create duplicates.</li>
+<li><strong>Never block the customer.</strong> &quot;Send&quot; should feel instant: record the transaction, return
+success, and do the Aegis forward server-side (fire-and-forget or a tiny background job).
+The customer must never wait on — or see — anything AML-related.</li>
+<li><strong>Use the ingest response <code>message</code></strong> to set the row status: <em>&quot;SAR generation triggered&quot;</em>
+→ <code>processing</code> (a webhook is coming); <em>&quot;No SAR required&quot;</em> → <code>cleared</code> (no webhook).</li>
+<li><strong>Degrade gracefully if Aegis is down:</strong> keep the transaction recorded, mark the row
+&quot;send failed — retry&quot;, offer a manual retry. Never crash the bank app.</li>
+<li><strong>Keep the webhook handler fast:</strong> store the payload, return <code>200</code>, render separately.</li>
+<li><strong>Match on <code>alert_id</code></strong> to flip the correct monitoring-list row to &quot;report received&quot;.</li>
+<li><strong>Send clean numbers:</strong> <code>txn.amount</code> must be a plain number (no commas, no ₹) even if the
+UI shows &quot;₹9,45,000&quot;. Timestamps in ISO-8601.</li>
+<li><strong>Seed a few demo transactions</strong> at startup so the admin console isn't empty on stage.</li>
+<li><strong>Log</strong> every outbound request and inbound webhook (console or file) — makes the live
+demo easy to narrate and debug.</li>
+</ul>
+<hr>
+<h2 id="8-config-ports--security-rules">8. Config, ports &amp; security rules</h2>
+<p><strong>Ports (must follow):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Thing</th>
+<th>Port</th>
+<th>Who runs it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Aegis API</td>
+<td><code>8000</code></td>
+<td>us</td>
+</tr>
+<tr>
+<td>Aegis dashboard (officer UI)</td>
+<td><code>5173</code></td>
+<td>us</td>
+</tr>
+<tr>
+<td><strong>Your bank frontend</strong></td>
+<td><strong><code>5174</code></strong> (or <code>3000</code>)</td>
+<td>you</td>
+</tr>
+<tr>
+<td><strong>Your bank backend + webhook receiver</strong></td>
+<td><strong><code>8001</code></strong></td>
+<td>you</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Do not use <code>5173</code></strong> — that's our dashboard.</li>
+<li>Your <strong>frontend</strong> must run on <code>5174</code> or <code>3000</code> (these are the only extra origins our API
+allows browser calls from — relevant only if your frontend ever calls Aegis directly,
+which it shouldn't, but stay on these to be safe).</li>
+<li>Your <strong>backend/webhook receiver</strong> can be any free port; we suggest <code>8001</code>. (It receives
+server-to-server calls, so browser origin rules don't apply.)</li>
+</ul>
+<p><strong>Make all URLs configurable via environment variables</strong> (don't hardcode). At minimum:</p>
+<table>
+<thead>
+<tr>
+<th>Env var</th>
+<th>Example</th>
+<th>Used by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>AEGIS_BASE_URL</code></td>
+<td><code>http://localhost:8000</code></td>
+<td>your backend (where to send transactions)</td>
+</tr>
+<tr>
+<td><code>AEGIS_API_KEY</code></td>
+<td><em>(leave blank — we paste it)</em></td>
+<td>your backend (secret)</td>
+</tr>
+<tr>
+<td><code>AEGIS_TENANT_ID</code></td>
+<td><code>TEN-0001</code></td>
+<td>your backend</td>
+</tr>
+<tr>
+<td><code>BANK_BACKEND_PORT</code></td>
+<td><code>8001</code></td>
+<td>your backend</td>
+</tr>
+<tr>
+<td><code>BANK_WEBHOOK_PATH</code></td>
+<td><code>/aegis/webhook</code></td>
+<td>your backend (the receiver path)</td>
+</tr>
+<tr>
+<td><code>BANK_FRONTEND_PORT</code></td>
+<td><code>5174</code></td>
+<td>your frontend</td>
+</tr>
+<tr>
+<td><code>BANK_NAME</code></td>
+<td><code>Meridian Bank</code> (any)</td>
+<td>branding shown in the UI (don't hardcode)</td>
+</tr>
+</tbody>
+</table>
+<p>Ship this as <code>.env.example</code> (copy to <code>.env</code> to run; we paste the key in):</p>
+<pre class="hljs"><code><div><span class="hljs-comment"># --- Aegis (our system) ---</span>
+AEGIS_BASE_URL=http://localhost:8000
+AEGIS_API_KEY=                      <span class="hljs-comment"># leave blank — the Aegis team fills this in</span>
+AEGIS_TENANT_ID=TEN-0001
+
+<span class="hljs-comment"># --- Your bank app ---</span>
+BANK_NAME=Meridian Bank
+BANK_BACKEND_PORT=8001
+BANK_WEBHOOK_PATH=/aegis/webhook    <span class="hljs-comment"># your receiver is then http://localhost:8001/aegis/webhook</span>
+BANK_FRONTEND_PORT=5174
+</div></code></pre>
+<p><strong>About the API key:</strong> you do <strong>not</strong> need it to build. Ship <code>.env</code> with <code>AEGIS_API_KEY=</code>
+left <strong>empty</strong> and a matching <code>.env.example</code>. After you send us the ZIP, <em>we</em> register your
+app on our side and paste the real key into your <code>.env</code> before running. Your code must read
+the key from the env var (never inline it, never put it in the frontend). If at some point
+you want to test the live send yourself, ping us and we'll issue a throwaway test key — but
+the default plan is we fill it in.</p>
+<p><strong>Security rules (important):</strong></p>
+<ul>
+<li><strong>Never put <code>AEGIS_API_KEY</code> in frontend / browser code.</strong> Backend only.</li>
+<li>Your frontend talks to <strong>your backend</strong>; only <strong>your backend</strong> talks to <strong>Aegis</strong>.</li>
+<li>Don't commit real secrets to the ZIP; use <code>.env</code> + <code>.env.example</code>.</li>
+</ul>
+<hr>
+<h2 id="9-what-to-deliver-zip--readme">9. What to deliver (ZIP + README)</h2>
+<p>A single ZIP that runs <strong>offline on one laptop</strong>. Inside:</p>
+<pre class="hljs"><code><div>mock-bank/
+├── README.md            # run steps (below) — REQUIRED
+├── .env.example         # all the env vars from Section 8
+├── frontend/            # customer + bank-admin UI
+└── backend/             # API-key holder, risk rules, webhook receiver, storage
+</div></code></pre>
+<p>Your <code>README.md</code> must include:</p>
+<ol>
+<li><strong>Prerequisites</strong> (e.g. &quot;Node 18+&quot; or &quot;Python 3.11+&quot;).</li>
+<li><strong>Install</strong> commands (e.g. <code>npm install</code> in <code>frontend/</code> and <code>backend/</code>).</li>
+<li><strong>Configure</strong>: copy <code>.env.example</code> → <code>.env</code>, and which value we (Aegis side) fill in.</li>
+<li><strong>Run</strong> commands — exact, copy-paste, to start the backend (<code>:8001</code>) and frontend
+(<code>:5174</code>). Ideally one command per tier.</li>
+<li><strong>The webhook path</strong> you chose (so we can point Aegis at it), e.g.
+<code>http://localhost:8001/aegis/webhook</code>.</li>
+<li>A 3-line &quot;how to demo&quot; (open the customer page, send a transaction, watch the
+admin inbox).</li>
+</ol>
+<p>Keep dependencies minimal and standard so it installs cleanly on our laptop without
+special setup.</p>
+<hr>
+<h2 id="10-how-we-will-run-it-after-you-send-the-zip">10. How WE will run it after you send the ZIP</h2>
+<p>This is the exact sequence we'll follow — build so this works on the first try:</p>
+<ol>
+<li><strong>Start Aegis</strong> (our side): API on <code>:8000</code>, dashboard on <code>:5173</code>.</li>
+<li><strong>Unzip your app</strong>, copy <code>.env.example</code> → <code>.env</code>, and <strong>paste the real <code>AEGIS_API_KEY</code></strong>
+(revealed from our portal) into it. Then run your install + run steps from your README →
+your backend on <code>:8001</code>, your frontend on <code>:5174</code>.</li>
+<li><strong>Point Aegis at your webhook</strong> (our 1-minute step): we log into the Aegis dashboard as
+the bank admin → <strong>Settings → Webhook</strong> → set the callback URL to your webhook (e.g.
+<code>http://localhost:8001/aegis/webhook</code>), turn <strong>off</strong> &quot;use internal sink&quot;, <strong>Save</strong>, then
+click <strong>Test</strong> (your receiver should answer 200).</li>
+<li><strong>Run the loop:</strong>
+<ul>
+<li>In your <strong>customer</strong> screen, send a transaction that lands in the report zone (e.g.
+<code>INTERNATIONAL_WIRE</code>, ₹9,45,000, <code>risk.score</code> 70).</li>
+<li>Your <strong>bank-admin</strong> list shows it go <code>sent → processing</code>.</li>
+<li>It appears in our <strong>officer dashboard</strong> queue with a policy-citing draft.</li>
+<li>We click <strong>Approve</strong>.</li>
+<li>Within a moment, your <strong>inbox</strong> shows the finished report; we click <strong>Open PDF</strong>.</li>
+</ul>
+</li>
+<li>Done — that's the full demo.</li>
+</ol>
+<hr>
+<h2 id="11-definition-of-done">11. Definition of Done</h2>
+<p>Your build is &quot;done&quot; when all of these are true on a clean laptop:</p>
+<ul>
+<li><input type="checkbox" id="checkbox0"><label for="checkbox0"><code>npm install</code> / <code>pip install</code> (per your README) succeeds with no manual fixes.</label></li>
+<li><input type="checkbox" id="checkbox1"><label for="checkbox1">Frontend starts on <code>5174</code> (or <code>3000</code>); backend starts on <code>8001</code>.</label></li>
+<li><input type="checkbox" id="checkbox2"><label for="checkbox2">Customer can submit a transaction; it appears in the bank-admin list.</label></li>
+<li><input type="checkbox" id="checkbox3"><label for="checkbox3">Risky transactions are <strong>auto-sent</strong> to <code>POST http://localhost:8000/api/v1/ingest/</code></label>
+with the three required headers, and you store the returned <code>alert_id</code>.</li>
+<li><input type="checkbox" id="checkbox4"><label for="checkbox4">A clean transaction is <strong>not</strong> sent (or is shown as &quot;cleared&quot;).</label></li>
+<li><input type="checkbox" id="checkbox5"><label for="checkbox5">Your webhook endpoint accepts our POST and returns <strong>200</strong>.</label></li>
+<li><input type="checkbox" id="checkbox6"><label for="checkbox6">When a report arrives, the matching list row flips to &quot;report received&quot; and the</label>
+report appears in the <strong>inbox</strong> with an <strong>Open PDF</strong> button that opens <code>pdf_url</code>.</li>
+<li><input type="checkbox" id="checkbox7"><label for="checkbox7">The <strong>API key is read from the backend env</strong>, ships <strong>blank</strong> (<code>AEGIS_API_KEY=</code>),</label>
+and is never in the browser — we paste the real value in.</li>
+<li><input type="checkbox" id="checkbox8"><label for="checkbox8">The <strong>customer side never shows</strong> any suspicion/report/flag information.</label></li>
+<li><input type="checkbox" id="checkbox9"><label for="checkbox9">It <strong>looks like a real banking website</strong> (customer portal + admin console), not a</label>
+bare form; bank name/branding comes from <code>BANK_NAME</code> config, not hardcoded.</li>
+<li><input type="checkbox" id="checkbox10"><label for="checkbox10">All URLs/keys come from <strong>env vars</strong>; a <code>.env.example</code> is included.</label></li>
+<li><input type="checkbox" id="checkbox11"><label for="checkbox11">README has copy-paste run steps and states your webhook path.</label></li>
+</ul>
+<hr>
+<h2 id="appendix-a--ready-to-use-transaction-payloads">Appendix A — Ready-to-use transaction payloads</h2>
+<p>Send these to <code>POST http://localhost:8000/api/v1/ingest/</code> (with the 3 headers). Each is the
+<code>STANDARD_FINTECH</code> shape.</p>
+<p><strong>A1 — Guaranteed report (structuring + international wire), final score 100:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;customer&quot;</span><span class="hljs-punctuation">:</span>     <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;full_name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Rohan Mehta&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;CUST-884213&quot;</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;account&quot;</span><span class="hljs-punctuation">:</span>      <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;number&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;5012-7788-2231&quot;</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;txn&quot;</span><span class="hljs-punctuation">:</span>          <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;ref_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;TXN-A1-0001&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;amount&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">945000</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;currency&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;INR&quot;</span><span class="hljs-punctuation">,</span>
+                    <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;INTERNATIONAL_WIRE&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;direction&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;OUTBOUND&quot;</span><span class="hljs-punctuation">,</span>
+                    <span class="hljs-attr">&quot;timestamp&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-04-16T11:42:07+05:30&quot;</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;counterparty&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;account&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;AE070331234567&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Gulf Horizon FZE&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;bank&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Emirates NBD&quot;</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;metadata&quot;</span><span class="hljs-punctuation">:</span>     <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;ip&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;203.0.113.57&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;device_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;dev-9f3c1a77&quot;</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;risk&quot;</span><span class="hljs-punctuation">:</span>         <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;score&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">70</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;reason&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Large outbound transfer just below threshold.&quot;</span> <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<p><em>Why: base 70 + structuring HIGH (+20) + high-risk type HIGH (+20) → capped 100 &gt;= 75.</em></p>
+<p><strong>A2 — Guaranteed report (high risk score alone), final score ~95:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;customer&quot;</span><span class="hljs-punctuation">:</span>     <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;full_name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Anjali Verma&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;CUST-771002&quot;</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;account&quot;</span><span class="hljs-punctuation">:</span>      <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;number&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;6644-1290-5521&quot;</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;txn&quot;</span><span class="hljs-punctuation">:</span>          <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;ref_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;TXN-A2-0001&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;amount&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">120000</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;currency&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;INR&quot;</span><span class="hljs-punctuation">,</span>
+                    <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;TRANSFER&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;direction&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;OUTBOUND&quot;</span><span class="hljs-punctuation">,</span>
+                    <span class="hljs-attr">&quot;timestamp&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-05-02T09:10:00+05:30&quot;</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;counterparty&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;account&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;1234567890&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Quick Cash Traders&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;bank&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;HDFC Bank&quot;</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;metadata&quot;</span><span class="hljs-punctuation">:</span>     <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;ip&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;198.51.100.23&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;device_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;dev-aa11bb22&quot;</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;risk&quot;</span><span class="hljs-punctuation">:</span>         <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;score&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">92</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;reason&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;High velocity - 8 transactions in 1 hour.&quot;</span> <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<p><em>Why: base 92 + velocity HIGH (+20) + risk-threshold HIGH (+20) → capped 100.</em></p>
+<p><strong>A3 — Clean / no report (to demo the negative path), final score 30:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;customer&quot;</span><span class="hljs-punctuation">:</span>     <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;full_name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Sneha Iyer&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;CUST-330551&quot;</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;account&quot;</span><span class="hljs-punctuation">:</span>      <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;number&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;9001-2233-4455&quot;</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;txn&quot;</span><span class="hljs-punctuation">:</span>          <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;ref_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;TXN-A3-0001&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;amount&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">25000</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;currency&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;INR&quot;</span><span class="hljs-punctuation">,</span>
+                    <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;TRANSFER&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;direction&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;OUTBOUND&quot;</span><span class="hljs-punctuation">,</span>
+                    <span class="hljs-attr">&quot;timestamp&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-05-03T14:00:00+05:30&quot;</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;counterparty&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;account&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;5566778899&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Ravi Kumar&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;bank&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;ICICI Bank&quot;</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;metadata&quot;</span><span class="hljs-punctuation">:</span>     <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;ip&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;203.0.113.9&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;device_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;dev-cc33dd44&quot;</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;risk&quot;</span><span class="hljs-punctuation">:</span>         <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;score&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">30</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;reason&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Routine transfer.&quot;</span> <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<p><em>Why: base 30, no rules fire → 30 &lt; 75 → response says &quot;No SAR required&quot;, no webhook.</em></p>
+<p>A quick test from a terminal (replace the key):</p>
+<pre class="hljs"><code><div>curl -X POST http://localhost:8000/api/v1/ingest/ \
+  -H <span class="hljs-string">&quot;Content-Type: application/json&quot;</span> \
+  -H <span class="hljs-string">&quot;X-API-Key: sk-ae-REPLACE_ME&quot;</span> \
+  -H <span class="hljs-string">&quot;X-Tenant-ID: TEN-0001&quot;</span> \
+  -d @A1.json
+</div></code></pre>
+<hr>
+<h2 id="appendix-b--exact-webhook-payload-you-will-receive">Appendix B — Exact webhook payload you will receive</h2>
+<p>This is the real shape Aegis POSTs to your webhook on approval (values illustrative):</p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;event&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;sar.approved&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;sar_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;9b2c8f1a-7e44-4c2b-9a10-2f3d4e5a6b7c&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;alert_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;f1e2d3c4-1122-3344-5566-77889900aabb&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;approved_at&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-06-27T10:15:03.123456Z&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;approved_by&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Test Fintech Admin&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;compliance_rules_triggered&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-string">&quot;STRUCTURING&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-string">&quot;HIGH_RISK_TYPE&quot;</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;pdf_url&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;http://localhost:8000/files/sar/9b2c8f1a-7e44-4c2b-9a10-2f3d4e5a6b7c.pdf&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;goaml_str&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;report&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">&quot;rentity_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;TEN-0001&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;rentity_name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Test Fintech Pvt Ltd&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;submission_code&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;E&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;report_code&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;STR&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;entity_reference&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;9b2c8f1a-7e44-4c2b-9a10-2f3d4e5a6b7c&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;submission_date&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-06-27T10:15:03.123456Z&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;currency_code_local&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;INR&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;reporting_person&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Test Fintech Admin&quot;</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;report_indicators&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-string">&quot;STRUCTURING&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-string">&quot;HIGH_RISK_TYPE&quot;</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;reason&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;On 2026-04-16, customer Rohan Mehta initiated an outbound international wire of INR 945,000 ... (full narrative, with real names, citing the bank&#x27;s AML policy sections).&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;action&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;File STR with FIU-IND and place a temporary hold on the account pending review.&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;transaction&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+        <span class="hljs-attr">&quot;transactionnumber&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;TXN-A1-0001&quot;</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;date_transaction&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-04-16T11:42:07+05:30&quot;</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;value_local&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">945000.0</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;transmode_code&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;TT&quot;</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;transaction_description&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;INTERNATIONAL_WIRE OUTBOUND&quot;</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;t_from_my_client&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+          <span class="hljs-attr">&quot;from_funds_code&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;K&quot;</span><span class="hljs-punctuation">,</span>
+          <span class="hljs-attr">&quot;from_account&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;institution_name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Test Fintech Pvt Ltd&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;account&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;5012-7788-2231&quot;</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+          <span class="hljs-attr">&quot;from_person&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Rohan Mehta&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;client_ref&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;CUST-884213&quot;</span> <span class="hljs-punctuation">}</span>
+        <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;t_to&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+          <span class="hljs-attr">&quot;to_funds_code&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;K&quot;</span><span class="hljs-punctuation">,</span>
+          <span class="hljs-attr">&quot;to_account&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;institution_name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Emirates NBD&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;account&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;AE070331234567&quot;</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+          <span class="hljs-attr">&quot;to_person&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Gulf Horizon FZE&quot;</span> <span class="hljs-punctuation">}</span>
+        <span class="hljs-punctuation">}</span>
+      <span class="hljs-punctuation">}</span>
+    <span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<p>Notes:</p>
+<ul>
+<li><code>goaml_str.report.reason</code> is the full report narrative (with <strong>real</strong> customer names —
+it's the bank's own customer, so that's expected and legal). This is what gets filed.</li>
+<li><code>pdf_url</code> may occasionally be <code>null</code> if PDF rendering failed on our side — handle that
+by showing the JSON without the PDF button. (In practice it'll be present.)</li>
+<li>For the demo you only need to <em>display</em> this; you don't process it further.</li>
+</ul>
+<hr>
+<h2 id="appendix-c--faq--gotchas">Appendix C — FAQ &amp; gotchas</h2>
+<p><strong>Q: Do I poll Aegis to know when the report is ready?</strong>
+No. Just wait for the webhook. Keep the row on &quot;processing&quot; until it arrives. (Polling is
+possible but unnecessary for the demo.)</p>
+<p><strong>Q: I sent a transaction but no webhook came.</strong>
+Three usual reasons: (1) the transaction scored below 75 so no report was made — check the
+ingest response <code>message</code>; (2) the officer hasn't approved it yet on our dashboard — the
+webhook fires <strong>only on approval</strong>; (3) our webhook URL isn't pointed at your receiver yet
+(our step in Section 10.3). It is <strong>not</strong> your bug if (1) or (2).</p>
+<p><strong>Q: Can my frontend call Aegis directly?</strong>
+Don't. Route through your backend (keeps the key secret + avoids CORS). Your frontend only
+talks to your backend.</p>
+<p><strong>Q: Does my webhook need to verify the HMAC signature?</strong>
+Not for the local demo. Optional hardening only.</p>
+<p><strong>Q: What HTTP status should my webhook return?</strong>
+<code>200</code> (any 2xx). Return it promptly; don't do slow work before responding.</p>
+<p><strong>Q: What if I send the same transaction twice?</strong>
+Aegis rejects the duplicate with <code>409</code>. Send a unique <code>txn.ref_id</code> (and ideally an
+<code>Idempotency-Key</code>) per real transaction.</p>
+<p><strong>Q: Which transaction types trigger a report?</strong>
+The high-risk ones (<code>INTERNATIONAL_WIRE</code>, <code>CRYPTO_PURCHASE</code>, <code>FOREX_TRANSFER</code>, <code>HAWALA</code>)
+each add a strong signal. See the scoring table in Section 5.1 and the examples in Appendix A.</p>
+<p><strong>Q: Stack — Node or Python?</strong>
+Your choice. Just keep the two-tier structure, the env-var config, ports off 5173, and a
+clean README.</p>
+<hr>
+<h2 id="appendix-d--full-scenario-matrix-cover-all-these">Appendix D — Full scenario matrix (cover all these)</h2>
+<p>Make sure a person at the demo can produce each of these from the customer screen (or a
+seeded &quot;demo&quot; button). Assumes the Section 7.1 engine (HIGH = +60, MEDIUM = +30, forward at &gt;= 50).
+&quot;Forwarded?&quot; = does your bank send it to Aegis. &quot;Report?&quot; = does Aegis draft a SAR (and
+therefore send you a webhook).</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Case</th>
+<th>Customer action</th>
+<th>Forwarded?</th>
+<th>Report?</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>Structuring</strong></td>
+<td>Transfer <strong>9,45,000</strong></td>
+<td>Yes (60)</td>
+<td><strong>Yes</strong></td>
+<td>Aegis 60 + structuring HIGH 20 = 80</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>International wire</strong></td>
+<td>Intl wire 3,00,000</td>
+<td>Yes (60)</td>
+<td><strong>Yes</strong></td>
+<td>60 + high-risk HIGH 20 = 80</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>Crypto purchase</strong></td>
+<td>Crypto 2,00,000</td>
+<td>Yes (60)</td>
+<td><strong>Yes</strong></td>
+<td>60 + high-risk HIGH 20 = 80</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>Hawala</strong></td>
+<td>Hawala 1,50,000</td>
+<td>Yes (60)</td>
+<td><strong>Yes</strong></td>
+<td>60 + high-risk HIGH 20 = 80</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>Rapid movement</strong></td>
+<td><strong>Refund 5,00,000</strong> (also round)</td>
+<td>Yes (30+30=60)</td>
+<td><strong>Yes</strong></td>
+<td>60 + rapid 10 + round 10 = 80</td>
+</tr>
+<tr>
+<td>6</td>
+<td><strong>Round number only</strong></td>
+<td>Transfer 5,00,000</td>
+<td>No (30 &lt; 50)</td>
+<td>—</td>
+<td>below the bank's forward threshold (realistic)</td>
+</tr>
+<tr>
+<td>7</td>
+<td><strong>Dormant</strong></td>
+<td>Transfer from the seeded <strong>dormant</strong> account</td>
+<td>Yes (60)</td>
+<td><strong>Yes</strong></td>
+<td>60 + dormant HIGH 20 = 80</td>
+</tr>
+<tr>
+<td>8</td>
+<td><strong>Velocity</strong></td>
+<td><strong>5+ transfers</strong> within a minute from one account</td>
+<td>Yes (60)</td>
+<td><strong>Yes</strong></td>
+<td>60 + velocity HIGH 20 = 80</td>
+</tr>
+<tr>
+<td>9</td>
+<td><strong>Counterparty only</strong></td>
+<td>Transfer to <strong>&quot;Shell Bank&quot;</strong> 2,00,000</td>
+<td>No (30 &lt; 50)</td>
+<td>—</td>
+<td>pair with another flag to forward</td>
+</tr>
+<tr>
+<td>10</td>
+<td><strong>Clean</strong></td>
+<td>Transfer 25,000 to a normal bank</td>
+<td>No</td>
+<td>—</td>
+<td>nothing fires → show &quot;cleared — no report&quot;</td>
+</tr>
+<tr>
+<td>11</td>
+<td><strong>Duplicate</strong></td>
+<td>Re-send the same <code>txn.ref_id</code></td>
+<td>(already sent)</td>
+<td>—</td>
+<td>Aegis returns <code>409</code>; bank handles it gracefully</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Reliable demo set:</strong> cases <strong>1, 2, 3, 4, 5, 7, 8</strong> are your guaranteed &quot;full loop →
+report in the inbox&quot; demos. <strong>Case 10</strong> is your guaranteed &quot;clean, nothing happens&quot; demo.
+<strong>Case 6</strong> is a great talking point (&quot;the system correctly decides this isn't worth a
+filing&quot;). <strong>Cases 9 and 11</strong> show the bank's own logic (combine flags / reject duplicates).</p>
+<p>To force a report for any &quot;—&quot; case, either combine it with another flag or let your bank
+score push <code>risk.score</code> to <strong>&gt;= 75</strong> (which alone guarantees an Aegis report).</p>
+<hr>
+<h2 id="appendix-e--copy-paste-integration-code-node-and-python">Appendix E — Copy-paste integration code (Node and Python)</h2>
+<p>Skeletons for the two touchpoints. Shapes match Section 5.1, Section 5.2 and Appendix B
+exactly — wire them to your storage and UI.</p>
+<h3 id="e1-send-a-transaction-to-aegis-from-your-backend">E1. Send a transaction to Aegis (from your backend)</h3>
+<p><strong>Node (18+, built-in <code>fetch</code>):</strong></p>
+<pre class="hljs"><code><div><span class="hljs-keyword">async</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">sendToAegis</span>(<span class="hljs-params">txn</span>) {
+  <span class="hljs-keyword">const</span> res = <span class="hljs-keyword">await</span> <span class="hljs-title function_">fetch</span>(<span class="hljs-string">`<span class="hljs-subst">${process.env.AEGIS_BASE_URL}</span>/api/v1/ingest/`</span>, {
+    <span class="hljs-attr">method</span>: <span class="hljs-string">&quot;POST&quot;</span>,
+    <span class="hljs-attr">headers</span>: {
+      <span class="hljs-string">&quot;Content-Type&quot;</span>: <span class="hljs-string">&quot;application/json&quot;</span>,
+      <span class="hljs-string">&quot;X-API-Key&quot;</span>: process.<span class="hljs-property">env</span>.<span class="hljs-property">AEGIS_API_KEY</span>,
+      <span class="hljs-string">&quot;X-Tenant-ID&quot;</span>: process.<span class="hljs-property">env</span>.<span class="hljs-property">AEGIS_TENANT_ID</span>,
+      <span class="hljs-string">&quot;Idempotency-Key&quot;</span>: txn.<span class="hljs-property">refId</span>,                 <span class="hljs-comment">// unique per transaction</span>
+    },
+    <span class="hljs-attr">body</span>: <span class="hljs-title class_">JSON</span>.<span class="hljs-title function_">stringify</span>({
+      <span class="hljs-attr">customer</span>:     { <span class="hljs-attr">full_name</span>: txn.<span class="hljs-property">customerName</span>, <span class="hljs-attr">id</span>: txn.<span class="hljs-property">customerId</span> },
+      <span class="hljs-attr">account</span>:      { <span class="hljs-attr">number</span>: txn.<span class="hljs-property">accountNumber</span> },
+      <span class="hljs-attr">txn</span>:          { <span class="hljs-attr">ref_id</span>: txn.<span class="hljs-property">refId</span>, <span class="hljs-attr">amount</span>: txn.<span class="hljs-property">amount</span>, <span class="hljs-attr">currency</span>: <span class="hljs-string">&quot;INR&quot;</span>,
+                      <span class="hljs-attr">type</span>: txn.<span class="hljs-property">type</span>, <span class="hljs-attr">direction</span>: <span class="hljs-string">&quot;OUTBOUND&quot;</span>,
+                      <span class="hljs-attr">timestamp</span>: <span class="hljs-keyword">new</span> <span class="hljs-title class_">Date</span>().<span class="hljs-title function_">toISOString</span>() },
+      <span class="hljs-attr">counterparty</span>: { <span class="hljs-attr">account</span>: txn.<span class="hljs-property">cpAccount</span>, <span class="hljs-attr">name</span>: txn.<span class="hljs-property">cpName</span>, <span class="hljs-attr">bank</span>: txn.<span class="hljs-property">cpBank</span> },
+      <span class="hljs-attr">metadata</span>:     { <span class="hljs-attr">ip</span>: txn.<span class="hljs-property">ip</span>, <span class="hljs-attr">device_id</span>: txn.<span class="hljs-property">deviceId</span> },
+      <span class="hljs-attr">risk</span>:         { <span class="hljs-attr">score</span>: txn.<span class="hljs-property">riskScore</span>, <span class="hljs-attr">reason</span>: txn.<span class="hljs-property">riskReason</span> },
+    }),
+  });
+  <span class="hljs-keyword">if</span> (res.<span class="hljs-property">status</span> === <span class="hljs-number">409</span>) <span class="hljs-keyword">return</span> { <span class="hljs-attr">duplicate</span>: <span class="hljs-literal">true</span> };       <span class="hljs-comment">// already sent</span>
+  <span class="hljs-keyword">if</span> (!res.<span class="hljs-property">ok</span>) <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Error</span>(<span class="hljs-string">`Aegis ingest failed: <span class="hljs-subst">${res.status}</span>`</span>);
+  <span class="hljs-keyword">return</span> <span class="hljs-keyword">await</span> res.<span class="hljs-title function_">json</span>();   <span class="hljs-comment">// { status, alert_id, risk_score, message }</span>
+}
+</div></code></pre>
+<p><strong>Python (<code>requests</code>):</strong></p>
+<pre class="hljs"><code><div><span class="hljs-keyword">import</span> os, requests
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">send_to_aegis</span>(<span class="hljs-params">txn</span>):
+    r = requests.post(
+        <span class="hljs-string">f&quot;<span class="hljs-subst">{os.environ[<span class="hljs-string">&#x27;AEGIS_BASE_URL&#x27;</span>]}</span>/api/v1/ingest/&quot;</span>,
+        headers={
+            <span class="hljs-string">&quot;Content-Type&quot;</span>: <span class="hljs-string">&quot;application/json&quot;</span>,
+            <span class="hljs-string">&quot;X-API-Key&quot;</span>: os.environ[<span class="hljs-string">&quot;AEGIS_API_KEY&quot;</span>],
+            <span class="hljs-string">&quot;X-Tenant-ID&quot;</span>: os.environ[<span class="hljs-string">&quot;AEGIS_TENANT_ID&quot;</span>],
+            <span class="hljs-string">&quot;Idempotency-Key&quot;</span>: txn[<span class="hljs-string">&quot;ref_id&quot;</span>],
+        },
+        json={
+            <span class="hljs-string">&quot;customer&quot;</span>:     {<span class="hljs-string">&quot;full_name&quot;</span>: txn[<span class="hljs-string">&quot;customer_name&quot;</span>], <span class="hljs-string">&quot;id&quot;</span>: txn[<span class="hljs-string">&quot;customer_id&quot;</span>]},
+            <span class="hljs-string">&quot;account&quot;</span>:      {<span class="hljs-string">&quot;number&quot;</span>: txn[<span class="hljs-string">&quot;account_number&quot;</span>]},
+            <span class="hljs-string">&quot;txn&quot;</span>:          {<span class="hljs-string">&quot;ref_id&quot;</span>: txn[<span class="hljs-string">&quot;ref_id&quot;</span>], <span class="hljs-string">&quot;amount&quot;</span>: txn[<span class="hljs-string">&quot;amount&quot;</span>], <span class="hljs-string">&quot;currency&quot;</span>: <span class="hljs-string">&quot;INR&quot;</span>,
+                             <span class="hljs-string">&quot;type&quot;</span>: txn[<span class="hljs-string">&quot;type&quot;</span>], <span class="hljs-string">&quot;direction&quot;</span>: <span class="hljs-string">&quot;OUTBOUND&quot;</span>,
+                             <span class="hljs-string">&quot;timestamp&quot;</span>: txn[<span class="hljs-string">&quot;timestamp&quot;</span>]},
+            <span class="hljs-string">&quot;counterparty&quot;</span>: {<span class="hljs-string">&quot;account&quot;</span>: txn[<span class="hljs-string">&quot;cp_account&quot;</span>], <span class="hljs-string">&quot;name&quot;</span>: txn[<span class="hljs-string">&quot;cp_name&quot;</span>], <span class="hljs-string">&quot;bank&quot;</span>: txn[<span class="hljs-string">&quot;cp_bank&quot;</span>]},
+            <span class="hljs-string">&quot;metadata&quot;</span>:     {<span class="hljs-string">&quot;ip&quot;</span>: txn[<span class="hljs-string">&quot;ip&quot;</span>], <span class="hljs-string">&quot;device_id&quot;</span>: txn[<span class="hljs-string">&quot;device_id&quot;</span>]},
+            <span class="hljs-string">&quot;risk&quot;</span>:         {<span class="hljs-string">&quot;score&quot;</span>: txn[<span class="hljs-string">&quot;risk_score&quot;</span>], <span class="hljs-string">&quot;reason&quot;</span>: txn[<span class="hljs-string">&quot;risk_reason&quot;</span>]},
+        },
+        timeout=<span class="hljs-number">10</span>,
+    )
+    <span class="hljs-keyword">if</span> r.status_code == <span class="hljs-number">409</span>:
+        <span class="hljs-keyword">return</span> {<span class="hljs-string">&quot;duplicate&quot;</span>: <span class="hljs-literal">True</span>}
+    r.raise_for_status()
+    <span class="hljs-keyword">return</span> r.json()   <span class="hljs-comment"># { status, alert_id, risk_score, message }</span>
+</div></code></pre>
+<h3 id="e2-receive-the-report-your-webhook-endpoint">E2. Receive the report (your webhook endpoint)</h3>
+<p><strong>Node (Express):</strong></p>
+<pre class="hljs"><code><div><span class="hljs-keyword">const</span> express = <span class="hljs-built_in">require</span>(<span class="hljs-string">&quot;express&quot;</span>);
+<span class="hljs-keyword">const</span> app = <span class="hljs-title function_">express</span>();
+app.<span class="hljs-title function_">use</span>(express.<span class="hljs-title function_">json</span>());
+
+<span class="hljs-keyword">const</span> reports = [];   <span class="hljs-comment">// your inbox store (in-memory is fine)</span>
+
+app.<span class="hljs-title function_">post</span>(process.<span class="hljs-property">env</span>.<span class="hljs-property">BANK_WEBHOOK_PATH</span> || <span class="hljs-string">&quot;/aegis/webhook&quot;</span>, <span class="hljs-function">(<span class="hljs-params">req, res</span>) =&gt;</span> {
+  <span class="hljs-keyword">const</span> b = req.<span class="hljs-property">body</span> || {};
+  <span class="hljs-comment">// defensive: the connectivity-test payload has fewer fields</span>
+  reports.<span class="hljs-title function_">push</span>({
+    <span class="hljs-attr">alertId</span>: b.<span class="hljs-property">alert_id</span>, <span class="hljs-attr">sarId</span>: b.<span class="hljs-property">sar_id</span>,
+    <span class="hljs-attr">goaml</span>: b.<span class="hljs-property">goaml_str</span> || <span class="hljs-literal">null</span>, <span class="hljs-attr">pdfUrl</span>: b.<span class="hljs-property">pdf_url</span> || <span class="hljs-literal">null</span>,
+    <span class="hljs-attr">rules</span>: b.<span class="hljs-property">compliance_rules_triggered</span> || [], <span class="hljs-attr">receivedAt</span>: <span class="hljs-keyword">new</span> <span class="hljs-title class_">Date</span>().<span class="hljs-title function_">toISOString</span>(),
+  });
+  <span class="hljs-comment">// <span class="hljs-doctag">TODO:</span> flip the matching monitoring-list row (by alertId) to &quot;report received&quot;</span>
+  res.<span class="hljs-title function_">sendStatus</span>(<span class="hljs-number">200</span>);                 <span class="hljs-comment">// answer fast</span>
+});
+
+app.<span class="hljs-title function_">listen</span>(process.<span class="hljs-property">env</span>.<span class="hljs-property">BANK_BACKEND_PORT</span> || <span class="hljs-number">8001</span>);
+</div></code></pre>
+<p><strong>Python (FastAPI):</strong></p>
+<pre class="hljs"><code><div><span class="hljs-keyword">from</span> fastapi <span class="hljs-keyword">import</span> FastAPI, Request
+app = FastAPI()
+reports = []   <span class="hljs-comment"># your inbox store</span>
+
+<span class="hljs-meta">@app.post(<span class="hljs-params"><span class="hljs-string">&quot;/aegis/webhook&quot;</span></span>)</span>
+<span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">aegis_webhook</span>(<span class="hljs-params">req: Request</span>):
+    b = <span class="hljs-keyword">await</span> req.json()
+    reports.append({
+        <span class="hljs-string">&quot;alert_id&quot;</span>: b.get(<span class="hljs-string">&quot;alert_id&quot;</span>), <span class="hljs-string">&quot;sar_id&quot;</span>: b.get(<span class="hljs-string">&quot;sar_id&quot;</span>),
+        <span class="hljs-string">&quot;goaml&quot;</span>: b.get(<span class="hljs-string">&quot;goaml_str&quot;</span>), <span class="hljs-string">&quot;pdf_url&quot;</span>: b.get(<span class="hljs-string">&quot;pdf_url&quot;</span>),
+        <span class="hljs-string">&quot;rules&quot;</span>: b.get(<span class="hljs-string">&quot;compliance_rules_triggered&quot;</span>, []),
+    })
+    <span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> flip the matching monitoring-list row to &quot;report received&quot;</span>
+    <span class="hljs-keyword">return</span> {<span class="hljs-string">&quot;ok&quot;</span>: <span class="hljs-literal">True</span>}   <span class="hljs-comment"># any 2xx</span>
+</div></code></pre>
+<hr>
+<p><em>Questions while building? Ping us. When you're done, zip <code>mock-bank/</code> and send it over —
+we'll wire the webhook and run the full demo from your README.</em></p>
+
+</body>
+</html>

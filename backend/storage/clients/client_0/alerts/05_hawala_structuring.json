@@ -1,0 +1,32 @@
+{
+  "raw_payload": {
+    "customer": {
+      "full_name": "Imran Sheikh",
+      "id": "CUST-119077"
+    },
+    "account": {
+      "number": "4455-6677-2200"
+    },
+    "txn": {
+      "ref_id": "TXN-EVAL-05",
+      "amount": 870000,
+      "currency": "INR",
+      "type": "HAWALA",
+      "direction": "OUTBOUND",
+      "timestamp": "2026-05-20T20:45:00+05:30"
+    },
+    "counterparty": {
+      "account": "NA",
+      "name": "Unknown Intermediary",
+      "bank": "Local Agent"
+    },
+    "metadata": {
+      "ip": "198.51.100.88",
+      "device_id": "dev-9001ffaa"
+    },
+    "risk": {
+      "score": 72,
+      "reason": "Funds moved via an informal value-transfer arrangement in an amount just below the threshold."
+    }
+  }
+}

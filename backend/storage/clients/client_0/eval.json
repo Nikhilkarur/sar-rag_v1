@@ -1,0 +1,17 @@
+{
+  "display_name": "DUMMY/TEST CLIENT (client_0 — synthetic Aegis Bank)",
+  "schema_preset": "STANDARD_FINTECH",
+  "always_relevant": [
+    "5.1"
+  ],
+  "rule_to_section": {
+    "Structuring / Smurfing": "4.1",
+    "Rapid Movement of Funds": "4.2",
+    "Large Round Number": "4.3",
+    "Dormant Account Activation": "4.4",
+    "High Risk Transaction Type": "4.5",
+    "High Velocity": "4.6",
+    "High Risk Counterparty": "4.7",
+    "Risk Score Threshold Exceeded": "4.8"
+  }
+}

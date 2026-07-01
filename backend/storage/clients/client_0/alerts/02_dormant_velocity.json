@@ -1,0 +1,32 @@
+{
+  "raw_payload": {
+    "customer": {
+      "full_name": "Sunita Rao",
+      "id": "CUST-551200"
+    },
+    "account": {
+      "number": "6101-2233-9090"
+    },
+    "txn": {
+      "ref_id": "TXN-EVAL-02",
+      "amount": 250000,
+      "currency": "INR",
+      "type": "TRANSFER",
+      "direction": "OUTBOUND",
+      "timestamp": "2026-05-02T09:15:00+05:30"
+    },
+    "counterparty": {
+      "account": "1122-3344-5566",
+      "name": "Anil Kumar",
+      "bank": "HDFC Bank"
+    },
+    "metadata": {
+      "ip": "198.51.100.22",
+      "device_id": "dev-2210bbef"
+    },
+    "risk": {
+      "score": 92,
+      "reason": "Dormant account suddenly reactivated with unusually high velocity of outbound transfers."
+    }
+  }
+}

@@ -11,7 +11,12 @@ from app.models.sar import SARDraft
 from app.models.webhook import WebhookConfig, WebhookSinkEvent
 from app.services.pii_masker import mask_payload, rehydrate_text
 from app.services.compliance_analyzer import analyze
+from app.services.goaml_builder import build_goaml_str
+from app.services.sar_pdf import render_sar_pdf
 from app.routers.ingest import process_alert_background
+from app.config import settings
+from app.models.tenant import Tenant
+from app.utils.security import decrypt_json
 from datetime import datetime
 from typing import Any
 import secrets
@@ -164,6 +169,28 @@ def preview_rehydrated(alert_id: str, db: Session = Depends(get_db), current_use
         text = rehydrate_text(text, pii_map.token_map)
     return {"rehydrated_text": text}
 
+def _deliver_webhook(callback_url: str, secret_encrypted, payload: dict):
+    """POST the approved SAR to the bank's webhook URL, HMAC-signed. A delivery
+    failure must NOT fail the approval, so everything is wrapped."""
+    import json as _json
+    import hmac
+    import hashlib
+    import httpx
+    try:
+        body = _json.dumps(payload).encode("utf-8")
+        headers = {"Content-Type": "application/json", "X-Aegis-Event": "sar.approved"}
+        if secret_encrypted:
+            try:
+                secret = decrypt_json(secret_encrypted)
+                headers["X-Aegis-Signature"] = "sha256=" + hmac.new(
+                    str(secret).encode(), body, hashlib.sha256).hexdigest()
+            except Exception:
+                pass
+        httpx.post(callback_url, content=body, headers=headers, timeout=8.0)
+    except Exception:
+        pass  # network/receiver failure is non-fatal for the demo
+
+
 @router.post("/queue/{alert_id}/approve")
 def approve_alert(alert_id: str, payload: Any = Body(default=None), db: Session = Depends(get_db), current_user: User = Depends(get_compliance_user)):
     a = _get_owned_alert(alert_id, db, current_user)
@@ -185,19 +212,42 @@ def approve_alert(alert_id: str, payload: Any = Body(default=None), db: Session 
         if pii_map:
             pii_map.rehydrated_at = __import__('sqlalchemy').func.now()
 
-        # Deliver to the tenant's webhook sink (MVP: internal sink event)
+        # Build the goAML filing + render the PDF, then deliver to the bank.
+        approved_at_iso = datetime.utcnow().isoformat() + "Z"
+        rule_names = rules_map.get(a.id, [])
+        tenant = db.query(Tenant).filter(Tenant.id == a.tenant_id).first()
+        client_id = (tenant.tenant_id_public if tenant else None) or str(a.tenant_id)
+        goaml = build_goaml_str(a, draft, rule_names, tenant, current_user.full_name, approved_at_iso)
+
+        pdf_url = None
+        try:
+            pdf_path = render_sar_pdf(client_id, str(draft.id), a, draft, goaml, current_user.full_name, approved_at_iso)
+            draft.pdf_path = pdf_path
+            draft.pdf_generated_at = __import__('sqlalchemy').func.now()
+            pdf_url = f"{settings.PUBLIC_BASE_URL.rstrip('/')}/files/sar/{draft.id}.pdf"
+        except Exception:
+            pdf_url = None  # PDF render failure must not block approval/delivery
+
+        delivery_payload = {
+            "event": "sar.approved",
+            "sar_id": str(draft.id),
+            "alert_id": str(a.id),
+            "approved_at": approved_at_iso,
+            "approved_by": current_user.full_name,
+            "goaml_str": goaml,
+            "pdf_url": pdf_url,
+            "compliance_rules_triggered": rule_names,
+        }
+
         webhook = db.query(WebhookConfig).filter(WebhookConfig.tenant_id == current_user.tenant_id).first()
         if webhook and webhook.is_active:
+            # Real HTTP delivery to the bank's callback URL (unless using the internal sink).
+            if webhook.callback_url and not webhook.use_internal_sink:
+                _deliver_webhook(webhook.callback_url, webhook.secret_encrypted, delivery_payload)
+            # Always record an internal sink event for audit.
             db.add(WebhookSinkEvent(
                 tenant_id=current_user.tenant_id,
-                payload={
-                    "sar_id": str(draft.id),
-                    "alert_id": str(a.id),
-                    "approved_at": datetime.utcnow().isoformat() + "Z",
-                    "approved_by": current_user.full_name,
-                    "narrative_text": rehydrated,
-                    "compliance_rules_triggered": rules_map.get(a.id, []),
-                },
+                payload=delivery_payload,
                 headers={"X-Aegis-Event": "sar.approved"},
                 hmac_valid=True,
                 source_ip="internal-sink",
