@@ -438,9 +438,17 @@ THEIR section numbers (manual, optional). RAGAS needs none — just export their
 - **Answer Relevancy** — generate questions the SAR answers (Groq), embed them + the
   real question (bge), score = mean cosine similarity.
 
-Result (client_0, 5 alerts): **Faithfulness ≈ 0.81, Answer Relevancy ≈ 0.70** →
+Result (client_0, 5 alerts): **Faithfulness ≈ 0.89, Answer Relevancy ≈ 0.70** →
 generation is grounded and on-topic. Combined with IR (Recall@8=1.0), the whole
 pipeline is validated → no reranking/hybrid justified yet.
+
+**2026-06-29 improvement pass:** `build_sar_prompt` now scopes the NARRATIVE (open with the
+transaction; cite the section per indicator; keep recommended-action/procedure in the JSON
+only; no boilerplate) — this raised Faithfulness from ≈0.81 to ≈0.89 (fewer, better-grounded
+claims). Separately, `ragas_eval.answer_relevancy` was corrected to embed questions
+SYMMETRICALLY (`embed_documents`, no bge query-prefix, both sides) + n=5; Answer Relevancy is
+≈0.70, now measured without the query-prefix confound. ~0.70 is a fair ceiling for the compound
+reference question — pushing higher would mean gaming the reference, not improving the SAR.
 
 **Why native, not the `ragas` package:** ragas 0.4.x imports a `langchain_community`
 path removed in LangChain 1.x → won't import on this env. We implement the same
@@ -475,7 +483,7 @@ transaction facts score as "unsupported").
   `scripts/verify_stack.py`.
 
 **Generation eval (RAGAS): DONE** — implemented natively (Groq judge + bge); see
-§16a. Faithfulness ≈ 0.81, Answer Relevancy ≈ 0.70.
+§16a. Faithfulness ≈ 0.89, Answer Relevancy ≈ 0.70.
 
 **Genuinely remaining (not blockers; see also `STATUS_AND_MOCKBANK.md` §3):**
 - LLM-outage retry queue (Celery/Redis); background (async) webhook delivery.
@@ -594,6 +602,17 @@ but why each choice was made.
   not pending. Also normalised the doc set: added tables of contents, removed emoji
   markers, and fixed minor syntax. `AEGIS_KNOWLEDGE_BASE.md` remains the code-verified
   source of truth.
+- 2026-06-29: Pre-demo hardening + verification pass. (1) Fixed the goAML indicator bug:
+  `goaml_builder.INDICATOR_MAP` now keyed by BOTH rule_id and rule_name, so `report_indicators`
+  emit real goAML codes (STRUCTURING_BELOW_THRESHOLD…) instead of raw rule ids. (2) Re-verified
+  the full live loop end-to-end — `verify_stack.py` 27/27; ingest (risk 100) → SAR in ~8s →
+  approve → goAML STR + HMAC webhook + servable PDF. (3) Indexed TEN-0001's policy via
+  `scripts/seed_policy.py` (28 chunks) so live SARs cite real sections (verified 4.1/4.5/4.7/3.3/5.1);
+  re-run after any chroma_data wipe. (4) Answer-relevancy pass — scoped the SAR narrative in
+  `build_sar_prompt` (Faithfulness ≈0.81→≈0.89) and corrected `ragas_eval.answer_relevancy` to
+  symmetric bge embedding + n=5 (Answer Relevancy ≈0.70, confound removed). No hybrid RAG needed.
+  (5) Deleted the superseded `RAG_MASTER.md`. (6) Added `MOCKBANK_BRIEF.md` — the teammate brief
+  for the mock bank (build spec + AML rule engine + integration contract + copy-paste code).
 
 ---
 
@@ -663,8 +682,8 @@ No query crosses tenants. Live app gets `tenant_id` from the API key.
   `eval.json`), so Precision@k/Recall@k/nDCG/MRR are pure arithmetic. Result:
   Recall@8=1.0, nDCG@8=0.98, MRR=1.0.
 - **Generation — ragas_eval.py (Groq judge + bge):** Faithfulness (Groq extracts
-  claims, checks each vs transaction-data+chunks) = 0.81; Answer Relevancy (Groq
-  makes questions from the SAR, bge cosine-compares to the real question) = 0.70.
+  claims, checks each vs transaction-data+chunks) ≈ 0.89; Answer Relevancy (Groq
+  makes questions from the SAR, bge SYMMETRIC-compares to the real question) ≈ 0.70.
 
 ### 7. Test infrastructure
 ONE root `backend/storage/clients/<client_id>/` for every client (dummy = `client_0`,

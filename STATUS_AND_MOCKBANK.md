@@ -46,7 +46,18 @@ Full loop: **transaction → policy-cited SAR → officer approves → goAML + P
 ### RAG pipeline & eval
 - Vanilla RAG (index → retrieve → generate) built and proven; reranking/hybrid NOT needed.
 - **IR metrics:** Recall@8 = 1.0, MRR = 1.0, nDCG@8 ≈ 0.98 (deterministic, `client_0`).
-- **RAGAS:** native impl (Groq judge + bge), faithfulness ≈ 0.81, answer-relevancy ≈ 0.70.
+- **RAGAS:** native impl (Groq judge + bge), **faithfulness ≈ 0.89, answer-relevancy ≈ 0.70**
+  (2026-06-29: narrative scoped in `build_sar_prompt` → faithfulness up from ≈0.81;
+  `answer_relevancy` corrected to symmetric bge embedding + n=5).
+
+### Verified end-to-end (2026-06-29)
+- **goAML indicator bug fixed** — `report_indicators` now emit real codes
+  (`STRUCTURING_BELOW_THRESHOLD`…), not raw rule ids. Verified live.
+- **Full live loop re-verified** — `verify_stack.py` **27/27**; ingest (risk 100) → SAR in ~8s →
+  approve → goAML STR + HMAC webhook (internal sink) → servable PDF (200).
+- **TEN-0001 policy indexed** (`scripts/seed_policy.py`, 28 chunks) → live SARs cite real policy
+  sections (4.1/4.5/4.7/3.3/5.1). Re-run seed_policy after any `chroma_data` wipe.
+- **Teammate handoff** — the standalone mock-bank build spec is [`MOCKBANK_BRIEF.md`](MOCKBANK_BRIEF.md).
 
 ### Unified per-client storage refactor (2026-06-19)
 - Replaced the confusing `testing/` vs `production/` split with ONE root:
@@ -71,13 +82,58 @@ Full loop: **transaction → policy-cited SAR → officer approves → goAML + P
 
 ## 3. What's LEFT
 
-### Blocked on the mock bank (do when it lands)
-- **B1** — point the webhook at the bank: set `TEN-0001`'s `WebhookConfig.callback_url` to
-  the bank's receiver URL and `use_internal_sink = false`. (HMAC POST logic already built.)
-- **B2** — run the full live loop with the bank: bank POSTs a flagged txn → SAR → officer
-  approves → confirm the bank's inbox receives the goAML + PDF link.
-- **B3** — hand the teammate: base URL (`http://localhost:8000`), the `TEN-0001` API key,
-  and a sample webhook payload.
+### When the ZIP arrives — POST-ZIP RUNBOOK (for the agent on our side)
+
+**Do ALL of these even if the teammate set nothing up — they are all Aegis-side steps.**
+Run in order:
+
+1. **Start Aegis.** From `backend/`: `python -m uvicorn app.main:app --port 8000` (Postgres must
+   be up; run `python seed.py` first if the DB is empty). Dashboard: `cd frontend && npm run dev` (:5173).
+2. **Paste the API key into the teammate's app.** Reveal it (portal → Settings → Credentials →
+   Reveal, or `decrypt_json(tenant.api_key_encrypted)`), and put it in their backend `.env` as
+   `AEGIS_API_KEY=` (they ship it blank on purpose — see `MOCKBANK_BRIEF.md`).
+3. **Ensure TEN-0001's policy is indexed** (so live SARs CITE policy sections): `python
+   scripts/seed_policy.py`. **ALWAYS re-run this if `chroma_data` was wiped** — without it SARs
+   still generate but won't cite policy (RAG degrades to no-context). To use the bank's own policy:
+   `python scripts/seed_policy.py TEN-0001 path/to/policy.pdf`.
+4. **B1 — point the webhook at the bank.** Portal → Settings → Webhook → set the callback URL to
+   their receiver (e.g. `http://localhost:8001/aegis/webhook`), turn OFF "use internal sink", Save,
+   Test. (SSRF guard allows localhost because `ENVIRONMENT=development`.)
+5. **B2 — run the joint loop.** Their customer sends a risky txn → their admin list shows
+   sent→processing → our officer approves on :5173 → confirm their inbox shows goAML + PDF.
+6. **B3 — hand over.** Base URL `http://localhost:8000`, the `TEN-0001` API key, and a sample
+   webhook payload (in `MOCKBANK_BRIEF.md` Appendix B).
+
+Sanity-check anytime with `python scripts/verify_stack.py` (expect **27/27**).
+
+### Receiving, validating & FIXING the ZIP (agent runbook)
+
+The teammate's app must match the contract in [`MOCKBANK_BRIEF.md`](MOCKBANK_BRIEF.md). If it
+doesn't, a future agent should fix it (their code or ours). What to check + the usual fixes:
+
+**Validate against the contract** (MOCKBANK_BRIEF.md Section 5 + its Definition of Done):
+- Sends `POST http://localhost:8000/api/v1/ingest/` with headers `X-API-Key`,
+  `X-Tenant-ID: TEN-0001`, `Content-Type: application/json`, and the STANDARD_FINTECH body shape.
+- Exposes a webhook receiver that returns **200** and stores the payload.
+- Frontend on 5174/3000, backend on 8001; API key read from backend env (never the browser).
+
+**Common fixes a future agent may need to make in their app:**
+- Ingest `401` → API key blank/wrong in their `.env` (we paste it — Step 2 of the runbook above).
+- `411` → they send no `Content-Length` (chunked transfer); use a normal JSON client.
+- `422` → missing `X-API-Key` / `X-Tenant-ID` header.
+- SAR fields empty / no rules fire → their JSON paths don't match STANDARD_FINTECH
+  (`customer.full_name`, `txn.amount`, `txn.type`, `risk.score`…). Fix their body mapping.
+- No webhook arrives → (a) txn scored <75 so no SAR (expected), (b) officer hasn't approved yet,
+  or (c) our `callback_url` isn't pointed at their receiver (B1).
+- Their receiver 500s / never 200s → make it store-then-`200`; tolerate the slimmer test payload.
+- API key visible in the browser → move the Aegis call into their backend.
+
+**The bank's AML POLICY PDF (the doc SARs cite) — entirely our side, a future agent can (re)make it:**
+- The demo already uses the synthetic *Aegis Bank Ltd.* policy (`scripts/build_policy.py`; its
+  Section 4 thresholds MATCH `compliance_analyzer.py`), indexed for TEN-0001 by `seed_policy.py`.
+- To use a bank-specific policy: drop a real PDF anywhere and run
+  `python scripts/seed_policy.py TEN-0001 path/to/policy.pdf`; OR adapt `build_policy.py` to emit a
+  bank-branded PDF, then index it. Re-index whenever the policy or `chroma_data` changes.
 
 ### Optional / hardening (not blockers)
 - **LLM outage resilience** — add a retry queue (Celery/Redis) for the background SAR task;

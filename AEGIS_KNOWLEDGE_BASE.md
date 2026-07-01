@@ -5,7 +5,7 @@
 **The single, authoritative, code-verified reference for the entire project.**
 
 `Status: Functional MVP` · `Stack: FastAPI · PostgreSQL · ChromaDB · React/Vite · Groq LLM`
-`Last verified against source: 2026-06-22` · `Commit: accf9b6`
+`Last verified against source: 2026-06-29` · `Live loop re-verified 2026-06-29 — verify_stack 27/27`
 
 </div>
 
@@ -16,6 +16,11 @@
 This file is a **knowledge graph of the system as it actually exists in code today**. It was
 written so that a newcomer — human or AI agent — can understand *what the system does, how
 every part connects, and where each thing lives* **without reading the source first**.
+
+> **→ If you are an AI agent picking up this project: READ THIS FILE FIRST**, then drill into
+> the deep docs in the source-of-truth hierarchy below. For the current state and the most
+> recent changes, jump to [§22 — Project status](#22-project-status). The teammate-facing
+> mock-bank build spec lives in [`MOCKBANK_BRIEF.md`](MOCKBANK_BRIEF.md).
 
 | If you want to… | Go to |
 |---|---|
@@ -46,7 +51,10 @@ every part connects, and where each thing lives* **without reading the source fi
 3. [`STATUS_AND_MOCKBANK.md`](STATUS_AND_MOCKBANK.md) — current status + the mock-bank integration brief.
 4. [`DatabaseSchema.md`](DatabaseSchema.md) — the SQL/table contract.
 5. [`APISpec.md`](APISpec.md) — original API design (Note: several paths are stale; see §21).
-6. `RAG_MASTER.md` — **superseded**, retained only for history.
+6. [`MOCKBANK_BRIEF.md`](MOCKBANK_BRIEF.md) — standalone brief for the teammate building the mock
+   bank (build spec, AML rule engine, integration contract, copy-paste code).
+
+*(`RAG_MASTER.md` was **deleted** 2026-06-29 — fully superseded by this file + `PROJECT_REFERENCE.md`.)*
 
 ---
 
@@ -957,8 +965,8 @@ maps to one section via `eval.json`'s `rule_to_section` (for `client_0`: rules �
 | MRR | **1.000** | the #1 hit is always relevant |
 | nDCG@8 | **≈ 0.955** | relevant chunks ranked high |
 | P@8 | 0.425 | capped (only 3–4 relevant per alert; not a meaningful signal) |
-| Faithfulness (RAGAS) | **≈ 0.81** | SAR claims grounded in data + policy |
-| Answer Relevancy (RAGAS) | **≈ 0.70** | SAR is on-topic |
+| Faithfulness (RAGAS) | **≈ 0.89** | SAR claims grounded in data + policy (was ≈0.81; narrative-scoping pass 2026-06-29) |
+| Answer Relevancy (RAGAS) | **≈ 0.70** | SAR is on-topic (now measured with symmetric bge embedding + n=5) |
 
 **Verdict:** retrieval is near-optimal and generation is grounded → **no reranking/hybrid/CRAG
 is justified yet.** Re-evaluate when real multi-document corpora arrive.
@@ -1046,16 +1054,30 @@ Which doc to trust, and where the legacy docs have drifted from the code.
 - Live handlers mostly return FastAPI's `{detail: ...}` error shape (same HTTP codes), not the
   spec's `{error:{code,message}}` envelope.
 
-**Note — `RAG_MASTER.md` is superseded.** It still describes the old `testing/`-vs-`production/`
-split and `config.json` answer keys with a `--prod` flag — replaced on 2026-06-19 by the
-unified `backend/storage/clients/<id>/` layout with `eval.json`. Read `PROJECT_REFERENCE.md`
-instead. Safe to delete; retained for history.
+**Note — `RAG_MASTER.md` was DELETED (2026-06-29).** It described the old `testing/`-vs-
+`production/` split and `config.json` answer keys with a `--prod` flag — replaced on 2026-06-19
+by the unified `backend/storage/clients/<id>/` layout with `eval.json`. Fully superseded by this
+file + `PROJECT_REFERENCE.md`.
 
 **Note — live-API plumbing is built (documents upload, RAG-in-ingest, approval→goAML→webhook).**
 `PROJECT_REFERENCE.md` §16b previously described this as “not built yet”; that was corrected on
 2026-06-22 and now agrees with the code, `STATUS_AND_MOCKBANK.md`, and §22 below.
 
 ## 22. Project status
+
+**Recent changes (2026-06-29)**
+- **goAML indicator bug fixed** — `goaml_builder.INDICATOR_MAP` is now keyed by both rule_id and
+  rule_name, so `report_indicators` emit real goAML codes (e.g. `STRUCTURING_BELOW_THRESHOLD`),
+  not raw rule ids. Verified live.
+- **Full live loop re-verified end-to-end** — `verify_stack.py` 27/27; ingest (risk 100) → SAR in
+  ~8s → approve → goAML STR (correct indicators) → HMAC webhook (internal sink) → servable PDF.
+- **TEN-0001 policy indexed** (`scripts/seed_policy.py`, 28 chunks) → live SARs now cite real
+  policy sections (verified: 4.1/4.5/4.7/3.3/5.1). Re-run seed_policy after any `chroma_data` wipe.
+- **Answer-relevancy pass** — `llm_agent.build_sar_prompt` now scopes the narrative (open with the
+  transaction, cite section per indicator, procedure kept in JSON only); `ragas_eval.answer_relevancy`
+  now uses symmetric bge embeddings + n=5. Result: **Faithfulness ≈0.79→≈0.89**, Answer Relevancy ≈0.70
+  (now correctly measured). No hybrid RAG — retrieval was already Recall@8=1.0.
+- **Handoff**: [`MOCKBANK_BRIEF.md`](MOCKBANK_BRIEF.md) written for the teammate's mock bank.
 
 **Built and verified**
 - **Full live pipeline**: ingest → normalize → mask → 8 rules → score → **RAG retrieval (wired
@@ -1065,8 +1087,8 @@ instead. Safe to delete; retained for history.
 - **Multi-tenant auth & lifecycle**: signup/login/refresh, super-admin verify/approve/suspend/
   reinstate, API-key issuance + rotation, full RBAC.
 - **Security hardening** (FAANG-grade + edge cases) — see §11.
-- **RAG evaluation**: IR (Recall@8 = 1.0) + RAGAS (faithfulness ≈ 0.81). Vanilla RAG proven
-  sufficient.
+- **RAG evaluation**: IR (Recall@8 = 1.0) + RAGAS (faithfulness ≈ 0.89, answer relevancy ≈ 0.70).
+  Vanilla RAG proven sufficient.
 - **Frontend**: landing, auth, tenant portal (dashboard, queue, SAR workspace, usage,
   settings), admin console.
 - **Tooling**: seed/reset/export/demo scripts; `verify_stack.py` (27/27).

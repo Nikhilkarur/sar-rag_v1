@@ -66,15 +66,29 @@ def _format_regulatory_context(retrieved_chunks) -> str:
 
 
 def build_sar_prompt(payload_json: str, risk_score, regulatory_context: str) -> str:
-    cited_instructions = (
-        "Using the transaction data AND the regulatory context above, generate a SAR that:\n"
-        "    1. Cites the specific regulation or policy section that applies to each suspicious indicator.\n"
-        "    2. Explains why this transaction violates or implicates it.\n"
-        "    3. Follows the FIU-India goAML STR style.\n"
-        "    4. If no regulatory context was retrieved, generate based on standard PMLA/SEBI AML guidelines.\n"
-        if regulatory_context else
-        "Provide a clear, professional narrative explaining why this transaction is suspicious.\n"
-    )
+    # Narrative scope is kept tight ON PURPOSE: the SAR narrative must open with, and stay
+    # about, THIS transaction and why it is suspicious (with policy citations). Procedural
+    # content (recommended action, next steps, filing process) goes in the JSON only. A
+    # focused narrative is both a better filing and more on-topic (higher answer-relevancy).
+    if regulatory_context:
+        cited_instructions = (
+            "Write the SAR NARRATIVE so that it:\n"
+            "    1. OPENS by stating THIS specific transaction: its type, amount, direction, and the parties.\n"
+            "    2. Explains, indicator by indicator, WHY this transaction is suspicious, citing the specific\n"
+            "       policy/regulation section for each (e.g. 'Section 4.1') from the regulatory context above.\n"
+            "    3. Stays strictly on THIS transaction and its suspicion. Do NOT put recommended actions,\n"
+            "       next steps, filing procedure, or generic AML background in the narrative — those belong\n"
+            "       ONLY in the JSON 'recommended_action' field.\n"
+            "    4. Avoids generic openers and boilerplate; be specific and concise. Follow FIU-India goAML STR style.\n"
+            "    If a needed section was not retrieved, rely on standard PMLA/SEBI AML guidance for that point.\n"
+        )
+    else:
+        cited_instructions = (
+            "Write a clear, professional SAR narrative that OPENS by stating THIS specific transaction (type,\n"
+            "amount, direction, parties), then explains indicator by indicator WHY it is suspicious. Stay strictly\n"
+            "on this transaction; put recommended actions/next steps ONLY in the JSON 'recommended_action' field;\n"
+            "avoid generic boilerplate.\n"
+        )
     return f"""
     Review the transaction details between the <<DATA>> markers below and generate a Suspicious Activity Report (SAR) narrative.
 

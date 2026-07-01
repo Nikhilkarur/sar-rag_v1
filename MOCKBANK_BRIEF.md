@@ -161,6 +161,14 @@ The single end-to-end story we will show on stage:
 **You do NOT build:** any AI/LLM, any PII masking, the report itself, or the approval UI.
 Treat Aegis as a black box with exactly two connection points (Section 5).
 
+> **About the bank's AML _policy_ document (important — clears a common confusion):** the AML
+> policy PDF that the SAR *cites* (e.g. "Section 4.1") is handled **entirely on the Aegis side** —
+> Aegis stores and indexes it so the report can quote it. **You do not provide, upload, or
+> reference any policy document.** Your only AML concern is the risk-**rule engine** in Section 7.1
+> (which decides *whether to forward* a transaction). We index the policy on our side (already done
+> for the demo tenant), so this never blocks your build. If a real bank's own policy is needed
+> later, that's an Aegis-side step we run after your ZIP arrives.
+
 ### 3.1 What you can hardcode or fake
 
 Keep it lean — none of these need to be "real". Faking them is expected:

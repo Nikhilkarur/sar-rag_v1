@@ -108,15 +108,19 @@ def faithfulness(answer, contexts):
     return supported / len(verdicts), len(claims)
 
 
-def answer_relevancy(question, answer, n=3):
+def answer_relevancy(question, answer, n=5):
     qs = _parse_json(_judge(
         f"Based ONLY on the ANSWER below, write {n} distinct questions that this answer "
         f"directly and fully addresses. Output ONLY a JSON array of {n} question strings.\n\n"
         f"ANSWER:\n{answer}"))
     if not isinstance(qs, list) or not qs:
         return None
-    qv = embeddings.embed_query(question)               # bge vectors are unit-normalized
-    sims = [sum(a * b for a, b in zip(qv, embeddings.embed_query(str(gq)))) for gq in qs]
+    # Question<->question is SYMMETRIC similarity, not retrieval, so embed WITHOUT bge's
+    # query-instruction prefix (embed_documents, not embed_query) on BOTH sides — same space,
+    # no shared-prefix confound. Vectors are unit-normalized, so dot product == cosine.
+    qv = embeddings.embed_documents([question])[0]
+    gen_vecs = embeddings.embed_documents([str(gq) for gq in qs])
+    sims = [sum(a * b for a, b in zip(qv, gv)) for gv in gen_vecs]
     return sum(sims) / len(sims)
 
 
