@@ -1,43 +1,10 @@
-import { Check, Cpu } from 'lucide-react'
-import { useQueryClient } from '@tanstack/react-query'
+import { Check, Cpu, Lock } from 'lucide-react'
 import { useLLMConfig } from '../../../hooks/useTenant'
-import { updateLLMConfig } from '../../../api/tenant'
 import { Skeleton } from '../../../components/ui/Skeleton'
-import { useToast } from '../../../components/ui/Toast'
 import { cls, formatNumber } from '../../../utils/format'
-import type { LLMConfig as LLMConfigType } from '../../../types'
-
-const STYLES: { key: LLMConfigType['sar_template_style']; label: string; description: string }[] = [
-  {
-    key: 'NARRATIVE',
-    label: 'Narrative',
-    description: 'Long-form prose SAR narrative — reads like an officer-written report.',
-  },
-  {
-    key: 'STRUCTURED',
-    label: 'Structured Fields',
-    description: 'Key fields and a summary table — optimized for machine parsing.',
-  },
-  {
-    key: 'BOTH',
-    label: 'Both (Recommended)',
-    description: 'Full narrative plus structured fields — the goAML-friendly default.',
-  },
-]
 
 export function LLMConfig() {
   const { data: config, isLoading } = useLLMConfig()
-  const { toast } = useToast()
-  const qc = useQueryClient()
-
-  const handleStyle = async (style: LLMConfigType['sar_template_style']) => {
-    qc.setQueryData(['llm-config'], (old: LLMConfigType | undefined) =>
-      old ? { ...old, sar_template_style: style } : old,
-    )
-    await updateLLMConfig(style)
-    qc.invalidateQueries({ queryKey: ['llm-config'] })
-    toast('success', 'SAR template style updated')
-  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 760 }}>
@@ -89,12 +56,12 @@ export function LLMConfig() {
                   color: 'var(--text-2)',
                 }}
               >
-                llama-3.3-70b-versatile
+                Aegis-managed model
               </span>
             </div>
             <p style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 12, lineHeight: 1.6 }}>
-              Managed by Aegis. No configuration required. Sub-3-second SAR drafts on low-latency
-              managed inference.
+              Managed by Aegis. No configuration required — your drafting model is selected
+              automatically based on your plan (Standard or Premium Drafting).
             </p>
           </div>
 
@@ -135,72 +102,43 @@ export function LLMConfig() {
         </div>
       </div>
 
-      {/* SAR template style */}
+      {/* SAR template style — fixed to Both: goAML filing needs the narrative (reason + PDF) AND
+          the structured fields (indicators), so "Both" is the only compliant mode for the MVP. */}
       <div className="anim-fade-in-up" style={{ animationDelay: '80ms' }}>
         <h3 style={{ fontSize: 16, fontWeight: 600, letterSpacing: '-0.01em', marginBottom: 16 }}>
           SAR Template Style
         </h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {isLoading ? (
-            <>
-              <Skeleton height={68} />
-              <Skeleton height={68} />
-              <Skeleton height={68} />
-            </>
-          ) : (
-            STYLES.map((s) => {
-              const active = config?.sar_template_style === s.key
-              return (
-                <button
-                  key={s.key}
-                  onClick={() => handleStyle(s.key)}
-                  style={{
-                    textAlign: 'left',
-                    width: '100%',
-                    padding: 16,
-                    background: active ? 'var(--accent-subtle)' : 'var(--bg-surface)',
-                    border: '1px solid var(--border-subtle)',
-                    borderLeft: `3px solid ${active ? 'var(--accent)' : 'var(--border-subtle)'}`,
-                    borderRadius: 'var(--r-md)',
-                    cursor: 'pointer',
-                    transition: 'background 150ms ease-out, border-color 150ms ease-out',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 14,
-                  }}
-                >
-                  <span
-                    style={{
-                      width: 18,
-                      height: 18,
-                      borderRadius: '50%',
-                      border: `1.5px solid ${active ? 'var(--accent)' : 'var(--border-strong)'}`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                      transition: 'border-color 150ms',
-                    }}
-                  >
-                    {active && (
-                      <span
-                        className="anim-scale-in"
-                        style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--accent)' }}
-                      />
-                    )}
-                  </span>
-                  <span>
-                    <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-1)', display: 'block' }}>
-                      {s.label}
-                    </span>
-                    <span style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 2, display: 'block' }}>
-                      {s.description}
-                    </span>
-                  </span>
-                </button>
-              )
-            })
-          )}
+        <div
+          className="card"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            borderLeft: '3px solid var(--accent)',
+          }}
+        >
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-1)' }}>
+              Both — narrative + structured fields
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 2 }}>
+              Full narrative plus structured fields — the goAML-friendly default.
+            </div>
+          </div>
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
+              flexShrink: 0,
+              fontSize: 12,
+              color: 'var(--text-4)',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <Lock size={12} /> Locked for MVP
+          </span>
         </div>
       </div>
 

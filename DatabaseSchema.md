@@ -272,8 +272,11 @@ CREATE TABLE alerts (
                     -- | APPROVED | REJECTED | DELIVERED | DELIVERY_FAILED
     
     -- Raw and processed payloads
-    raw_payload     JSONB NOT NULL,                         -- Exact payload received from TMS
-    normalized_payload JSONB,                               -- After schema mapping, before masking
+    -- raw/normalized carry REAL PII → Fernet-encrypted at rest by the app layer
+    -- (EncryptedJSONB, stored as {"__enc__": "<token>"} inside the JSONB; legacy
+    -- plaintext rows still decode). masked stays plaintext — tokens only, no PII.
+    raw_payload     JSONB NOT NULL,                         -- Exact payload received from TMS (ENCRYPTED at rest)
+    normalized_payload JSONB,                               -- After schema mapping, before masking (ENCRYPTED at rest)
     masked_payload  JSONB,                                  -- After PII masking (tokens, not real values)
     
     -- Extracted standard fields (denormalized for easy querying)
@@ -324,8 +327,9 @@ CREATE TABLE pii_maps (
     alert_id        UUID NOT NULL UNIQUE REFERENCES alerts(id) ON DELETE CASCADE,
     tenant_id       UUID NOT NULL REFERENCES tenants(id),
     
-    -- The token ↔ real value mapping
-    -- Example: {"USR_a1b2c3d4": "Rajesh Kumar", "ACC_e5f6g7h8": "HDFC-00123456"}
+    -- The token ↔ real value mapping — Fernet-ENCRYPTED at rest by the app layer
+    -- (EncryptedJSONB: stored as {"__enc__": "<token>"}; a DB dump exposes only ciphertext)
+    -- Decrypted example: {"USR_a1b2c3d4": "Rajesh Kumar", "ACC_e5f6g7h8": "HDFC-00123456"}
     token_map       JSONB NOT NULL,
     
     -- Audit
@@ -398,10 +402,13 @@ CREATE TABLE sar_drafts (
     last_edited_by  UUID REFERENCES users(id),
     last_edited_at  TIMESTAMPTZ,
     
-    -- Final approved version (populated on approval)
-    approved_text   TEXT,                                   -- Final edited text (still masked)
-    rehydrated_text TEXT,                                   -- Final text with real PII restored
-    pdf_path        VARCHAR(500),                           -- File path or S3 key for stored PDF
+    -- Final approved version (populated on finalization — auto-approve or officer)
+    -- Both carry REAL PII → Fernet-ENCRYPTED at rest by the app layer (EncryptedText,
+    -- stored with an "enc::v1::" prefix; legacy plaintext rows still decode)
+    approved_text   TEXT,                                   -- Finalized text, real PII (ENCRYPTED at rest)
+    rehydrated_text TEXT,                                   -- Rehydrated text, real PII (ENCRYPTED at rest)
+    pdf_path        VARCHAR(500),                           -- LEGACY/unused: live PDFs are rendered in-memory,
+                                                            --   never persisted (changed 2026-07-05)
     pdf_generated_at TIMESTAMPTZ,
     
     -- LLM metadata
@@ -481,7 +488,8 @@ CREATE TABLE webhook_sink_events (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id       UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     
-    -- Received payload
+    -- Received payload — approval events include the goAML STR (REAL PII) →
+    -- Fernet-ENCRYPTED at rest by the app layer (EncryptedJSONB). Headers hold no PII.
     payload         JSONB NOT NULL,
     headers         JSONB,
     

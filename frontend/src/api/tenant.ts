@@ -1,5 +1,10 @@
 import client from './client'
-import type { WebhookConfig, LLMConfig, UsageStats, WebhookEvent, SchemaPreset, ApprovedSAR } from '../types'
+import type { WebhookConfig, LLMConfig, UsageStats, WebhookEvent, SchemaPreset, ApprovedSAR, Billing } from '../types'
+
+export async function getBilling(): Promise<Billing> {
+  const { data } = await client.get('/tenant/billing')
+  return data
+}
 
 export async function getCredentials(): Promise<{ api_key_prefix: string; tenant_id_public: string }> {
   const { data } = await client.get('/tenant/credentials')
@@ -63,5 +68,14 @@ export async function getUsage(): Promise<UsageStats> {
 
 export async function listApprovedSars(): Promise<ApprovedSAR[]> {
   const { data } = await client.get('/tenant/sars')
+  return data
+}
+
+/** Fetch a SAR PDF as a blob. The file is served at /files/sar/<id>.pdf (root, not
+    under /api/v1) and is now tenant-authenticated, so we hit it through the same axios
+    client (absolute URL bypasses baseURL; the interceptor still attaches the JWT). */
+const FILES_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1').replace(/\/api\/v1\/?$/, '')
+export async function downloadSarPdf(sarId: string): Promise<Blob> {
+  const { data } = await client.get(`${FILES_BASE}/files/sar/${sarId}.pdf`, { responseType: 'blob' })
   return data
 }

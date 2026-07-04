@@ -16,20 +16,33 @@ export function Login() {
   const navigate = useNavigate()
   const setAuth = useAuthStore((s) => s.setAuth)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!email || !password) {
+    // Read the LIVE DOM values, not just React state. Chrome autofill can paint a field
+    // without firing onChange, leaving `email`/`password` state stale/empty — which posts
+    // the wrong credentials and gets a confusing 401. FormData reads whatever is actually
+    // in the inputs; trim guards against copy-paste whitespace.
+    const form = new FormData(e.currentTarget)
+    const emailVal = (((form.get('email') as string | null) ?? email) || '').trim()
+    const passwordVal = (((form.get('password') as string | null) ?? password) || '').trim()
+    if (!emailVal || !passwordVal) {
       setError('Enter your email and password.')
       return
     }
+    // Keep React state in sync with what we actually submit (in case autofill desynced it).
+    setEmail(emailVal)
+    setPassword(passwordVal)
     setLoading(true)
     setError('')
     try {
-      const result = await login({ email, password })
+      const result = await login({ email: emailVal, password: passwordVal })
       setAuth(result.user, result.access_token, result.refresh_token)
-      navigate(result.user.role === 'SUPER_ADMIN' ? '/admin/verifications' : '/dashboard')
+      navigate(result.user.role === 'SUPER_ADMIN' ? '/admin/overview' : '/dashboard')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Sign in failed. Please try again.')
+      // Prefer the backend's message ("Invalid email or password") over axios's
+      // generic "Request failed with status code 401".
+      const detail = (err as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail
+      setError(typeof detail === 'string' ? detail : 'Sign in failed. Please check your email and password.')
     } finally {
       setLoading(false)
     }
@@ -64,6 +77,7 @@ export function Login() {
           <Field label="Email">
             <Input
               type="email"
+              name="email"
               placeholder="you@company.com"
               value={email}
               autoComplete="email"
@@ -77,6 +91,7 @@ export function Login() {
           <Field label="Password">
             <Input
               type={showPassword ? 'text' : 'password'}
+              name="password"
               placeholder="••••••••••"
               value={password}
               autoComplete="current-password"
@@ -130,26 +145,6 @@ export function Login() {
           >
             New entity? Request access →
           </Link>
-        </div>
-
-        <div
-          style={{
-            marginTop: 20,
-            padding: '10px 12px',
-            background: 'var(--bg-base)',
-            border: '1px dashed var(--border)',
-            borderRadius: 'var(--r-md)',
-            fontSize: 11,
-            color: 'var(--text-4)',
-            fontFamily: 'var(--font-mono)',
-            lineHeight: 1.8,
-          }}
-        >
-          <span style={{ color: 'var(--text-3)' }}>Demo credentials</span>
-          <br />
-          demo@demofintech.com / Demo2026!
-          <br />
-          admin@aegis-aml.com / AegisAdmin2026!
         </div>
     </div>
   )

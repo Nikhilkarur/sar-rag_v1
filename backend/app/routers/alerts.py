@@ -11,12 +11,13 @@ from app.models.sar import SARDraft
 from app.models.webhook import WebhookConfig, WebhookSinkEvent
 from app.services.pii_masker import mask_payload, rehydrate_text
 from app.services.compliance_analyzer import analyze
+from app.services.risk_scoring import compute_composite_risk, warrants_sar
 from app.services.goaml_builder import build_goaml_str
-from app.services.sar_pdf import render_sar_pdf
+from app.services.sar_delivery import finalize_and_deliver
 from app.routers.ingest import process_alert_background
 from app.config import settings
 from app.models.tenant import Tenant
-from app.utils.security import decrypt_json
+from app.utils.security import decrypt_json, validate_webhook_url
 from datetime import datetime
 from typing import Any
 import secrets
@@ -76,7 +77,10 @@ _ALL_RULES = [
 ]
 
 @router.get("/queue")
-def list_alerts(include_synthetic: bool = True, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_tenant_user)):
+def list_alerts(include_synthetic: bool = False, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_tenant_user)):
+    # Default excludes synthetic (portal-simulator) alerts so a real compliance officer sees
+    # only real transactions. The DEV dashboard opts back in (?include_synthetic=true) so the
+    # "Submit test alert" button's output is still visible while demoing.
     query = db.query(Alert).filter(Alert.tenant_id == current_user.tenant_id, Alert.is_deleted == False)
     if not include_synthetic:
         # Compliance metrics must be computed over real alerts only
@@ -121,6 +125,9 @@ def get_alert(alert_id: str, db: Session = Depends(get_db), current_user: User =
         sar_draft = {
             "id": str(draft.id),
             "draft_text": draft.draft_text,
+            # The structured half of the SAR (key indicators + recommended action).
+            # Derived from MASKED data, so it carries no real PII — safe to render.
+            "draft_structured": draft.draft_structured,
             "llm_model": draft.llm_model,
             "generation_latency_ms": draft.generation_latency_ms,
             "officer_edit_count": draft.officer_edit_count,
@@ -144,6 +151,10 @@ def get_alert(alert_id: str, db: Session = Depends(get_db), current_user: User =
 @router.put("/queue/{alert_id}/draft")
 def update_draft(alert_id: str, payload: dict, db: Session = Depends(get_db), current_user: User = Depends(get_compliance_user)):
     a = _get_owned_alert(alert_id, db, current_user)
+    # A finalized SAR has already been rehydrated + delivered to the bank; editing
+    # draft_text afterwards would silently diverge from the delivered approved_text.
+    if a.status in ("APPROVED", "REJECTED"):
+        raise HTTPException(status_code=409, detail=f"Alert already {a.status.lower()} — the draft can no longer be edited")
     draft = db.query(SARDraft).filter(SARDraft.alert_id == a.id).first()
     if not draft:
         raise HTTPException(status_code=404, detail="No draft exists for this alert yet")
@@ -177,6 +188,10 @@ def _deliver_webhook(callback_url: str, secret_encrypted, payload: dict):
     import hashlib
     import httpx
     try:
+        # Re-validate at SEND time (DNS rebinding): a URL that was public at
+        # registration may now resolve to an internal/metadata address, and this
+        # payload carries real rehydrated PII. No-op-safe in development.
+        validate_webhook_url(callback_url)
         body = _json.dumps(payload).encode("utf-8")
         headers = {"Content-Type": "application/json", "X-Aegis-Event": "sar.approved"}
         if secret_encrypted:
@@ -196,62 +211,15 @@ def approve_alert(alert_id: str, payload: Any = Body(default=None), db: Session 
     a = _get_owned_alert(alert_id, db, current_user)
     if a.status in ("APPROVED", "REJECTED"):
         raise HTTPException(status_code=409, detail=f"Alert already {a.status.lower()}")
+    # Approving requires a SAR to approve. Without this, a below-threshold
+    # (COMPLETED_CLEAN) or still-PROCESSING alert could be marked APPROVED with no
+    # draft — finalize_and_deliver would no-op and leave an "approved" SAR that was
+    # never generated nor delivered.
+    if not db.query(SARDraft.id).filter(SARDraft.alert_id == a.id).first():
+        raise HTTPException(status_code=409, detail="No SAR draft exists for this alert — nothing to approve")
 
-    a.status = 'APPROVED'
-    a.reviewed_by = current_user.id
-    a.reviewed_at = __import__('sqlalchemy').func.now()
-
-    # Finalize the SAR: rehydrate PII into the approved text
-    draft = db.query(SARDraft).filter(SARDraft.alert_id == a.id).first()
-    rules_map = _rules_by_alert(db, [a.id])
-    if draft:
-        pii_map = db.query(PIIMap).filter(PIIMap.alert_id == a.id).first()
-        rehydrated = rehydrate_text(draft.draft_text, pii_map.token_map) if pii_map and pii_map.token_map else draft.draft_text
-        draft.approved_text = rehydrated
-        draft.rehydrated_text = rehydrated
-        if pii_map:
-            pii_map.rehydrated_at = __import__('sqlalchemy').func.now()
-
-        # Build the goAML filing + render the PDF, then deliver to the bank.
-        approved_at_iso = datetime.utcnow().isoformat() + "Z"
-        rule_names = rules_map.get(a.id, [])
-        tenant = db.query(Tenant).filter(Tenant.id == a.tenant_id).first()
-        client_id = (tenant.tenant_id_public if tenant else None) or str(a.tenant_id)
-        goaml = build_goaml_str(a, draft, rule_names, tenant, current_user.full_name, approved_at_iso)
-
-        pdf_url = None
-        try:
-            pdf_path = render_sar_pdf(client_id, str(draft.id), a, draft, goaml, current_user.full_name, approved_at_iso)
-            draft.pdf_path = pdf_path
-            draft.pdf_generated_at = __import__('sqlalchemy').func.now()
-            pdf_url = f"{settings.PUBLIC_BASE_URL.rstrip('/')}/files/sar/{draft.id}.pdf"
-        except Exception:
-            pdf_url = None  # PDF render failure must not block approval/delivery
-
-        delivery_payload = {
-            "event": "sar.approved",
-            "sar_id": str(draft.id),
-            "alert_id": str(a.id),
-            "approved_at": approved_at_iso,
-            "approved_by": current_user.full_name,
-            "goaml_str": goaml,
-            "pdf_url": pdf_url,
-            "compliance_rules_triggered": rule_names,
-        }
-
-        webhook = db.query(WebhookConfig).filter(WebhookConfig.tenant_id == current_user.tenant_id).first()
-        if webhook and webhook.is_active:
-            # Real HTTP delivery to the bank's callback URL (unless using the internal sink).
-            if webhook.callback_url and not webhook.use_internal_sink:
-                _deliver_webhook(webhook.callback_url, webhook.secret_encrypted, delivery_payload)
-            # Always record an internal sink event for audit.
-            db.add(WebhookSinkEvent(
-                tenant_id=current_user.tenant_id,
-                payload=delivery_payload,
-                headers={"X-Aegis-Event": "sar.approved"},
-                hmac_valid=True,
-                source_ip="internal-sink",
-            ))
+    # Officer approval → finalize + deliver (shared with the auto-approve path).
+    finalize_and_deliver(a, db, current_user.full_name, current_user.id)
 
     db.commit()
     db.refresh(a)
@@ -314,11 +282,8 @@ def submit_test_alert(
     masked_payload, token_map = mask_payload(normalized, pii_fields)
     analysis_results = analyze(normalized)
 
-    risk_score = int(normalized.get("risk_score", 0))
-    for r in analysis_results:
-        if r["triggered"]:
-            if r["confidence"] == "HIGH": risk_score += 20
-            elif r["confidence"] == "MEDIUM": risk_score += 10
+    # Same composite scoring as the live ingest path (single source of truth).
+    risk_score = compute_composite_risk(normalized.get("risk_score"), analysis_results)
 
     alert = Alert(
         tenant_id=current_user.tenant_id,
@@ -330,7 +295,7 @@ def submit_test_alert(
         transaction_id=txn_id,
         transaction_amount=normalized.get("transaction_amount"),
         transaction_type=normalized.get("transaction_type"),
-        risk_score=min(100, risk_score),
+        risk_score=risk_score,  # already clamped to 0..100 by compute_composite_risk
         source="SIMULATOR",
         is_synthetic=True,  # never counted in compliance metrics
         processing_started_at=__import__('sqlalchemy').func.now()
@@ -353,7 +318,7 @@ def submit_test_alert(
             ))
     db.commit()
 
-    if alert.risk_score >= 75:
+    if warrants_sar(alert.risk_score):
         background_tasks.add_task(process_alert_background, alert.id)
     else:
         alert.status = "COMPLETED_CLEAN"

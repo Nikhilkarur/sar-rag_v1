@@ -138,6 +138,23 @@ export function StatusBadge({ status }: { status: string }) {
 
 /* ── Compliance rules ──────────────────────────────────────────────── */
 
+// Human labels for the raw rule ids (compliance_analyzer.py). Anything unmapped falls back
+// to a de-underscored, capitalized form so a new rule still reads cleanly.
+const RULE_LABELS: Record<string, string> = {
+  STRUCTURING: 'Structuring',
+  RAPID_MOVEMENT: 'Rapid movement',
+  ROUND_NUMBER: 'Round number',
+  DORMANT_ACTIVATION: 'Dormant activation',
+  HIGH_RISK_TYPE: 'High-risk type',
+  VELOCITY: 'Velocity',
+  COUNTERPARTY_RISK: 'Counterparty risk',
+  RISK_SCORE_THRESHOLD: 'Risk score',
+};
+
+export function prettyRule(rule: string): string {
+  return RULE_LABELS[rule] ?? rule.replace(/_/g, ' ').toLowerCase().replace(/^./, (c) => c.toUpperCase());
+}
+
 export function RulePill({ rule }: { rule: string }) {
   return (
     <span
@@ -145,18 +162,16 @@ export function RulePill({ rule }: { rule: string }) {
         display: 'inline-flex',
         alignItems: 'center',
         height: 20,
-        padding: '0 7px',
+        padding: '0 8px',
         borderRadius: 'var(--r-sm)',
-        fontFamily: 'var(--font-mono)',
-        fontSize: 10.5,
-        letterSpacing: '0.02em',
+        fontSize: 11.5,
         color: 'var(--text-2)',
         background: 'var(--bg-elevated)',
         border: '1px solid var(--border)',
         whiteSpace: 'nowrap',
       }}
     >
-      {rule}
+      {prettyRule(rule)}
     </span>
   );
 }
@@ -180,7 +195,7 @@ export function RulePills({ rules, max = 2 }: { rules?: string[]; max?: number }
           >
             +{extra}
           </span>
-          <span className="tip-content">{list.slice(max).join(', ')}</span>
+          <span className="tip-content">{list.slice(max).map(prettyRule).join(', ')}</span>
         </span>
       )}
     </span>

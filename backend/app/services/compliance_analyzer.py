@@ -126,14 +126,20 @@ def check_high_risk_type(normalized: dict) -> dict:
 def check_velocity(normalized: dict) -> dict:
     reason = normalized.get("alert_reason")
     risk_score = normalized.get("risk_score")
-    
-    triggered = (reason and "velocity" in str(reason).lower()) or (risk_score and int(risk_score) >= 90)
+
+    # Fires ONLY when the bank's TMS actually reported velocity (keyword in alert_reason).
+    # A high composite risk_score alone must NOT trigger this rule: that used to fabricate
+    # "multiple transactions within a short window" as evidence in the SAR when no such
+    # pattern was observed (high score is already covered by RISK_SCORE_THRESHOLD, and any
+    # score >= 90 crosses the SAR threshold regardless, so this changes no SAR decision).
+    triggered = bool(reason and "velocity" in str(reason).lower())
     confidence = "HIGH" if risk_score and int(risk_score) >= 90 else "MEDIUM"
-    
+
     evidence = {}
     if triggered:
         evidence = {
-            "explanation": "High-velocity pattern detected — multiple transactions within a short window."
+            "field": "alert_reason",
+            "explanation": "The bank's TMS reported a high-velocity pattern — multiple transactions within a short window."
         }
         
     return {
@@ -168,8 +174,9 @@ def check_counterparty_risk(normalized: dict) -> dict:
 
 def check_risk_score_threshold(normalized: dict) -> dict:
     risk_score = normalized.get("risk_score")
-    THRESHOLD = 75
-    
+    from app.config import settings
+    THRESHOLD = settings.SAR_RISK_THRESHOLD  # single source of truth (config)
+
     triggered = risk_score is not None and int(risk_score) >= THRESHOLD
     confidence = "HIGH" if risk_score and int(risk_score) >= 85 else "MEDIUM"
     

@@ -1,5 +1,10 @@
 import client from './client'
-import type { VerificationItem, CustomerItem, ApiLogItem, GroqUsage } from '../types'
+import type { VerificationItem, CustomerItem, ApiLogItem, GroqUsage, PlatformOverview, PlatformBilling } from '../types'
+
+export async function getPlatformOverview(): Promise<PlatformOverview> {
+  const { data } = await client.get('/admin/overview')
+  return data
+}
 
 export async function listVerifications(): Promise<VerificationItem[]> {
   const { data } = await client.get('/admin/verifications')
@@ -35,5 +40,10 @@ export async function listApiLogs(): Promise<ApiLogItem[]> {
 
 export async function getGroqUsage(): Promise<GroqUsage> {
   const { data } = await client.get('/admin/groq-usage')
+  return data
+}
+
+export async function getPlatformBilling(): Promise<PlatformBilling> {
+  const { data } = await client.get('/admin/billing')
   return data
 }

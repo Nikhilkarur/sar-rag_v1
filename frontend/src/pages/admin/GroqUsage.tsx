@@ -1,4 +1,4 @@
-import { DollarSign, Hash, Zap } from 'lucide-react'
+import { Hash, Info, Zap } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import {
   Bar,
@@ -67,20 +67,33 @@ export function GroqUsage() {
 
   const allTime = useCountUp(data?.total_tokens_all_time ?? 0)
   const thisMonth = useCountUp(data?.total_tokens_this_month ?? 0)
-  const cost = useCountUp(data?.estimated_cost_usd_this_month ?? 0, 1200, 2)
 
   const top5 = (data?.per_tenant ?? []).slice(0, 5).map((t) => ({
-    name: t.tenant_name.length > 18 ? `${t.tenant_name.slice(0, 17)}…` : t.tenant_name,
+    name: t.tenant_name.length > 26 ? `${t.tenant_name.slice(0, 25)}…` : t.tenant_name,
     tokens: t.tokens_this_month,
   }))
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      {/* Free-tier note */}
+      <div
+        style={{
+          display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 16px',
+          borderRadius: 'var(--r-lg)', background: 'var(--success-subtle)', border: '1px solid var(--success)',
+        }}
+      >
+        <Info size={16} color="var(--success)" style={{ flexShrink: 0, marginTop: 1 }} />
+        <div style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.5 }}>
+          <b style={{ color: 'var(--success)' }}>Currently running on free-tier / rotating provider keys — ₹0 billed.</b>{' '}
+          Token counts below are <b>real</b>, metered off the actual SAR drafts (<code>sar_drafts</code>). Client
+          charges (once paying clients onboard) are shown on the <b>Billing</b> page.
+        </div>
+      </div>
+
       {/* Stat cards */}
-      <div className="stat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+      <div className="stat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
         {isLoading ? (
           <>
-            <SkeletonStatCard />
             <SkeletonStatCard />
             <SkeletonStatCard />
           </>
@@ -100,13 +113,6 @@ export function GroqUsage() {
               value={thisMonth}
               label="Tokens This Month"
             />
-            <Stat
-              index={2}
-              icon={<DollarSign size={15} color="var(--success)" />}
-              iconBg="rgba(6,78,59,0.12)"
-              value={`$${cost}`}
-              label="Est. Cost This Month"
-            />
           </>
         )}
       </div>
@@ -119,9 +125,9 @@ export function GroqUsage() {
           <h3 style={{ fontSize: 16, fontWeight: 600, letterSpacing: '-0.01em', marginBottom: 16 }}>
             Top Tenants by Token Usage — This Month
           </h3>
-          <div style={{ height: Math.max(180, top5.length * 48) }}>
+          <div style={{ height: Math.max(140, top5.length * 60) }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={top5} layout="vertical" margin={{ top: 0, right: 24, bottom: 0, left: 40 }}>
+              <BarChart data={top5} layout="vertical" barCategoryGap="28%" margin={{ top: 0, right: 24, bottom: 0, left: 8 }}>
                 <CartesianGrid stroke="var(--border-subtle)" strokeDasharray="3 3" horizontal={false} />
                 <XAxis
                   type="number"
@@ -133,7 +139,7 @@ export function GroqUsage() {
                 <YAxis
                   type="category"
                   dataKey="name"
-                  width={120}
+                  width={170}
                   tick={{ fill: 'var(--text-3)', fontSize: 12 }}
                   axisLine={false}
                   tickLine={false}
@@ -143,7 +149,7 @@ export function GroqUsage() {
                   dataKey="tokens"
                   fill="var(--accent)"
                   radius={[0, 4, 4, 0]}
-                  barSize={18}
+                  barSize={22}
                   isAnimationActive
                   animationDuration={900}
                 />
@@ -165,13 +171,12 @@ export function GroqUsage() {
                 <th style={{ paddingLeft: 24 }}>Tenant</th>
                 <th style={{ textAlign: 'right' }}>Tokens This Month</th>
                 <th style={{ textAlign: 'right' }}>Requests</th>
-                <th style={{ textAlign: 'right' }}>Est. Cost</th>
                 <th style={{ paddingRight: 24 }}>Last Active</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
-                <SkeletonTableRows rows={4} cols={5} />
+                <SkeletonTableRows rows={4} cols={4} />
               ) : (
                 (data?.per_tenant ?? []).map((t) => (
                   <tr key={t.tenant_id}>
@@ -183,9 +188,6 @@ export function GroqUsage() {
                     </td>
                     <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--text-2)' }}>
                       {t.total_requests}
-                    </td>
-                    <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--success)' }}>
-                      ${t.est_cost.toFixed(2)}
                     </td>
                     <td style={{ paddingRight: 24, fontSize: 13, color: 'var(--text-3)' }}>
                       {timeAgo(t.last_active)}
@@ -204,8 +206,8 @@ export function GroqUsage() {
             color: 'var(--text-4)',
           }}
         >
-          Costs estimated at $0.0015/1K input tokens, $0.002/1K output tokens (provider list
-          pricing). Actual billing may vary.
+          Token usage across all tenants. Running on free-tier / rotating provider keys — no
+          billable cost is tracked here.
         </div>
       </div>
     </div>

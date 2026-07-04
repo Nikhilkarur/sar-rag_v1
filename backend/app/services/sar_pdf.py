@@ -1,10 +1,12 @@
 """
 Render an approved SAR to a human-readable PDF (the bank-facing report).
 
-Stored at backend/storage/clients/<client_id>/sar/<sar_id>.pdf; path is returned and saved on the
-SARDraft. Cells are wrapped in Paragraph so long text wraps instead of clipping.
+The PDF carries REHYDRATED (real) PII — it is the actual FIU filing — so we deliberately do NOT
+persist it to Aegis's disk. It is rendered in memory: the bytes are base64'd into the approval
+webhook (the bank keeps its own copy) and re-rendered on demand for the officer's own download.
+Cells are wrapped in Paragraph so long text wraps instead of clipping.
 """
-import os
+from io import BytesIO
 from typing import Any, Dict, List
 
 from reportlab.lib.pagesizes import A4
@@ -14,8 +16,6 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import (SimpleDocTemplate, Paragraph, Spacer, Table,
                                 TableStyle, HRFlowable)
 from reportlab.lib import colors
-
-from app.services import client_storage
 
 
 def _normalize_indicators(structured: Dict[str, Any]) -> List[Dict[str, str]]:
@@ -30,9 +30,10 @@ def _normalize_indicators(structured: Dict[str, Any]) -> List[Dict[str, str]]:
     return out
 
 
-def render_sar_pdf(client_id: str, sar_id: str, alert, draft, goaml: Dict[str, Any],
-                   officer_name: str, approved_at: str) -> str:
-    path = client_storage.sar_path(client_id, sar_id)  # storage/clients/<cid>/sar/<sar_id>.pdf
+def render_sar_pdf(sar_id: str, alert, draft, goaml: Dict[str, Any],
+                   officer_name: str, approved_at: str) -> bytes:
+    """Render the SAR to PDF and return the bytes. Never touches disk (real-PII filing)."""
+    buffer = BytesIO()
 
     s = getSampleStyleSheet()
     H = ParagraphStyle("H", parent=s["Heading2"], fontName="Helvetica-Bold", fontSize=12,
@@ -115,6 +116,6 @@ def render_sar_pdf(client_id: str, sar_id: str, alert, draft, goaml: Dict[str, A
     story.append(Paragraph(f"Filed to FIU-IND via goAML by {officer_name}.",
                            ParagraphStyle("F", parent=s["Normal"], fontSize=8, textColor=colors.grey)))
 
-    SimpleDocTemplate(path, pagesize=A4, leftMargin=18 * mm, rightMargin=18 * mm,
+    SimpleDocTemplate(buffer, pagesize=A4, leftMargin=18 * mm, rightMargin=18 * mm,
                       topMargin=16 * mm, bottomMargin=16 * mm).build(story)
-    return path
+    return buffer.getvalue()

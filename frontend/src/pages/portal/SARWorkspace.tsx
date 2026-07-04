@@ -5,6 +5,7 @@ import {
   Check,
   ChevronDown,
   ChevronLeft,
+  Download,
   Eye,
   Lock,
   Send,
@@ -23,8 +24,9 @@ import { AlertStatusBadge, ConfidencePill, RiskScoreCell } from '../../component
 import { Skeleton } from '../../components/ui/Skeleton'
 import { AegisShield } from '../../components/AegisLogo'
 import { previewRehydrated } from '../../api/alerts'
+import { downloadSarPdf } from '../../api/tenant'
 import { formatINR, timeAgo, formatDateTime } from '../../utils/format'
-import type { ComplianceRule } from '../../types'
+import type { ComplianceRule, SARStructured, SARKeyIndicator } from '../../types'
 
 /* ═════════════════════════════════════════════════════════════════════════
    SAR WORKSPACE — Attio-style split screen.
@@ -123,6 +125,124 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
     >
       {children}
     </div>
+  )
+}
+
+// ── SAR document (structured) ──────────────────────────────────────────────
+
+/** draft_structured may be null or malformed on older/edge drafts — normalize defensively. */
+function normalizeStructured(raw: unknown): SARStructured | null {
+  if (!raw || typeof raw !== 'object') return null
+  const obj = raw as Record<string, unknown>
+  const kiRaw = Array.isArray(obj.key_indicators) ? obj.key_indicators : []
+  const key_indicators = kiRaw
+    .map((k): SARKeyIndicator | null => {
+      if (!k || typeof k !== 'object') return null
+      const o = k as Record<string, unknown>
+      const indicator = String(o.indicator ?? '').trim()
+      if (!indicator) return null
+      return {
+        indicator,
+        regulation: String(o.regulation ?? '').trim(),
+        description: String(o.description ?? '').trim(),
+      }
+    })
+    .filter((k): k is SARKeyIndicator => k !== null)
+  const recommended_action =
+    typeof obj.recommended_action === 'string' ? obj.recommended_action.trim() : ''
+  if (key_indicators.length === 0 && !recommended_action) return null
+  return { key_indicators, recommended_action }
+}
+
+/** Uppercase, underlined document section heading. */
+function DocH({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        fontSize: 11,
+        fontWeight: 600,
+        letterSpacing: '0.06em',
+        textTransform: 'uppercase',
+        color: 'var(--text-3)',
+        paddingBottom: 6,
+        borderBottom: '1px solid var(--border-subtle)',
+      }}
+    >
+      {children}
+    </div>
+  )
+}
+
+/** Read-only narrative render (used once the alert is no longer editable). */
+function ReadOnlyNarrative({ text }: { text: string }) {
+  return (
+    <div style={{ fontSize: 14.5, lineHeight: 1.75, color: 'var(--text-1)', whiteSpace: 'pre-wrap' }}>
+      {text.split('\n').map((line, i) =>
+        /^[0-9]+\. [A-Z]/.test(line) ? (
+          <div key={i} style={{ fontWeight: 600, marginTop: i ? 16 : 0 }}>
+            {line}
+          </div>
+        ) : (
+          <React.Fragment key={i}>
+            {line}
+            {'\n'}
+          </React.Fragment>
+        ),
+      )}
+    </div>
+  )
+}
+
+/** The structured half of the SAR: cited indicators + recommended action. */
+function SARStructuredBlock({ structured }: { structured: SARStructured }) {
+  return (
+    <>
+      {structured.key_indicators.length > 0 && (
+        <div style={{ marginTop: 28 }}>
+          <DocH>Key indicators</DocH>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 12 }}>
+            {structured.key_indicators.map((k, i) => (
+              <div key={i} style={{ display: 'flex', gap: 10 }}>
+                <span style={{ color: 'var(--accent-text)', marginTop: 1, flexShrink: 0 }}>•</span>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: 8 }}>
+                    <span style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-1)' }}>{k.indicator}</span>
+                    {k.regulation && (
+                      <span
+                        style={{
+                          fontSize: 11.5,
+                          fontFamily: 'var(--font-mono)',
+                          color: 'var(--accent-text)',
+                          background: 'var(--accent-subtle)',
+                          border: '1px solid var(--border-subtle)',
+                          borderRadius: 'var(--r-sm)',
+                          padding: '1px 7px',
+                        }}
+                      >
+                        {k.regulation}
+                      </span>
+                    )}
+                  </div>
+                  {k.description && (
+                    <p style={{ fontSize: 13.5, color: 'var(--text-2)', lineHeight: 1.6, marginTop: 4 }}>
+                      {k.description}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {structured.recommended_action && (
+        <div style={{ marginTop: 28 }}>
+          <DocH>Recommended action</DocH>
+          <p style={{ fontSize: 14, color: 'var(--text-1)', lineHeight: 1.7, marginTop: 10 }}>
+            {structured.recommended_action}
+          </p>
+        </div>
+      )}
+    </>
   )
 }
 
@@ -329,6 +449,24 @@ export function SARWorkspace() {
     }
   }
 
+  // Download the finalized SAR PDF (exists once approved). Fetches the blob (tenant-auth'd)
+  // so it saves with a proper filename instead of opening a blank tab.
+  const downloadPdf = async (sarId: string) => {
+    try {
+      const blob = await downloadSarPdf(sarId)
+      const href = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = href
+      a.download = `SAR-${sarId}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(href)
+    } catch {
+      toast('error', 'Download failed', 'The SAR PDF could not be fetched.')
+    }
+  }
+
   // ── Reject ─────────────────────────────────────────────────────────────
 
   const handleReject = () => {
@@ -380,6 +518,7 @@ export function SARWorkspace() {
   const compliance = alert.compliance
   const draft = alert.sar_draft
   const isPending = alert.status === 'PENDING_REVIEW'
+  const structured = draft ? normalizeStructured(draft.draft_structured) : null
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--bg-base)' }}>
@@ -414,27 +553,38 @@ export function SARWorkspace() {
           <Button variant="secondary" size="sm" icon={<Eye size={13} />} onClick={openPreview}>
             Preview
           </Button>
-          <Button
-            variant="danger-ghost"
-            size="sm"
-            icon={<XCircle size={13} />}
-            onClick={() => setRejectOpen(true)}
-            disabled={!isPending}
-          >
-            Reject
-          </Button>
-          <Button
-            size="sm"
-            icon={<Send size={13} />}
-            onClick={() => {
-              saveDraft()
-              setApprovePhase('confirm')
-              setApproveOpen(true)
-            }}
-            disabled={!isPending}
-          >
-            Approve &amp; send
-          </Button>
+          {/* The finalized SAR PDF exists once the alert is approved (auto or manual). */}
+          {alert.status === 'APPROVED' && draft && (
+            <Button variant="secondary" size="sm" icon={<Download size={13} />} onClick={() => downloadPdf(draft.id)}>
+              Download PDF
+            </Button>
+          )}
+          {/* Approve/Reject only exist while an officer review is actually pending
+              (i.e. AUTO_APPROVE_SARS is off). Under auto-approve the SAR arrives
+              already delivered, so these would be dead controls — hide them. */}
+          {isPending && (
+            <>
+              <Button
+                variant="danger-ghost"
+                size="sm"
+                icon={<XCircle size={13} />}
+                onClick={() => setRejectOpen(true)}
+              >
+                Reject
+              </Button>
+              <Button
+                size="sm"
+                icon={<Send size={13} />}
+                onClick={() => {
+                  saveDraft()
+                  setApprovePhase('confirm')
+                  setApproveOpen(true)
+                }}
+              >
+                Approve &amp; send
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -693,7 +843,7 @@ export function SARWorkspace() {
                   whiteSpace: 'nowrap',
                 }}
               >
-                {draft ? `AI · ${draft.llm_model.replace('-versatile', '')}` : 'No draft'}
+                {draft ? 'AI-generated' : 'No draft'}
               </span>
             </div>
           </div>
@@ -712,15 +862,75 @@ export function SARWorkspace() {
                 minHeight: '100%',
               }}
             >
-              <div
-                ref={editorRef}
-                className="sar-editor"
-                contentEditable={isPending}
-                suppressContentEditableWarning
-                spellCheck={false}
-                onInput={onEditorInput}
-                onBlur={saveDraft}
-              />
+              {!draft ? (
+                <div style={{ textAlign: 'center', color: 'var(--text-3)', fontSize: 14, padding: '48px 0' }}>
+                  No SAR was generated — this alert completed clean.
+                </div>
+              ) : (
+                <>
+                  {/* Document title */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      justifyContent: 'space-between',
+                      gap: 12,
+                      paddingBottom: 20,
+                      marginBottom: 24,
+                      borderBottom: '1px solid var(--border-subtle)',
+                    }}
+                  >
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-0.01em' }}>
+                        Suspicious Transaction Report
+                      </div>
+                      <div style={{ fontSize: 12.5, color: 'var(--text-3)', marginTop: 3 }}>
+                        {alert.transaction_type.replace(/_/g, ' ')} · {formatINR(alert.transaction_amount)} ·{' '}
+                        <span style={{ fontFamily: 'var(--font-mono)' }}>{alert.transaction_id}</span>
+                      </div>
+                    </div>
+                    <span
+                      style={{
+                        flexShrink: 0,
+                        height: 22,
+                        padding: '0 10px',
+                        borderRadius: 'var(--r-sm)',
+                        background: 'var(--accent-subtle)',
+                        color: 'var(--accent-text)',
+                        border: '1px solid var(--border-subtle)',
+                        fontSize: 11,
+                        fontWeight: 700,
+                        letterSpacing: '0.04em',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                      }}
+                    >
+                      STR
+                    </span>
+                  </div>
+
+                  {/* Narrative — editable only while officer review is pending */}
+                  <DocH>Narrative</DocH>
+                  <div style={{ marginTop: 12 }}>
+                    {isPending ? (
+                      <div
+                        ref={editorRef}
+                        className="sar-editor"
+                        contentEditable
+                        suppressContentEditableWarning
+                        spellCheck={false}
+                        onInput={onEditorInput}
+                        onBlur={saveDraft}
+                      />
+                    ) : (
+                      <ReadOnlyNarrative text={draftText ?? ''} />
+                    )}
+                  </div>
+
+                  {/* Structured half — cited indicators + recommended action */}
+                  {structured && <SARStructuredBlock structured={structured} />}
+                </>
+              )}
             </div>
           </div>
 
@@ -741,10 +951,12 @@ export function SARWorkspace() {
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minWidth: 0, overflow: 'hidden', whiteSpace: 'nowrap' }}>
               <Sparkles size={12} style={{ flexShrink: 0 }} />
               {draft
-                ? `Generated in ${(draft.generation_latency_ms / 1000).toFixed(1)}s · ${draft.llm_model.replace('-versatile', '')}`
+                ? `Generated in ${(draft.generation_latency_ms / 1000).toFixed(1)}s · Aegis AI`
                 : 'No SAR draft — this alert completed clean'}
             </span>
-            <span style={{ whiteSpace: 'nowrap' }}>{charCount.toLocaleString('en-IN')} characters</span>
+            <span style={{ whiteSpace: 'nowrap' }}>
+              {(isPending ? charCount : draftText?.length ?? 0).toLocaleString('en-IN')} characters
+            </span>
           </div>
         </section>
       </div>

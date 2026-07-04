@@ -2,7 +2,10 @@ import client from './client'
 import type { AlertDetail } from '../types'
 
 export async function listAlerts(): Promise<AlertDetail[]> {
-  const { data } = await client.get('/alerts/queue')
+  // Only the DEV build opts into synthetic (simulator) alerts, so the "Submit test alert"
+  // button's output stays visible while demoing. Production officers see real alerts only.
+  const params = import.meta.env.DEV ? { include_synthetic: true } : undefined
+  const { data } = await client.get('/alerts/queue', { params })
   return data
 }
 

@@ -1,7 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/auth';
-import { useAlerts } from '../../hooks/useAlerts';
 import { AegisShield } from '../AegisLogo';
 
 const NavItem = ({ to, icon, label, badgeCount = 0 }: { to: string; icon: React.ReactNode; label: string; badgeCount?: number }) => {
@@ -40,10 +39,6 @@ export default function Sidebar() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
 
-  // Live pending-review count (shares the queue's cached query)
-  const { data: alerts } = useAlerts(false);
-  const pendingCount = alerts?.filter((a) => a.status === 'PENDING_REVIEW').length ?? 0;
-
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -72,11 +67,8 @@ export default function Sidebar() {
           <NavItem to="/dashboard" label="Dashboard" icon={
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
           } />
-          <NavItem to="/queue" label="Review Queue" badgeCount={pendingCount} icon={
+          <NavItem to="/queue" label="Review Queue" icon={
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-          } />
-          <NavItem to="/usage" label="Usage" icon={
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
           } />
         </div>
 
@@ -93,6 +85,9 @@ export default function Sidebar() {
           } />
           <NavItem to="/settings/llm" label="LLM Config" icon={
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          } />
+          <NavItem to="/settings/billing" label="Billing" icon={
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
           } />
         </div>
 

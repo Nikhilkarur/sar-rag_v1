@@ -72,12 +72,43 @@ def _groq():
     return Groq(api_key=settings.GROQ_API_KEY)
 
 
-def _judge(prompt, system="You are a strict, precise evaluation assistant. Output ONLY what is asked, no preamble."):
+def _judge_call(provider, prompt, system):
+    if provider == "gemini":
+        import httpx
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{settings.GEMINI_MODEL}:generateContent"
+        body = {"system_instruction": {"parts": [{"text": system}]},
+                "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+                "generationConfig": {"temperature": 0.0, "maxOutputTokens": 1024,
+                                     "thinkingConfig": {"thinkingBudget": 0}}}
+        r = httpx.post(url, params={"key": settings.GEMINI_API_KEY}, json=body, timeout=90)
+        r.raise_for_status()
+        data = r.json()
+        parts = ((data.get("candidates") or [{}])[0].get("content") or {}).get("parts") or []
+        text = "".join(p.get("text", "") for p in parts)
+        if not text.strip():
+            raise RuntimeError("Gemini returned an empty completion")
+        return text
     r = _groq().chat.completions.create(
         model=settings.GROQ_MODEL,
         messages=[{"role": "system", "content": system}, {"role": "user", "content": prompt}],
         temperature=0.0, max_tokens=1024)
     return r.choices[0].message.content
+
+
+def _judge(prompt, system="You are a strict, precise evaluation assistant. Output ONLY what is asked, no preamble."):
+    # Same primary→fallback failover as the generator (llm_agent), so RAGAS keeps running
+    # when one provider's free-tier rate/token cap is hit.
+    primary = (settings.LLM_PROVIDER or "groq").lower()
+    fallback = (settings.LLM_FALLBACK_PROVIDER or "").lower()
+    chain = [primary] + ([fallback] if fallback and fallback != primary else [])
+    last_err = None
+    for prov in chain:
+        try:
+            return _judge_call(prov, prompt, system)
+        except Exception as e:
+            last_err = e
+            continue
+    raise last_err if last_err else RuntimeError("No LLM provider configured")
 
 
 def _parse_json(text):
@@ -162,7 +193,10 @@ def evaluate_client(client_dir):
         try:
             comp = [{"rule_name": r["rule_name"], "triggered": True} for r in fired]
             hits = retrieve_regulatory_context(f"ragas-{cid}", {"transaction_type": norm.get("transaction_type")}, comp)
-            out = generate_sar_core(masked, score, settings.GROQ_MODEL, retrieved_chunks=hits)
+            # Pass the fired rules (with evidence) into generation, exactly like the live path,
+            # so the eval scores what production actually produces.
+            out = generate_sar_core(masked, score, settings.GROQ_MODEL,
+                                    retrieved_chunks=hits, compliance_results=fired)
             answer = out["narrative"]
 
             # Faithfulness grounding = SAR's ACTUAL sources: transaction data + policy chunks.

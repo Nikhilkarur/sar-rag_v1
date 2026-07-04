@@ -1042,29 +1042,38 @@ function SecuritySection() {
 /* ── Pricing ──────────────────────────────────────────────────────── */
 const PLANS = [
   {
-    name: 'Pilot',
+    name: 'Free',
     price: '₹0',
-    per: 'sandbox',
-    desc: 'Simulated alerts to evaluate the engine.',
-    items: ['100 alerts / month', '1 officer seat', 'All 8 typology checks', 'Community support'],
+    per: 'forever',
+    desc: '36 SARs free each month, then ₹5 per SAR (Sonnet 4.6).',
+    items: ['36 SARs / month free', 'Then ₹5 per SAR', 'Sonnet 4.6 narratives', 'All 8 typology checks'],
+    cta: 'Start free',
+    primary: false,
+  },
+  {
+    name: 'Premium Drafting',
+    price: '₹10',
+    per: 'per SAR',
+    desc: 'Highest-quality narratives on Opus 4.8, our most capable model.',
+    items: ['₹10 per SAR', 'Opus 4.8 narratives', 'Deeper policy citations', 'Priority support'],
     cta: 'Request access',
     primary: false,
   },
   {
     name: 'Growth',
-    price: '₹24k',
+    price: '₹2,320',
     per: 'per month',
-    desc: 'For teams filing their first SARs.',
-    items: ['2,000 alerts / month', '5 officer seats', 'Webhook delivery', 'Email support'],
+    desc: 'For teams filing regularly. 500 SARs at ₹5 each.',
+    items: ['500 SARs / month', '5 officer seats', 'Webhook delivery', 'Email support'],
     cta: 'Request access',
     primary: false,
   },
   {
     name: 'Scale',
-    price: '₹58k',
+    price: '₹9,820',
     per: 'per month',
-    desc: 'The full engine, around the clock.',
-    items: ['20,000 alerts / month', 'Unlimited seats', 'AI SAR narratives', 'HMAC-signed delivery', 'Priority support'],
+    desc: 'The full engine, around the clock. 2,000 SARs at ₹5 each.',
+    items: ['2,000 SARs / month', 'Unlimited seats', 'AI SAR narratives', 'HMAC-signed delivery', 'Priority support'],
     cta: 'Request access',
     primary: true,
     badge: 'Most popular',
@@ -1074,7 +1083,7 @@ const PLANS = [
     price: 'Custom',
     per: 'annual',
     desc: 'Dedicated VPC and custom typologies.',
-    items: ['Unlimited alerts', 'Custom rule packs', 'Dedicated infrastructure', 'SLA & onboarding'],
+    items: ['Unlimited SARs', 'Custom rule packs', 'Dedicated infrastructure', 'SLA & onboarding'],
     cta: 'Talk to sales',
     primary: false,
     mail: true,
@@ -1088,7 +1097,9 @@ function Pricing() {
         <span className="lc-eyebrow">Pricing</span>
         <h2 className="lc-h2">Start free. Scale when you do.</h2>
         <p className="lc-section-sub">
-          Every plan includes PII tokenization, the full audit trail, and FIU-IND goAML formatting.
+          Your first 36 SARs each month are free — then ₹5 per SAR on Standard (Sonnet 4.6), or ₹10
+          per SAR with Premium Drafting (Opus 4.8). Every plan includes PII tokenization, the full
+          audit trail, and FIU-IND goAML formatting.
         </p>
       </div>
       <div className="lc-plans reveal reveal-list">

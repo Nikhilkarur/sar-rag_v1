@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
 import type { User } from '../types'
 
 interface AuthState {
@@ -20,19 +20,25 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       isAuthenticated: false,
       setAuth: (user, accessToken, refreshToken) => {
-        localStorage.setItem('aegis_refresh_token', refreshToken)
+        sessionStorage.setItem('aegis_refresh_token', refreshToken)
         set({ user, accessToken, isAuthenticated: true })
       },
       updateUser: (user) => set({ user }),
       clearAuth: () => {
-        localStorage.removeItem('aegis_refresh_token')
+        sessionStorage.removeItem('aegis_refresh_token')
         set({ user: null, accessToken: null, isAuthenticated: false })
       },
       logout: () => {
-        localStorage.removeItem('aegis_refresh_token')
+        sessionStorage.removeItem('aegis_refresh_token')
         set({ user: null, accessToken: null, isAuthenticated: false })
       },
     }),
-    { name: 'aegis-auth' },
+    {
+      name: 'aegis-auth',
+      // Session-scoped (not localStorage): closing the tab/browser clears the login,
+      // so the dashboard cannot be reached without signing in again. Backend security
+      // (JWT, refresh-token rotation, rate limiting, etc.) is unchanged.
+      storage: createJSONStorage(() => sessionStorage),
+    },
   ),
 )

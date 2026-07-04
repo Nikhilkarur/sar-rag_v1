@@ -119,14 +119,18 @@ What makes the SAR trustworthy:
 - **It cites the tenant's own AML policy** (via RAG), not generic LLM knowledge — so the
   report references *“Section 4.1”* of the bank's actual policy, not vague prose.
 - **Personal data never reaches the AI.** PII is tokenized before any LLM call and only
-  restored locally, after a human approves.
-- **A human officer reviews and approves** every report before it is finalized and delivered.
+  restored locally, at finalization.
+- **A human makes the final filing call — at the bank.** By default (`AUTO_APPROVE_SARS=True`)
+  Aegis auto-finalizes the drafted SAR and delivers it to the bank; the **bank's own admin**
+  reviews it in their console and decides whether to file with the FIU. Setting the flag to
+  `False` restores the older mode where an Aegis compliance officer approves in the SAR
+  Workspace before anything is delivered.
 
 ## 2. The mental model
 
 Aegis is a pipeline wrapped in a multi-tenant SaaS. The heart of it is a single loop:
 
-> **Transaction → Normalize → Mask PII → Score with rules → (if risky) Retrieve policy + Generate cited SAR → Officer approves → Rehydrate PII → Deliver goAML + PDF to the bank.**
+> **Transaction → Normalize → Mask PII → Score with rules → (if risky) Retrieve policy + Generate cited SAR → Auto-finalize (default) → Rehydrate PII → Deliver goAML + PDF to the bank → bank admin makes the filing call.**
 
 ```mermaid
 flowchart LR
@@ -136,9 +140,10 @@ flowchart LR
     D -->|"no"| E["Closed: clean"]
     D -->|"yes"| F["RAG: retrieve the<br/>tenant's policy"]
     F --> G["LLM drafts a<br/>policy-cited SAR"]
-    G --> H["Officer reviews<br/>& approves"]
+    G --> H["Auto-finalize (default)<br/>or officer approves"]
     H --> I["Rehydrate real PII<br/>→ goAML + PDF"]
     I --> J["HMAC webhook<br/>back to the bank"]
+    J --> K["Bank admin makes<br/>the FIU filing call"]
 ```
 
 Three principles to keep in mind everywhere:
@@ -278,22 +283,29 @@ sequenceDiagram
         RAG-->>BG: top-8 chunks (or none → degrade gracefully)
         BG->>LLM: 4b · generate SAR (masked data + chunks + rules)
         LLM-->>BG: narrative + structured JSON (cited)
-        BG->>DB: store SARDraft (masked); status PROCESSING_COMPLETED
+        BG->>DB: store SARDraft (masked)
+        alt AUTO_APPROVE_SARS = True (default)
+            BG->>BG: 5 · finalize_and_deliver — rehydrate PII → goAML STR → PDF (in-memory)
+            BG->>Hook: Security — HMAC-signed webhook {goaml_str, pdf_base64, pdf_url}
+            BG->>DB: status APPROVED + WebhookSinkEvent (audit)
+            Note over Hook: bank admin reviews & makes the FIU filing call
+        else AUTO_APPROVE_SARS = False (manual mode)
+            BG->>DB: status PROCESSING_COMPLETED (pending officer review)
+            Off->>API: GET /alerts/queue → review item
+            opt edit / preview
+                Off->>API: PUT /queue/{id}/draft (edit narrative)
+                Off->>API: GET /queue/{id}/preview-rehydrated (see real PII)
+            end
+            Off->>API: POST /alerts/queue/{id}/approve
+            API->>API: finalize_and_deliver — rehydrate PII → goAML STR → PDF (in-memory)
+            API->>Hook: Security — HMAC-signed webhook {goaml_str, pdf_base64, pdf_url}
+            API->>DB: status APPROVED + WebhookSinkEvent (audit)
+            API-->>Off: 200 · {approved_at}
+        end
     else risk < 75
         API-->>Bank: 200 · {alert_id, risk_score, "no SAR required"}
         API->>DB: status COMPLETED_CLEAN
     end
-
-    Off->>API: GET /alerts/queue → review item
-    opt edit / preview
-        Off->>API: PUT /queue/{id}/draft (edit narrative)
-        Off->>API: GET /queue/{id}/preview-rehydrated (see real PII)
-    end
-    Off->>API: POST /alerts/queue/{id}/approve
-    API->>API: rehydrate PII → build goAML STR → render PDF
-    API->>Hook: Security — HMAC-signed webhook {goaml_str, pdf_url}
-    API->>DB: status APPROVED + WebhookSinkEvent (audit)
-    API-->>Off: 200 · {approved_at}
 ```
 
 ### Alert status state machine
@@ -305,7 +317,8 @@ friendlier public names for the UI (see the note below).
 stateDiagram-v2
     [*] --> PROCESSING: ingest accepted
     PROCESSING --> COMPLETED_CLEAN: risk < 75 (no SAR)
-    PROCESSING --> PROCESSING_COMPLETED: SAR drafted OK
+    PROCESSING --> APPROVED: SAR drafted + auto-finalized (AUTO_APPROVE_SARS=True, default)
+    PROCESSING --> PROCESSING_COMPLETED: SAR drafted OK (manual mode only)
     PROCESSING --> PROCESSING_FAILED: pipeline error
     PROCESSING_COMPLETED --> APPROVED: officer approves
     PROCESSING_COMPLETED --> REJECTED: officer rejects
@@ -376,7 +389,7 @@ transaction is suspicious. All numeric inputs are coerced safely first, so craft
 | `ROUND_NUMBER` | Large Round Number | amount > 0 and divisible by 100,000 | MEDIUM if ≥ 500k, else LOW |
 | `DORMANT_ACTIVATION` | Dormant Account Activation | `"dormant"` in `alert_reason` | HIGH |
 | `HIGH_RISK_TYPE` | High Risk Transaction Type | type ∈ {CRYPTO_PURCHASE, INTERNATIONAL_WIRE, FOREX_TRANSFER, HAWALA} | HIGH |
-| `VELOCITY` | High Velocity | `"velocity"` in reason **or** risk_score ≥ 90 | HIGH if ≥ 90, else MEDIUM |
+| `VELOCITY` | High Velocity | `"velocity"` in reason (keyword only — a high score alone must not fabricate a velocity claim; changed 2026-07-05) | HIGH if risk_score ≥ 90, else MEDIUM |
 | `COUNTERPARTY_RISK` | High Risk Counterparty | institution ∈ {Unknown Bank, Shell Bank, Offshore Co., Anonymous} | MEDIUM |
 | `RISK_SCORE_THRESHOLD` | Risk Score Threshold Exceeded | risk_score ≥ 75 | HIGH if ≥ 85, else MEDIUM |
 
@@ -588,18 +601,24 @@ production, only `CHROMA_PERSIST_DIR` / the client call site changes.
 
 ## 9. Approval, goAML & webhook delivery · [`routers/alerts.py`](backend/app/routers/alerts.py)
 
-When an officer approves an alert (`POST /api/v1/alerts/queue/{id}/approve`):
+Finalization is one shared service — [`sar_delivery.py::finalize_and_deliver`](backend/app/services/sar_delivery.py)
+— invoked by **both** paths: automatically from the ingest background task when
+`AUTO_APPROVE_SARS=True` (the default), or by an officer via
+`POST /api/v1/alerts/queue/{id}/approve` in manual mode. It:
 
-1. **Rehydrate** the draft: tokens → real PII (stored as `approved_text` / `rehydrated_text`).
-2. **Build the goAML STR** ([`goaml_builder.py`](backend/app/services/goaml_builder.py)) — a
+1. **Rehydrates** the draft: tokens → real PII (stored as `approved_text` / `rehydrated_text`,
+   both encrypted at rest).
+2. **Builds the goAML STR** ([`goaml_builder.py`](backend/app/services/goaml_builder.py)) — a
    representative FIU-India goAML JSON using **real values**: `report_code: "STR"`, mapped
    `report_indicators` (e.g. `STRUCTURING_BELOW_THRESHOLD`), a `transmode_code` per transaction
    type, and a bi-party `t_from_my_client` / `t_to` transaction block.
-3. **Render the PDF** ([`sar_pdf.py`](backend/app/services/sar_pdf.py)) into the client's
-   `sar/` folder; expose it at `/files/sar/{id}.pdf`.
-4. **Security — Deliver the webhook**: POST `{event, sar_id, goaml_str, pdf_url, …}` to the bank's
-   callback URL with an `X-Aegis-Signature` HMAC-SHA256 header (unless using the internal
-   sink). Either way, a `WebhookSinkEvent` is recorded for audit.
+3. **Renders the PDF** ([`sar_pdf.py`](backend/app/services/sar_pdf.py)) **in memory — never
+   persisted to disk** (it carries real PII). The bytes are base64'd into the webhook
+   (`pdf_base64`) and re-rendered on demand for the authenticated `/files/sar/{id}.pdf` download.
+4. **Security — Delivers the webhook**: POST `{event, sar_id, goaml_str, pdf_base64, pdf_url, …}`
+   to the bank's callback URL with an `X-Aegis-Signature` HMAC-SHA256 header (unless using the
+   internal sink). The URL is re-validated against SSRF at send time (DNS rebinding). Either way,
+   a `WebhookSinkEvent` is recorded for audit (without the base64 blob; payload encrypted at rest).
 
 **Note:** PDF render and webhook delivery are both wrapped — a failure there is **non-fatal**; the
 approval itself still succeeds.
@@ -868,15 +887,17 @@ a `testing/`-vs-`production/` split (refactored 2026-06-19).
 ```
 backend/storage/clients/<client_id>/
 ├── policy.pdf       # AML policy (uploaded live, or built for client_0). NOT stored in the DB.
-├── alerts/*.json    # {"raw_payload": {...}} — client_0 fixtures, or DB exports for real clients
-├── sar/*.pdf        # generated SAR PDFs (live output)
+├── alerts/*.json    # OFFLINE eval only — client_0 fixtures, or manual DB exports (export_alerts.py)
+├── sar/*.pdf        # OFFLINE demo-script output only (client_0); LIVE PDFs are never on disk
 └── eval.json        # IR answer key (client_0 ONLY)
 ```
 
 - `<client_id>` is `client_0` (dummy) or `TEN-xxxx` (real).
 - **Policy PDF** → folder + Chroma (not the DB). **Alerts** → the Postgres `alerts` table is the
-  source of truth (deliberately *not* mirrored to disk; export on demand for eval). **SARs** →
-  the client's `sar/` folder.
+  source of truth (deliberately *not* mirrored to disk; export on demand for eval). **SAR PDFs** →
+  rendered **in memory only** (they carry real PII): base64'd into the approval webhook and
+  re-rendered on demand for the authenticated `/files/sar/{id}.pdf` download (changed 2026-07-05;
+  the on-disk `sar/` folder is now only written by the offline client_0 demo scripts).
 
 ## 16. Configuration & secrets
 

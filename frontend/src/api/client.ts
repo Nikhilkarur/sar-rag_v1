@@ -24,7 +24,7 @@ client.interceptors.request.use((config) => {
 let refreshing: Promise<string | null> | null = null
 
 async function refreshAccessToken(): Promise<string | null> {
-  const refreshToken = localStorage.getItem('aegis_refresh_token')
+  const refreshToken = sessionStorage.getItem('aegis_refresh_token')
   if (!refreshToken) return null
   try {
     // Raw axios (not `client`) so a 401 here can't recurse into this interceptor
@@ -32,7 +32,7 @@ async function refreshAccessToken(): Promise<string | null> {
       refresh_token: refreshToken,
     })
     // Persist the rotated pair — the old refresh token is now dead server-side
-    localStorage.setItem('aegis_refresh_token', data.refresh_token as string)
+    sessionStorage.setItem('aegis_refresh_token', data.refresh_token as string)
     const store = useAuthStore.getState()
     if (store.user) store.setAuth(store.user, data.access_token as string, data.refresh_token as string)
     return data.access_token as string

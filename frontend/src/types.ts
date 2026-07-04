@@ -62,9 +62,22 @@ export interface ComplianceRule {
   }
 }
 
+export interface SARKeyIndicator {
+  indicator: string
+  regulation: string
+  description: string
+}
+
+export interface SARStructured {
+  key_indicators: SARKeyIndicator[]
+  recommended_action: string
+}
+
 export interface SARDraft {
   id: string
   draft_text: string
+  /** Structured half of the SAR (indicators + recommended action); may be null on older drafts */
+  draft_structured: SARStructured | null
   llm_model: string
   generation_latency_ms: number
   officer_edit_count: number
@@ -120,14 +133,21 @@ export interface LLMConfig {
 
 export interface UsageStats {
   alerts_ingested: number
-  delta_alerts: number
+  delta_alerts: number | null
   sars_approved: number
-  delta_sars: number
+  delta_sars: number | null
   pending_review: number
   false_positives_cleared: number
   avg_review_time_minutes: number
   daily_breakdown: { date: string; alerts: number; approved: number }[]
   monthly_sars: { month: string; sars: number }[]
+  outcome_monthly: { month: string; label: string; filed: number; review: number; cleared: number; failed: number }[]
+  typology: { rule_id: string; rule_name: string; count: number }[]
+  tokens_used: number
+  total_requests: number
+  failed_count: number
+  amount_screened_inr: number
+  amount_flagged_inr: number
 }
 
 export interface ApprovedSAR {
@@ -189,6 +209,30 @@ export interface GroqUsage {
   }[]
 }
 
+export interface PlatformBilling {
+  currency: string
+  cycle_start: string
+  free_sars: number
+  price_per_sar_inr: number
+  total_amount_due_inr: number
+  total_sars_this_cycle: number
+  client_count: number
+  billable_client_count: number
+  comped_client_count: number
+  clients: {
+    tenant_id: string
+    tenant_id_public: string
+    name: string
+    status: TenantStatus
+    plan: string
+    sars_this_cycle: number
+    billable_sars: number
+    amount_due_inr: number
+    special_free_access: boolean
+    note: string | null
+  }[]
+}
+
 export type SimulatorScenario =
   | 'STRUCTURING'
   | 'RAPID_MOVEMENT'
@@ -200,4 +244,58 @@ export interface Credentials {
   tenant_id_public: string
   api_key_prefix: string
   api_key_last_rotated: string | null
+}
+
+export interface PlatformOverview {
+  kpis: {
+    tenants_active: number
+    tenants_suspended: number
+    tenants_pending: number
+    total_alerts: number
+    alerts_this_month: number
+    total_sars: number
+    sars_this_month: number
+    failed_total: number
+    tokens_this_month: number
+    llm_cost_this_month: number
+    api_requests_7d: number
+    api_error_rate_7d: number
+    ingest_requests_7d: number
+  }
+  monthly: { month: string; label: string; filed: number; review: number; cleared: number; failed: number }[]
+  typology: { rule_id: string; rule_name: string; count: number }[]
+  api_daily: { date: string; label: string; total: number; ok: number; client_err: number; server_err: number }[]
+}
+
+export interface BillingPlan {
+  id: string
+  name: string
+  included_sars: number | null // null = unlimited / per-SAR
+  monthly_inr: number | null // null = per-SAR / custom
+  per_sar_inr: number | null // null = custom
+  effective_per_sar_inr: number
+  model: string
+  description: string
+  features: string[]
+}
+
+export interface Billing {
+  cycle_start: string
+  sars_this_cycle: number
+  tokens_this_cycle: number
+  free_sars: number
+  free_tokens: number
+  price_per_sar_inr: number
+  premium_price_per_sar_inr: number
+  standard_model: string
+  premium_model: string
+  billable_sars: number
+  amount_due_inr: number
+  within_free_tier: boolean
+  special_free_access?: boolean
+  special_access_label?: string | null
+  currency: string
+  plans: BillingPlan[]
+  current_plan: string
+  recommended_plan: string | null
 }

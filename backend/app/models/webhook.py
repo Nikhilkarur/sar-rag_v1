@@ -5,6 +5,9 @@ from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy import DateTime
 from app.database import Base
+# Sink-event payloads include the approved goAML STR, which carries real PII
+# (names, account numbers). Encrypt the payload at rest; headers hold no PII.
+from app.models.encrypted_types import EncryptedJSONB
 
 class WebhookConfig(Base):
     __tablename__ = "webhook_configs"
@@ -33,7 +36,7 @@ class WebhookSinkEvent(Base):
     id: Mapped[str] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"))
     tenant_id: Mapped[str] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
     
-    payload: Mapped[Dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    payload: Mapped[Dict[str, Any]] = mapped_column(EncryptedJSONB, nullable=False)
     headers: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB)
     
     hmac_valid: Mapped[Optional[bool]] = mapped_column(Boolean)

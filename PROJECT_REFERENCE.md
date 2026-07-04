@@ -103,8 +103,9 @@ Rule of thumb: IR needs an `eval.json` (so it's `client_0` only); RAGAS needs no
 
 **Aegis AML** auto-drafts Suspicious Activity Reports (SARs/STRs) for Indian
 fintechs/brokers. A transaction → normalized → PII-masked → 8 typology rules →
-if risk ≥ 75, an LLM (Groq) writes a SAR → officer reviews/approves → filed to
-FIU-India via goAML.
+if risk ≥ 75, an LLM (Groq) writes a SAR → auto-finalized (default,
+`AUTO_APPROVE_SARS=True`; set False for Aegis-officer review) → goAML STR + PDF
+delivered to the bank → the **bank's admin** makes the final file-with-FIU call.
 
 **RAG** makes that SAR cite the **tenant's actual AML policy** instead of the
 LLM's general knowledge. It's plain ("vanilla") RAG: parse → chunk → embed →
@@ -126,7 +127,9 @@ config.py / .env  →  embeddings.py (encoder engine, used by BOTH sides)
    │
    └ PHASE 3 (generate, per alert)
        llm_agent.py: chunks + data → prompt → Groq → SAR (narrative + structured JSON)
-           → (real) dashboard → officer approves → rehydrate PII → goAML JSON + PDF → webhook
+           → (real, default) auto-finalize (sar_delivery.finalize_and_deliver) → rehydrate PII
+             → goAML JSON + in-memory PDF → HMAC webhook → bank admin decides filing
+           → (real, AUTO_APPROVE_SARS=False) officer approves in dashboard first, same delivery
            → (demo) simulated approval → files in outputs/final/
 ```
 
@@ -256,8 +259,9 @@ public id (`TEN-xxxx`).
 ```
 backend/storage/clients/<client_id>/
 ├── policy.pdf          # raw AML policy (uploaded live, or built for client_0) — NOT in DB
-├── alerts/*.json       # {"raw_payload": {...}} — client_0 fixtures, or DB exports for real clients
-├── sar/*.pdf           # generated SAR PDFs (live output)
+├── alerts/*.json       # OFFLINE eval only: client_0 fixtures, or manual DB exports (export_alerts.py)
+├── sar/*.pdf           # OFFLINE demo-script output only (client_0); LIVE SAR PDFs are rendered
+│                       #   in-memory and never persisted (real PII) — changed 2026-07-05
 └── eval.json           # IR answer key (client_0 ONLY)
 ```
 
@@ -613,6 +617,51 @@ but why each choice was made.
   symmetric bge embedding + n=5 (Answer Relevancy ≈0.70, confound removed). No hybrid RAG needed.
   (5) Deleted the superseded `RAG_MASTER.md`. (6) Added `MOCKBANK_BRIEF.md` — the teammate brief
   for the mock bank (build spec + AML rule engine + integration contract + copy-paste code).
+- 2026-07-04: Mock bank integrated + auto-approve became the default workflow. (1) Teammate's
+  mock bank (Spring Boot + React, `C:\Users\nkk77\Desktop\mock-bank`) integrated; onboarded the
+  real way as tenant **TEN-0005 (Meridian Bank)** — runbook: `MOCKBANK_INTEGRATION.md`. (2) New
+  shared service `app/services/sar_delivery.py::finalize_and_deliver` used by BOTH the officer
+  approve endpoint and the ingest background task. (3) **`AUTO_APPROVE_SARS=True` (default):**
+  Aegis auto-finalizes + delivers the SAR; the bank's admin is the human-in-the-loop who makes
+  the FIU filing call. `False` restores Aegis-officer review. This is the decided vision
+  (confirmed 2026-07-05). (4) Session-scoped dashboard login; risk-score double-count fix;
+  billing/admin dashboard fixes.
+- 2026-07-05: PII-at-rest + security hardening pass. (1) **SAR PDFs no longer persisted to
+  disk** — rendered in-memory, base64'd into the webhook, re-rendered for the authenticated
+  `/files/sar` download. (2) **Encryption at rest extended to every plaintext-PII surface**
+  (alerts raw/normalized payloads, SAR approved/rehydrated text, webhook sink payloads) via
+  shared `app/models/encrypted_types.py`; legacy-tolerant, no migration. (3) Webhook SSRF
+  re-validation at send time in both delivery dispatchers (DNS rebinding). (4) Fail-closed
+  production boot (PII key + SECRET_KEY must be set/overridden). (5) `llm_provider` now records
+  the provider that actually answered (failover-accurate). (6) Ingest persists
+  `transaction_currency`/`transaction_timestamp` (non-INR no longer displayed as INR).
+  (7) Docs/diagrams synced to the auto-approve vision; removed dead `client_storage.log_alert`.
+- 2026-07-05 (later): Edge-case & logic hunt (fixed). (1) **Billing/usage no longer count
+  synthetic simulator SARs** — tenant `/billing` + `/usage` token/request metrics, admin
+  `/billing` + `_draft_usage` (groq-usage, overview) all join Alert and exclude
+  `is_synthetic`; a bank testing with the portal button can no longer be charged for test
+  SARs, and admin/tenant numbers reconcile. (2) **VELOCITY rule no longer fabricates
+  evidence** — fires only on the `"velocity"` keyword in `alert_reason`, never on
+  risk_score ≥ 90 alone (which invented "multiple transactions within a short window" in
+  SARs; no SAR decision changes since ≥90 already crosses the ≥75 threshold).
+  (3) `avg_review_time_minutes` measures only officer approvals (`reviewed_by` set) — auto-
+  approved SARs were reporting pipeline latency as human review time. (4) Approve endpoint
+  requires an existing SARDraft (409 otherwise) — a clean/processing alert can no longer be
+  marked APPROVED with nothing delivered. (5) Draft edits blocked once APPROVED/REJECTED
+  (409) — prevents silent divergence from the delivered `approved_text`. (6) `/tenant/sars`
+  excludes synthetic + soft-deleted alerts and labels auto-approvals "Auto-approved".
+  DatabaseSchema.md annotated with the encrypted-at-rest columns; KB rule table updated.
+- 2026-07-05 (later still): Hardening + testability pass. (1) **Unit test suite** added under
+  `backend/tests/` (pytest, 51 tests, no DB/LLM needed) — covers risk scoring, the 8 typology
+  rules (incl. the velocity keyword-only regression), PII mask/rehydrate round trip, goAML
+  assembly, and the encryption decorators. Run: `cd backend && python -m pytest tests/ -q`.
+  (2) **Composite scoring extracted** to `app/services/risk_scoring.py` (single source of truth;
+  ingest + simulator both call it — no more copy-pasted loops). (3) **SAR threshold is now one
+  config constant** `SAR_RISK_THRESHOLD` (was `75` hardcoded in 3 places). (4) **In-process LLM
+  retry** on generation (`SAR_GENERATION_MAX_ATTEMPTS`/backoff) so a transient double-provider
+  blip doesn't strand an alert as FAILED. (5) **Review Queue excludes synthetic by default**
+  (DEV dashboard opts back in). (6) **`scripts/backfill_encrypt_pii.py`** — idempotent one-time
+  re-encryption of any legacy plaintext PII rows. Scoring BEHAVIOR unchanged (additive, threshold 75).
 
 ---
 
@@ -729,8 +778,19 @@ routers (RBAC via `Depends`) → services (the "brain") → models (SQL tables).
 - Synthetic test alerts flagged `is_synthetic=True` (excluded from compliance metrics).
 - LLM prompt-injection defense (`<<DATA>>` boundary markers + untrusted-data instruction).
 - Webhook SSRF guard (DNS-resolves the URL, blocks private/loopback/link-local; dev carve-out).
+  Re-validated at SEND time in every dispatcher (test + both delivery paths) against DNS rebinding
+  (2026-07-05).
 - JWT token-type confusion prevention (`access` vs `refresh` in the payload).
-- PII encryption at rest (`cryptography.fernet` over the `token_map`).
+- PII encryption at rest (`cryptography.fernet`) over ALL plaintext-PII surfaces (2026-07-05):
+  `pii_maps.token_map`, `alerts.raw_payload` + `normalized_payload`, `sar_drafts.approved_text` +
+  `rehydrated_text`, and `webhook_sink_events.payload` (carries the goAML STR). Shared decorators
+  in `app/models/encrypted_types.py` (`EncryptedJSONB` / `EncryptedText`), legacy-plaintext-tolerant
+  so no migration/backfill is needed. Masked columns stay plaintext (no PII by construction).
+- SAR PDFs never persisted to Aegis disk (2026-07-05): rendered in-memory, base64'd into the
+  webhook, re-rendered on demand for the authenticated `/files/sar/{id}.pdf` (tenant-scoped JWT).
+- Fail-closed production boot (2026-07-05): app refuses to start with `ENVIRONMENT=production`
+  if `PII_ENCRYPTION_KEY` is unset or `SECRET_KEY` is still the built-in default
+  (`config.production_config_errors()` + check in `main.py`).
 - Payload size caps (Content-Length + byte recount) to prevent OOM.
 - Async non-blocking ingest (returns `202` fast, offloads LLM to a background task).
 
@@ -738,9 +798,10 @@ routers (RBAC via `Depends`) → services (the "brain") → models (SQL tables).
 - **Addressed:** Prompt injection, Webhook SSRF, OOM payload cap, PII vault encryption,
   Replay attacks (idempotency), API-key rotation (refresh-token rotation invariant),
   DB concurrency (Postgres + IntegrityError handling; SQLite no longer used).
-- **Deferred — LLM outage/rate-limit resilience** — a Groq outage makes the background SAR task
-  fail; there's a safe degrade-to-no-context path, but no retry queue (Celery/Redis) yet.
-  This is the main open hardening item for high volume.
+- **Partially addressed — LLM outage/rate-limit resilience** — providers fail over Groq->Gemini,
+  and the background task now retries generation `SAR_GENERATION_MAX_ATTEMPTS` times with linear
+  backoff before marking `PROCESSING_FAILED` (config in `config.py`). A DURABLE retry queue
+  (Celery/Redis) for a prolonged outage is still deferred — the in-process retry only covers blips.
 
 ---
 

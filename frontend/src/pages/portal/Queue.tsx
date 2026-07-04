@@ -9,15 +9,15 @@ import { AlertStatusBadge, RiskScoreCell, RulePills } from '../../components/ui/
 import { EmptyState, ShieldCheckIllustration } from '../../components/ui/EmptyState'
 import { SkeletonTableRows } from '../../components/ui/Skeleton'
 import { cls, formatINR, timeAgo, truncId } from '../../utils/format'
-import type { AlertStatus } from '../../types'
 
-type Filter = 'ALL' | 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED'
+type Filter = 'ALL' | 'APPROVED' | 'NOT_APPROVED'
 
+// Under auto-approve there is no "pending" state, and an alert that doesn't become a filed
+// SAR is either rejected (manual mode) or failed to process — grouped as "Rejected / Not approved".
 const FILTERS: { key: Filter; label: string }[] = [
   { key: 'ALL', label: 'All' },
-  { key: 'PENDING_REVIEW', label: 'Pending' },
   { key: 'APPROVED', label: 'Approved' },
-  { key: 'REJECTED', label: 'Rejected' },
+  { key: 'NOT_APPROVED', label: 'Rejected / Not approved' },
 ]
 
 const NEW_THRESHOLD_MS = 30_000
@@ -37,9 +37,9 @@ export function Queue() {
     let list = alerts ?? []
     if (filter !== 'ALL') {
       list = list.filter((a) =>
-        filter === 'PENDING_REVIEW'
-          ? a.status === 'PENDING_REVIEW' || a.status === 'PROCESSING'
-          : a.status === (filter as AlertStatus),
+        filter === 'APPROVED'
+          ? a.status === 'APPROVED'
+          : a.status === 'REJECTED' || a.status === 'PROCESSING_FAILED',
       )
     }
     if (search.trim()) {
@@ -51,7 +51,8 @@ export function Queue() {
     return list
   }, [alerts, filter, search, fromDate, toDate])
 
-  const pendingCount = alerts?.filter((a) => a.status === 'PENDING_REVIEW').length ?? 0
+  const total = alerts?.length ?? 0
+  const notApproved = alerts?.filter((a) => a.status === 'REJECTED' || a.status === 'PROCESSING_FAILED').length ?? 0
 
   const submitTestAlert = () => {
     submitTest.mutate('STRUCTURING', {
@@ -66,12 +67,16 @@ export function Queue() {
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
           <h1 style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em' }}>Alerts</h1>
           <span style={{ fontSize: 13, color: 'var(--text-3)' }}>
-            {pendingCount > 0 ? `${pendingCount} pending review` : 'Nothing pending'}
+            {total} alert{total === 1 ? '' : 's'}
+            {notApproved > 0 ? ` · ${notApproved} not approved` : ''}
           </span>
         </div>
-        <Button size="sm" variant="secondary" icon={<Zap size={13} />} onClick={submitTestAlert} loading={submitTest.isPending}>
-          Submit test alert
-        </Button>
+        {/* Dev/demo affordance only — hidden in production builds. */}
+        {import.meta.env.DEV && (
+          <Button size="sm" variant="secondary" icon={<Zap size={13} />} onClick={submitTestAlert} loading={submitTest.isPending}>
+            Submit test alert
+          </Button>
+        )}
       </div>
 
       {/* Toolbar — segmented filters left, search + dates right */}
@@ -138,11 +143,13 @@ export function Queue() {
         <EmptyState
           icon={<ShieldCheckIllustration size={64} />}
           title="All clear"
-          description="No alerts match. Submit a test alert to try the pipeline."
+          description={import.meta.env.DEV ? 'No alerts match. Submit a test alert to try the pipeline.' : 'No alerts match your filters.'}
           action={
-            <Button icon={<Zap size={14} />} onClick={submitTestAlert} loading={submitTest.isPending}>
-              Submit test alert
-            </Button>
+            import.meta.env.DEV ? (
+              <Button icon={<Zap size={14} />} onClick={submitTestAlert} loading={submitTest.isPending}>
+                Submit test alert
+              </Button>
+            ) : undefined
           }
         />
       ) : (

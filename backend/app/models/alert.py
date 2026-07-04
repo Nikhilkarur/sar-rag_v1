@@ -5,6 +5,9 @@ from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy import DateTime, TEXT
 from app.database import Base
+# raw_payload / normalized_payload carry real, un-masked PII. Encrypt them at rest;
+# masked_payload stays plaintext JSONB (tokenized, no PII, and read by the pipeline).
+from app.models.encrypted_types import EncryptedJSONB
 
 class Alert(Base):
     __tablename__ = "alerts"
@@ -20,8 +23,8 @@ class Alert(Base):
     
     status: Mapped[str] = mapped_column(String(30), nullable=False, server_default=text("'PENDING_INGESTION'"))
     
-    raw_payload: Mapped[Dict[str, Any]] = mapped_column(JSONB, nullable=False)
-    normalized_payload: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB)
+    raw_payload: Mapped[Dict[str, Any]] = mapped_column(EncryptedJSONB, nullable=False)
+    normalized_payload: Mapped[Optional[Dict[str, Any]]] = mapped_column(EncryptedJSONB)
     masked_payload: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB)
     
     # Client-supplied Idempotency-Key header, or SHA-256 of the raw body when absent

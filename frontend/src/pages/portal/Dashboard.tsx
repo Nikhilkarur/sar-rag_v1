@@ -88,7 +88,7 @@ function StatCell({ value, label, delta, warn }: StatCellProps) {
   )
 }
 
-function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: { value: number }[]; label?: string }) {
+function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: { value: number; name?: string; color?: string }[]; label?: string }) {
   if (!active || !payload?.length) return null
   return (
     <div
@@ -102,9 +102,11 @@ function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: 
       }}
     >
       <div style={{ color: 'var(--text-3)' }}>{label}</div>
-      <div style={{ color: 'var(--text-1)', fontWeight: 600, marginTop: 2 }}>
-        {payload[0].value} alerts
-      </div>
+      {payload.map((p) => (
+        <div key={p.name} style={{ color: 'var(--text-1)', fontWeight: 600, marginTop: 2 }}>
+          {p.value} {p.name ?? ''}
+        </div>
+      ))}
     </div>
   )
 }
@@ -121,9 +123,21 @@ export function Dashboard() {
 
   const firstName = (user?.fullName ?? '').split(' ')[0]
   const pending = usage?.pending_review ?? 0
+  const sarsThisMonth = usage?.sars_approved ?? 0
+  const alertsThisMonth = usage?.alerts_ingested ?? 0
+  // Represent what the platform actually did. Under auto-approve "pending" is ~always 0, so
+  // fall back to a live activity summary rather than the manual-review "needs your review" line.
+  const subline =
+    pending > 0
+      ? `${pending} alert${pending === 1 ? '' : 's'} awaiting review`
+      : alertsThisMonth === 0
+        ? 'No alerts yet this month'
+        : `${sarsThisMonth} SAR${sarsThisMonth === 1 ? '' : 's'} filed · ${alertsThisMonth} alert${alertsThisMonth === 1 ? '' : 's'} screened this month`
 
   const alertsCount = useCountUp(usage?.alerts_ingested ?? 0)
-  const pendingCount = useCountUp(pending)
+  // "Pending review" is ~always 0 under auto-approve (pending is surfaced in the subline when
+  // it matters); show "Cleared — no SAR" instead, which is meaningful in both modes.
+  const clearedCount = useCountUp(usage?.false_positives_cleared ?? 0)
   const approvedCount = useCountUp(usage?.sars_approved ?? 0)
   const avgTime = useCountUp(usage?.avg_review_time_minutes ?? 0, 1200, 1)
 
@@ -156,15 +170,15 @@ export function Dashboard() {
           <h1 style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em' }}>
             {greeting()}, {firstName}
           </h1>
-          <p style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 2 }}>
-            {pending > 0
-              ? `${pending} alert${pending === 1 ? '' : 's'} need${pending === 1 ? 's' : ''} your review`
-              : 'AML pipeline is clear'}
-          </p>
+          <p style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 2 }}>{subline}</p>
         </div>
-        <Button size="sm" variant="secondary" icon={<Zap size={13} />} onClick={() => setModalOpen(true)}>
-          Submit test alert
-        </Button>
+        {/* Injecting synthetic alerts is a demo/dev affordance, not a real customer feature —
+            only surface it in dev builds (which is how the demo runs), never in production. */}
+        {import.meta.env.DEV && (
+          <Button size="sm" variant="secondary" icon={<Zap size={13} />} onClick={() => setModalOpen(true)}>
+            Submit test alert
+          </Button>
+        )}
       </div>
 
       {/* Stat band — one bordered strip, hairline-divided cells */}
@@ -190,22 +204,30 @@ export function Dashboard() {
               <StatCell value={alertsCount} label="Alerts this month" delta={{ value: usage?.delta_alerts ?? 0 }} />
             </div>
             <div style={{ borderRight: '1px solid var(--border-subtle)' }}>
-              <StatCell value={pendingCount} label="Pending review" warn={pending > 0} />
+              <StatCell value={clearedCount} label="Cleared — no SAR" />
             </div>
             <div style={{ borderRight: '1px solid var(--border-subtle)' }}>
               <StatCell value={approvedCount} label="Approved SARs" delta={{ value: usage?.delta_sars ?? 0 }} />
             </div>
-            <StatCell value={`${avgTime} min`} label="Avg. review time" />
+            <StatCell value={`${avgTime} min`} label="Avg. processing time" />
           </>
         )}
       </div>
 
       {/* Chart */}
       <div style={{ ...panelStyle, padding: 24 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 20 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 600, letterSpacing: '-0.01em' }}>
-            Alerts ingested — last 14 days
-          </h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 20, gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, flexWrap: 'wrap' }}>
+            <h3 style={{ fontSize: 14, fontWeight: 600, letterSpacing: '-0.01em' }}>
+              Activity — last 14 days
+            </h3>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: 'var(--text-3)' }}>
+              <span style={{ width: 8, height: 8, borderRadius: 2, background: '#064E3B' }} /> Alerts
+            </span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: 'var(--text-3)' }}>
+              <span style={{ width: 8, height: 8, borderRadius: 2, background: '#a0741a' }} /> SARs filed
+            </span>
+          </div>
           <span style={{ fontSize: 12, color: 'var(--text-4)', fontFamily: 'var(--font-mono)' }}>
             {chartData[0]?.date} – {chartData[chartData.length - 1]?.date}
           </span>
@@ -220,6 +242,10 @@ export function Dashboard() {
                   <linearGradient id="alertFill" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#064E3B" stopOpacity={0.16} />
                     <stop offset="100%" stopColor="#064E3B" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="sarFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#a0741a" stopOpacity={0.14} />
+                    <stop offset="100%" stopColor="#a0741a" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid stroke="var(--border-subtle)" strokeDasharray="3 3" vertical={false} />
@@ -239,12 +265,26 @@ export function Dashboard() {
                 <Tooltip content={<ChartTooltip />} cursor={{ stroke: 'var(--border)', strokeWidth: 1 }} />
                 <Area
                   type="monotone"
+                  name="Alerts"
                   dataKey="alerts"
                   stroke="#064E3B"
                   strokeWidth={1.75}
                   fill="url(#alertFill)"
                   dot={false}
                   activeDot={{ r: 4, fill: 'var(--accent)', stroke: '#fff', strokeWidth: 2 }}
+                  isAnimationActive={true}
+                  animationDuration={900}
+                  animationEasing="ease-out"
+                />
+                <Area
+                  type="monotone"
+                  name="SARs filed"
+                  dataKey="approved"
+                  stroke="#a0741a"
+                  strokeWidth={1.75}
+                  fill="url(#sarFill)"
+                  dot={false}
+                  activeDot={{ r: 4, fill: '#a0741a', stroke: '#fff', strokeWidth: 2 }}
                   isAnimationActive={true}
                   animationDuration={900}
                   animationEasing="ease-out"

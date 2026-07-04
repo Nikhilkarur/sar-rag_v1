@@ -7,6 +7,15 @@ from app.routers import auth, admin, tenant, ingest, alerts, files, documents
 
 _IS_PROD = settings.ENVIRONMENT == "production"
 
+# Fail closed: refuse to boot a production instance whose security-critical secrets
+# are still defaults (unset PII key / default JWT secret). Dev is unaffected.
+_config_errors = settings.production_config_errors()
+if _config_errors:
+    raise RuntimeError(
+        "Refusing to start: insecure production configuration:\n  - "
+        + "\n  - ".join(_config_errors)
+    )
+
 app = FastAPI(
     title="Aegis AML",
     version="1.0.0",

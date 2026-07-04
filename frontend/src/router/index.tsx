@@ -6,7 +6,6 @@ import AuthLayout from '../layouts/AuthLayout'
 import Landing from '../pages/Landing/Landing'
 import { Login } from '../pages/auth/Login'
 import { Signup } from '../pages/auth/Signup'
-import { Dashboard } from '../pages/portal/Dashboard'
 import { StatusPage } from '../pages/portal/StatusPage'
 import { Queue } from '../pages/portal/Queue'
 import { SARWorkspace } from '../pages/portal/SARWorkspace'
@@ -15,16 +14,19 @@ import { Credentials } from '../pages/portal/settings/Credentials'
 import { Webhook } from '../pages/portal/settings/Webhook'
 import { Schema } from '../pages/portal/settings/Schema'
 import { LLMConfig } from '../pages/portal/settings/LLMConfig'
+import { Billing } from '../pages/portal/settings/Billing'
+import { Overview } from '../pages/admin/Overview'
 import { Verifications } from '../pages/admin/Verifications'
 import { Customers } from '../pages/admin/Customers'
 import { Logs } from '../pages/admin/Logs'
 import { GroqUsage } from '../pages/admin/GroqUsage'
+import { Billing as AdminBilling } from '../pages/admin/Billing'
 
 /** Tenant portal guard: must be authed, not a super admin, and ACTIVE. */
 function PortalGuard({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, user } = useAuthStore()
   if (!isAuthenticated || !user) return <Navigate to="/login" replace />
-  if (user.role === 'SUPER_ADMIN') return <Navigate to="/admin/verifications" replace />
+  if (user.role === 'SUPER_ADMIN') return <Navigate to="/admin/overview" replace />
   if (user.tenant && user.tenant.status !== 'ACTIVE') return <Navigate to="/status" replace />
   return <>{children}</>
 }
@@ -41,7 +43,7 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
 function PublicOnly({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, user } = useAuthStore()
   if (isAuthenticated && user) {
-    if (user.role === 'SUPER_ADMIN') return <Navigate to="/admin/verifications" replace />
+    if (user.role === 'SUPER_ADMIN') return <Navigate to="/admin/overview" replace />
     if (user.tenant && user.tenant.status !== 'ACTIVE') return <Navigate to="/status" replace />
     return <Navigate to="/dashboard" replace />
   }
@@ -90,14 +92,16 @@ export function AppRouter() {
           </PortalGuard>
         }
       >
-        <Route path="/dashboard" element={<Dashboard />} />
+        {/* Dashboard and Usage merged into one central dashboard (the Usage view). */}
+        <Route path="/dashboard" element={<Usage />} />
         <Route path="/queue" element={<Queue />} />
         <Route path="/queue/:alertId" element={<SARWorkspace />} />
-        <Route path="/usage" element={<Usage />} />
+        <Route path="/usage" element={<Navigate to="/dashboard" replace />} />
         <Route path="/settings/credentials" element={<Credentials />} />
         <Route path="/settings/webhook" element={<Webhook />} />
         <Route path="/settings/schema" element={<Schema />} />
         <Route path="/settings/llm" element={<LLMConfig />} />
+        <Route path="/settings/billing" element={<Billing />} />
       </Route>
 
       {/* Admin console */}
@@ -108,14 +112,16 @@ export function AppRouter() {
           </AdminGuard>
         }
       >
+        <Route path="/admin/overview" element={<Overview />} />
         <Route path="/admin/verifications" element={<Verifications />} />
         <Route path="/admin/customers" element={<Customers />} />
         <Route path="/admin/logs" element={<Logs />} />
+        <Route path="/admin/billing" element={<AdminBilling />} />
         <Route path="/admin/llm" element={<GroqUsage />} />
         {/* legacy path — keep old bookmarks working */}
         <Route path="/admin/groq" element={<Navigate to="/admin/llm" replace />} />
       </Route>
-      <Route path="/admin" element={<Navigate to="/admin/verifications" replace />} />
+      <Route path="/admin" element={<Navigate to="/admin/overview" replace />} />
 
       {/* Unknown routes fall back to the landing page */}
       <Route path="*" element={<Navigate to="/" replace />} />

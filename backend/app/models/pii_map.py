@@ -1,32 +1,12 @@
 from datetime import datetime
 from typing import Optional, Dict, Any
-from sqlalchemy import text, ForeignKey, TypeDecorator
+from sqlalchemy import text, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy import DateTime
 from app.database import Base
-from app.utils.security import encrypt_json, decrypt_json
-
-class EncryptedJSONB(TypeDecorator):
-    """Fernet-encrypts the JSON value before it reaches the database, so a
-    stolen DB dump exposes only ciphertext. Stored as {"__enc__": "<token>"}
-    inside the existing JSONB column — no column type migration needed.
-    Plaintext rows written before this change are still readable (decrypt is
-    skipped when the marker key is absent)."""
-    impl = JSONB
-    cache_ok = True
-
-    def process_bind_param(self, value, dialect):
-        if value is None:
-            return None
-        return {"__enc__": encrypt_json(value)}
-
-    def process_result_value(self, value, dialect):
-        if value is None:
-            return None
-        if isinstance(value, dict) and "__enc__" in value:
-            return decrypt_json(value["__enc__"])
-        return value  # legacy plaintext row
+# EncryptedJSONB moved to a shared module so alerts/webhook events can reuse it.
+from app.models.encrypted_types import EncryptedJSONB
 
 class PIIMap(Base):
     __tablename__ = "pii_maps"

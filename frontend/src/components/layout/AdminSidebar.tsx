@@ -6,7 +6,9 @@ import {
   ChevronLeft,
   ChevronRight,
   ExternalLink,
+  LayoutDashboard,
   LogOut,
+  Receipt,
   UserCheck,
   Zap,
 } from 'lucide-react'
@@ -28,6 +30,7 @@ export function AdminSidebar() {
   const pendingCount = verifications?.length ?? 0
 
   const nav = [
+    { to: '/admin/overview', label: 'Overview', icon: <LayoutDashboard size={16} /> },
     {
       to: '/admin/verifications',
       label: 'Verifications',
@@ -36,6 +39,7 @@ export function AdminSidebar() {
     },
     { to: '/admin/customers', label: 'Customers', icon: <Building2 size={16} /> },
     { to: '/admin/logs', label: 'API Logs', icon: <Activity size={16} /> },
+    { to: '/admin/billing', label: 'Billing', icon: <Receipt size={16} /> },
     { to: '/admin/llm', label: 'LLM Usage', icon: <Zap size={16} /> },
   ]
 

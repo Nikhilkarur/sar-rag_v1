@@ -5,6 +5,10 @@ from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy import DateTime, TEXT
 from app.database import Base
+# approved_text / rehydrated_text hold the PII-rehydrated narrative (real names,
+# accounts). Encrypt them at rest. draft_text is the MASKED narrative — no PII — so
+# it stays plaintext (and is what the officer edits / the UI renders).
+from app.models.encrypted_types import EncryptedText
 
 class SARDraft(Base):
     __tablename__ = "sar_drafts"
@@ -20,8 +24,8 @@ class SARDraft(Base):
     last_edited_by: Mapped[Optional[str]] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
     last_edited_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     
-    approved_text: Mapped[Optional[str]] = mapped_column(TEXT)
-    rehydrated_text: Mapped[Optional[str]] = mapped_column(TEXT)
+    approved_text: Mapped[Optional[str]] = mapped_column(EncryptedText)
+    rehydrated_text: Mapped[Optional[str]] = mapped_column(EncryptedText)
     pdf_path: Mapped[Optional[str]] = mapped_column(String(500))
     pdf_generated_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     

@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { AlertTriangle, ChevronDown, RotateCcw } from 'lucide-react'
+import { AlertTriangle, ArrowRight, RotateCcw } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { useCredentials } from '../../../hooks/useTenant'
 import { revealApiKey, rotateApiKey } from '../../../api/tenant'
@@ -7,82 +8,9 @@ import { useAuthStore } from '../../../store/auth'
 import { Button } from '../../../components/ui/Button'
 import { Modal } from '../../../components/ui/Modal'
 import { CopyButton } from '../../../components/ui/CopyButton'
-import { CodeBlock } from '../../../components/ui/CodeBlock'
 import { APIKeyReveal } from '../../../components/ui/APIKeyReveal'
 import { Skeleton } from '../../../components/ui/Skeleton'
 import { useToast } from '../../../components/ui/Toast'
-import { cls } from '../../../utils/format'
-
-const SNIPPETS = (tenantId: string) => ({
-  cURL: `# Submit a flagged transaction alert to Aegis
-curl -X POST https://api.aegis-aml.com/api/v1/alerts/ingest \\
-  -H "X-API-Key: sk-ae-YOUR-API-KEY" \\
-  -H "X-Tenant-ID: ${tenantId}" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "customer": { "full_name": "Rajesh Kumar", "id": "CUST-98271" },
-    "account":  { "number": "HDFC-00123456789" },
-    "txn": {
-      "ref_id": "TXN-2026-061099182",
-      "amount": 990000.00,
-      "currency": "INR",
-      "type": "NEFT_TRANSFER",
-      "direction": "DEBIT",
-      "timestamp": "2026-06-10T09:30:00+05:30"
-    },
-    "risk": { "score": 87, "reason": "Near reporting threshold" }
-  }'`,
-  Python: `import httpx
-
-# Submit a flagged transaction alert to Aegis
-response = httpx.post(
-    "https://api.aegis-aml.com/api/v1/alerts/ingest",
-    headers={
-        "X-API-Key": "sk-ae-YOUR-API-KEY",
-        "X-Tenant-ID": "${tenantId}",
-    },
-    json={
-        "customer": {"full_name": "Rajesh Kumar", "id": "CUST-98271"},
-        "account": {"number": "HDFC-00123456789"},
-        "txn": {
-            "ref_id": "TXN-2026-061099182",
-            "amount": 990000.00,
-            "currency": "INR",
-            "type": "NEFT_TRANSFER",
-            "direction": "DEBIT",
-            "timestamp": "2026-06-10T09:30:00+05:30",
-        },
-        "risk": {"score": 87, "reason": "Near reporting threshold"},
-    },
-)
-print(response.json())  # {"alert_id": "...", "status": "PROCESSING"}`,
-  'Node.js': `import axios from 'axios'
-
-// Submit a flagged transaction alert to Aegis
-const { data } = await axios.post(
-  'https://api.aegis-aml.com/api/v1/alerts/ingest',
-  {
-    customer: { full_name: 'Rajesh Kumar', id: 'CUST-98271' },
-    account: { number: 'HDFC-00123456789' },
-    txn: {
-      ref_id: 'TXN-2026-061099182',
-      amount: 990000.0,
-      currency: 'INR',
-      type: 'NEFT_TRANSFER',
-      direction: 'DEBIT',
-      timestamp: '2026-06-10T09:30:00+05:30',
-    },
-    risk: { score: 87, reason: 'Near reporting threshold' },
-  },
-  {
-    headers: {
-      'X-API-Key': 'sk-ae-YOUR-API-KEY',
-      'X-Tenant-ID': '${tenantId}',
-    },
-  },
-)
-console.log(data) // { alert_id: '...', status: 'PROCESSING' }`,
-})
 
 export function Credentials() {
   const { data: creds, isLoading } = useCredentials()
@@ -90,14 +18,11 @@ export function Credentials() {
   const { toast } = useToast()
   const qc = useQueryClient()
 
-  const [guideOpen, setGuideOpen] = useState(false)
-  const [tab, setTab] = useState<'cURL' | 'Python' | 'Node.js'>('cURL')
   const [rotateOpen, setRotateOpen] = useState(false)
   const [rotating, setRotating] = useState(false)
   const [newKey, setNewKey] = useState<string | null>(null)
 
   const tenantId = creds?.tenant_id_public ?? user?.tenant?.tenantIdPublic ?? 'TEN-0001'
-  const snippets = SNIPPETS(tenantId)
 
   const handleRotate = async () => {
     setRotating(true)
@@ -224,53 +149,21 @@ export function Credentials() {
         </div>
       </div>
 
-      {/* Card 2 — Integration Guide */}
-      <div className="card anim-fade-in-up" style={{ padding: 0, animationDelay: '80ms' }}>
-        <button
-          onClick={() => setGuideOpen((o) => !o)}
-          style={{
-            width: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: 24,
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            color: 'var(--text-1)',
-          }}
-        >
-          <div style={{ textAlign: 'left' }}>
-            <h3 style={{ fontSize: 16, fontWeight: 600, letterSpacing: '-0.01em' }}>Integration Guide</h3>
-            <p style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 4 }}>
-              How to call <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>/api/v1/alerts/ingest</span> from your TMS
-            </p>
-          </div>
-          <ChevronDown
-            size={16}
-            color="var(--text-3)"
-            style={{ transition: 'transform 200ms', transform: guideOpen ? 'rotate(180deg)' : 'none' }}
-          />
-        </button>
-        <div className="accordion-body" style={{ maxHeight: guideOpen ? 900 : 0, opacity: guideOpen ? 1 : 0 }}>
-          <div style={{ padding: '0 24px 24px' }}>
-            <div style={{ display: 'flex', gap: 4, marginBottom: 12 }}>
-              {(Object.keys(snippets) as (keyof typeof snippets)[]).map((t) => (
-                <button key={t} className={cls('chip', tab === t && 'chip-active')} onClick={() => setTab(t)}>
-                  {t}
-                </button>
-              ))}
-            </div>
-            <div key={tab} className="anim-fade-in">
-              <CodeBlock
-                code={snippets[tab]}
-                language={tab === 'cURL' ? 'bash' : tab === 'Python' ? 'python' : 'javascript'}
-                maxHeight={420}
-              />
-            </div>
-          </div>
+      {/* Card 2 — pointer to the consolidated technical reference */}
+      <Link
+        to="/settings/schema"
+        className="card anim-fade-in-up card-interactive"
+        style={{ padding: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, textDecoration: 'none', color: 'inherit', animationDelay: '80ms' }}
+      >
+        <div>
+          <h3 style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-0.01em' }}>Integration guide &amp; API reference</h3>
+          <p style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 4 }}>
+            The full endpoint, payload schema, and webhook contract now live in one printable
+            handoff document under <b>Ingestion Schema</b>.
+          </p>
         </div>
-      </div>
+        <ArrowRight size={16} color="var(--text-3)" style={{ flexShrink: 0 }} />
+      </Link>
 
       {/* Rotate modal */}
       <Modal

@@ -8,7 +8,9 @@ const getPageTitle = (pathname: string) => {
   if (pathname.startsWith('/settings/webhook')) return 'Webhook Configuration';
   if (pathname.startsWith('/settings/schema')) return 'Ingestion Schema';
   if (pathname.startsWith('/settings/llm')) return 'LLM Configuration';
+  if (pathname.startsWith('/settings/billing')) return 'Billing';
   if (pathname.startsWith('/usage')) return 'Usage Analytics';
+  if (pathname.startsWith('/admin/overview')) return 'Platform Overview';
   if (pathname.startsWith('/admin/verifications')) return 'Tenant Verifications';
   if (pathname.startsWith('/admin/customers')) return 'Customers';
   if (pathname.startsWith('/admin/logs')) return 'API Logs';
@@ -16,7 +18,7 @@ const getPageTitle = (pathname: string) => {
   return 'Aegis AML';
 };
 
-export default function TopBar() {
+export default function TopBar({ onToggleSidebar, sidebarCollapsed }: { onToggleSidebar?: () => void; sidebarCollapsed?: boolean }) {
   const location = useLocation();
   const title = getPageTitle(location.pathname);
 
@@ -27,7 +29,19 @@ export default function TopBar() {
       className="h-[48px] px-6 flex items-center justify-between sticky top-0 z-30"
       style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(8px)', borderBottom: '1px solid var(--border-subtle)' }}
     >
-      <div className="flex items-center">
+      <div className="flex items-center gap-2">
+        {onToggleSidebar && (
+          <button
+            onClick={onToggleSidebar}
+            title={sidebarCollapsed ? 'Show sidebar' : 'Hide sidebar'}
+            aria-label={sidebarCollapsed ? 'Show sidebar' : 'Hide sidebar'}
+            className="flex items-center justify-center w-7 h-7 -ml-1 rounded-md text-ink-3 hover:bg-surface-2 hover:text-ink-1 transition-colors"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" /><line x1="9" y1="3" x2="9" y2="21" />
+            </svg>
+          </button>
+        )}
         <h1 className="text-[14px] font-semibold text-ink-1 tracking-tight">{title}</h1>
       </div>
 

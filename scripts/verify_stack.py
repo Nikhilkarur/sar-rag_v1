@@ -34,6 +34,33 @@ def check(name: str, condition: bool, detail: str = ""):
     print(f"  [{mark}] {name}" + (f"  - {detail}" if detail and not condition else ""))
 
 
+def cleanup_probe_tenants():
+    """Best-effort: remove the throwaway 'Probe Fintech' tenants this battery signs up, so they
+    don't accumulate as junk in the admin Verification Queue. Purely housekeeping — it prints an
+    info line and NEVER affects the pass/fail count (or raises)."""
+    import os
+    backend = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "backend")
+    if backend not in sys.path:
+        sys.path.insert(0, backend)
+    try:
+        from app.database import SessionLocal
+        from app.models.tenant import Tenant
+        from app.models.user import User
+        db = SessionLocal()
+        try:
+            probes = db.query(Tenant).filter(Tenant.name == "Probe Fintech").all()
+            for t in probes:
+                for u in db.query(User).filter(User.tenant_id == t.id).all():
+                    db.delete(u)
+                db.delete(t)  # alerts/matches cascade
+            db.commit()
+            print(f"  [info] cleaned up {len(probes)} probe tenant(s)")
+        finally:
+            db.close()
+    except Exception as e:  # noqa: BLE001 — housekeeping must never break the run
+        print(f"  [info] probe cleanup skipped ({e.__class__.__name__})")
+
+
 def main() -> int:
     c = httpx.Client(timeout=30.0)
 
@@ -125,6 +152,9 @@ def main() -> int:
         check("probe signup awaiting verification", "Probe Fintech" in names)
     r = c.post(f"{API}/admin/tenants/not-a-uuid/approve", headers=admin_auth)
     check("admin garbage UUID -> 404 (was 500)", r.status_code == 404, str(r.status_code))
+
+    print("\n-- Cleanup --")
+    cleanup_probe_tenants()
 
     print(f"\n{'=' * 48}\nRESULT: {passed} passed, {failed} failed\n{'=' * 48}")
     return 0 if failed == 0 else 1

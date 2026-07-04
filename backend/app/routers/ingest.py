@@ -11,6 +11,7 @@ from app.models.compliance import ComplianceMatch
 from app.services.schema_normalizer import normalize_payload
 from app.services.pii_masker import mask_payload
 from app.services.compliance_analyzer import analyze
+from app.services.risk_scoring import compute_composite_risk, warrants_sar
 from app.services.llm_agent import generate_sar
 from app.services.rag_retrieval_service import retrieve_regulatory_context
 import hashlib
@@ -18,8 +19,23 @@ import json
 import threading
 import time
 import uuid
+from datetime import datetime
 from collections import defaultdict, deque
 from sqlalchemy.exc import IntegrityError
+
+
+def _parse_txn_timestamp(value):
+    """Best-effort parse of a payload transaction_timestamp into a datetime.
+    Returns None on anything unparseable so a bad value never blocks ingest —
+    the summary/goAML then fall back to the row's created_at."""
+    if not value:
+        return None
+    if isinstance(value, datetime):
+        return value
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except (ValueError, TypeError):
+        return None
 
 # --- Rate limiting (sliding window, per tenant-or-IP, in-process) ---
 # Runs as a router dependency BEFORE API-key verification, so unauthenticated
@@ -108,12 +124,34 @@ def process_alert_background(alert_id: str):
             except Exception:
                 retrieved_chunks = None  # RAG unavailable → fall back to no-context generation
 
-            # 4b. Generate SAR Narrative (with the tenant's policy context, if retrieved)
-            sar = generate_sar(alert.id, db, retrieved_chunks=retrieved_chunks)
+            # 4b. Generate SAR Narrative (with the tenant's policy context, if retrieved).
+            #     Bounded in-process retry: the LLM providers already fail over Groq->Gemini,
+            #     but a transient blip on BOTH would otherwise strand the alert as FAILED with
+            #     no SAR — a regulatory gap. Retry a few times with short backoff before giving
+            #     up. (A durable retry queue is the production-scale upgrade; this covers blips.)
+            last_err = None
+            for attempt in range(settings.SAR_GENERATION_MAX_ATTEMPTS):
+                try:
+                    sar = generate_sar(alert.id, db, retrieved_chunks=retrieved_chunks)
+                    last_err = None
+                    break
+                except Exception as e:  # noqa: BLE001 — retry on any generation failure
+                    last_err = e
+                    db.rollback()
+                    if attempt + 1 < settings.SAR_GENERATION_MAX_ATTEMPTS:
+                        time.sleep(settings.SAR_GENERATION_RETRY_BACKOFF_SECONDS * (attempt + 1))
+            if last_err is not None:
+                raise last_err
 
-            # 5. Mark Complete
-            alert.status = "PROCESSING_COMPLETED"
-            alert.processing_completed_at = __import__('sqlalchemy').func.now()
+            # 5. Finalize. When AUTO_APPROVE_SARS is on, skip manual officer review and
+            #    deliver the finished report straight to the bank (the bank's admin makes
+            #    the final file-with-FIU call). Otherwise leave it pending officer review.
+            if settings.AUTO_APPROVE_SARS:
+                from app.services.sar_delivery import finalize_and_deliver
+                finalize_and_deliver(alert, db, "Automated compliance review (auto-approved)")
+            else:
+                alert.status = "PROCESSING_COMPLETED"
+                alert.processing_completed_at = __import__('sqlalchemy').func.now()
             db.commit()
         except Exception as e:
             db.rollback()
@@ -190,19 +228,10 @@ async def ingest_payload(
     # 3. Compliance Analysis
     analysis_results = analyze(normalized)
     
-    # Determine base risk score from payload or rules.
-    # Clamp to 0-100: a crafted negative/huge/non-numeric risk_score must not
-    # crash the pipeline or drag the final score below the SAR threshold.
-    try:
-        risk_score = int(float(normalized.get("risk_score") or 0))
-    except (TypeError, ValueError):
-        risk_score = 0
-    risk_score = max(0, min(100, risk_score))
-    for r in analysis_results:
-        if r["triggered"]:
-            if r["confidence"] == "HIGH": risk_score += 20
-            elif r["confidence"] == "MEDIUM": risk_score += 10
-    
+    # Composite risk = bank's own score (base) + Aegis's triggered typology rules.
+    # See services/risk_scoring.py for the model and why RISK_SCORE_THRESHOLD scores 0.
+    risk_score = compute_composite_risk(normalized.get("risk_score"), analysis_results)
+
     # Create Alert
     alert = Alert(
         tenant_id=tenant.id,
@@ -213,8 +242,14 @@ async def ingest_payload(
         masked_payload=masked_payload,
         transaction_id=str(normalized.get("transaction_id", uuid.uuid4())),
         transaction_amount=normalized.get("transaction_amount"),
+        # Persist the payload's real currency/timestamp into the typed columns.
+        # When absent, leave them NULL (the summary falls back to the tenant default /
+        # created_at) rather than letting the column's 'INR'/NULL default masquerade as
+        # a real value — a USD txn was previously always shown as INR.
+        transaction_currency=normalized.get("transaction_currency"),
         transaction_type=normalized.get("transaction_type"),
-        risk_score=min(100, risk_score),
+        transaction_timestamp=_parse_txn_timestamp(normalized.get("transaction_timestamp")),
+        risk_score=risk_score,  # already clamped to 0..100 by compute_composite_risk
         is_synthetic=False,
         idempotency_key=idempotency_key,
         ingested_from_ip=request.client.host if request.client else None,
@@ -254,17 +289,17 @@ async def ingest_payload(
     # truth for live transactions. We deliberately do NOT mirror it to the per-client
     # folder here; for offline eval, export a sample from the DB on demand instead.
 
-    if alert.risk_score >= 75:
+    if warrants_sar(alert.risk_score):
         # Threshold met, trigger SAR generation
         background_tasks.add_task(process_alert_background, alert.id)
     else:
         alert.status = "COMPLETED_CLEAN"
         alert.processing_completed_at = __import__('sqlalchemy').func.now()
         db.commit()
-        
+
     return {
         "status": "success",
         "alert_id": alert.id,
         "risk_score": alert.risk_score,
-        "message": "Ingested successfully. SAR generation triggered." if alert.risk_score >= 75 else "Ingested successfully. No SAR required."
+        "message": "Ingested successfully. SAR generation triggered." if warrants_sar(alert.risk_score) else "Ingested successfully. No SAR required."
     }
