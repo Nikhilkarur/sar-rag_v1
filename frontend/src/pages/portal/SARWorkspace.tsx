@@ -559,9 +559,9 @@ export function SARWorkspace() {
               Download PDF
             </Button>
           )}
-          {/* Approve/Reject only exist while an officer review is actually pending
-              (i.e. AUTO_APPROVE_SARS is off). Under auto-approve the SAR arrives
-              already delivered, so these would be dead controls — hide them. */}
+          {/* Approve/Reject appear while an officer review is pending (the default,
+              AUTO_APPROVE_SARS off). If auto-approve is on, the SAR arrives already
+              delivered, so these controls are hidden. */}
           {isPending && (
             <>
               <Button

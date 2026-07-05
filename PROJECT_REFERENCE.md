@@ -103,8 +103,8 @@ Rule of thumb: IR needs an `eval.json` (so it's `client_0` only); RAGAS needs no
 
 **Aegis AML** auto-drafts Suspicious Activity Reports (SARs/STRs) for Indian
 fintechs/brokers. A transaction → normalized → PII-masked → 8 typology rules →
-if risk ≥ 75, an LLM (Groq) writes a SAR → auto-finalized (default,
-`AUTO_APPROVE_SARS=True`; set False for Aegis-officer review) → goAML STR + PDF
+if risk ≥ 75, an LLM (Groq) writes a SAR → a compliance officer reviews & approves it in the
+Aegis dashboard (default, `AUTO_APPROVE_SARS=False`; set True to auto-finalize) → goAML STR + PDF
 delivered to the bank → the **bank's admin** makes the final file-with-FIU call.
 
 **RAG** makes that SAR cite the **tenant's actual AML policy** instead of the
@@ -127,9 +127,10 @@ config.py / .env  →  embeddings.py (encoder engine, used by BOTH sides)
    │
    └ PHASE 3 (generate, per alert)
        llm_agent.py: chunks + data → prompt → Groq → SAR (narrative + structured JSON)
-           → (real, default) auto-finalize (sar_delivery.finalize_and_deliver) → rehydrate PII
-             → goAML JSON + in-memory PDF → HMAC webhook → bank admin decides filing
-           → (real, AUTO_APPROVE_SARS=False) officer approves in dashboard first, same delivery
+           → (real, default AUTO_APPROVE_SARS=False) officer reviews + approves in dashboard →
+             finalize_and_deliver → rehydrate PII → goAML JSON+XML + in-memory PDF → HMAC webhook
+             → bank admin decides filing
+           → (real, AUTO_APPROVE_SARS=True) same delivery, auto-finalized with no officer step
            → (demo) simulated approval → files in outputs/final/
 ```
 
@@ -662,6 +663,22 @@ but why each choice was made.
   blip doesn't strand an alert as FAILED. (5) **Review Queue excludes synthetic by default**
   (DEV dashboard opts back in). (6) **`scripts/backfill_encrypt_pii.py`** — idempotent one-time
   re-encryption of any legacy plaintext PII rows. Scoring BEHAVIOR unchanged (additive, threshold 75).
+- 2026-07-05 (pre-pitch hardening): (1) **goAML XML** — `goaml_builder.build_goaml_xml()` now
+  serializes the report dict to well-formed goAML-aligned `<report>` XML (FIU-IND structure;
+  XSD certification pending — position honestly). Delivered alongside the JSON as `goaml_xml`
+  in the approval webhook. (2) **Secrets scrub** — removed the real DB password from `config.py`,
+  `alembic.ini`, `.env.example`, and two docs; gitignored real tenant storage
+  (`backend/storage/clients/TEN-*/`) and untracked the committed TEN-0005 policy PDFs;
+  `.env.example` now documents `PII_ENCRYPTION_KEY`. (Note: the old password still exists in git
+  HISTORY — a local dev password, low severity; rewrite with git-filter-repo only if published.)
+  Docker/process-manager deferred until after the pitch.
+- 2026-07-05 (human-in-the-loop by default): **`AUTO_APPROVE_SARS` default flipped to `False`** —
+  a drafted SAR now waits as `PENDING_REVIEW` for a compliance officer to review + approve in the
+  dashboard BEFORE it's finalized and delivered (stronger, more honest pitch story). UI updated:
+  Queue gains a **"Pending review"** filter + a pending count in the header; SARWorkspace already
+  had the review/approve flow. Docs/state-machine/flow synced to the new default. Set the flag
+  `True` to restore auto-finalize. Reverted the earlier git-untrack of the TEN-0005 policy PDFs
+  (kept tracked, per request).
 
 ---
 

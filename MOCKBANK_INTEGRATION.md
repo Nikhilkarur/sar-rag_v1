@@ -23,7 +23,7 @@ lands back in the bank's inbox via webhook.
 | Aegis policy for the tenant | Meridian Bank AML/CFT policy **v4.0** (enriched; regenerable via `scripts/build_meridian_policy.py`), uploaded via `POST /documents/upload` (**32 chunks** in Chroma) |
 | Aegis webhook | points at the bank: `http://localhost:8001/aegis/webhook` (internal sink OFF) |
 | Mock bank config | `mock-bank/.env` → `AEGIS_TENANT_ID=TEN-0005` + that tenant's API key (pasted by us) |
-| DBs | Aegis: Postgres `aegis_db1` · Bank: Postgres `mockbank` (both `postgres`/`karur123`) |
+| DBs | Aegis: Postgres `aegis_db1` · Bank: Postgres `mockbank` (both user `postgres`, password in local `.env`) |
 
 **Verified:** customer transfer (₹9,45,000 intl wire) → bank score 100 → forwarded → SAR
 generated citing the Meridian policy → officer approved → goAML `rentity_name = "Meridian Bank
@@ -44,7 +44,7 @@ All four must run. Ports are fixed by config.
 | **Bank frontend** | 5174 | from `mock-bank/frontend/`: `npm run dev` |
 
 **Prereqs on this machine (already installed):** Java 17 (`C:\Program Files\Java\jdk-17`),
-Node 22, PostgreSQL (running, `postgres`/`karur123`), and a **portable Maven** at
+Node 22, PostgreSQL (running, user `postgres`, password in local `.env`), and a **portable Maven** at
 `C:\Users\nkk77\maven\apache-maven-3.9.9` (installed this session — Maven was not on the
 system otherwise).
 

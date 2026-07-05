@@ -1,11 +1,19 @@
 """
-Build a goAML-aligned STR filing from an approved SAR.
+Build a goAML STR filing from an approved SAR.
 
 This is the regulator-facing structure (FIU-India goAML). It is assembled from the
 alert's normalized payload (REAL values — the bank-facing filing uses real names,
 not masked tokens), the approved narrative, the triggered rules, and the approving
-officer. Representative JSON (not a schema-validated XML submission).
+officer.
+
+`build_goaml_str` returns the report as a dict (easy to inspect/transport);
+`build_goaml_xml` serializes that dict to goAML-aligned XML — well-formed and
+structured after the FIU-IND goAML STR <report> element. NOTE (be honest in any
+pitch): the XML follows the goAML report structure but is NOT yet validated against
+the official goAML XSD, so it is a submission-ready *draft*, not a certified filing.
 """
+import xml.etree.ElementTree as ET
+from xml.dom import minidom
 from typing import Any, Dict, List, Optional
 
 # AML rule -> goAML-style suspicion indicator code (for report_indicators).
@@ -89,3 +97,34 @@ def build_goaml_str(alert, draft, rule_names: List[str], tenant,
             },
         }
     }
+
+
+def _append_xml(parent: ET.Element, key: str, value: Any) -> None:
+    """Recursively serialize a report value into goAML XML under `parent`."""
+    # report_indicators is a list of code strings -> <report_indicators><indicator>..</indicator>
+    if key == "report_indicators" and isinstance(value, list):
+        holder = ET.SubElement(parent, "report_indicators")
+        for code in value:
+            ET.SubElement(holder, "indicator").text = str(code)
+        return
+    if isinstance(value, dict):
+        node = ET.SubElement(parent, key)
+        for k, v in value.items():
+            _append_xml(node, k, v)
+    elif isinstance(value, list):
+        for item in value:  # repeat the element for each list member
+            _append_xml(parent, key, item)
+    else:
+        ET.SubElement(parent, key).text = "" if value is None else str(value)
+
+
+def build_goaml_xml(report: Dict[str, Any]) -> str:
+    """Serialize a `build_goaml_str` report dict to goAML-aligned XML (pretty-printed).
+    Well-formed and structured after the FIU-IND goAML STR <report>; XSD certification
+    is still pending, so treat it as a submission-ready draft."""
+    inner = report.get("report", report) if isinstance(report, dict) else {}
+    root = ET.Element("report")
+    for k, v in inner.items():
+        _append_xml(root, k, v)
+    raw = ET.tostring(root, encoding="unicode")
+    return minidom.parseString(raw).toprettyxml(indent="  ")

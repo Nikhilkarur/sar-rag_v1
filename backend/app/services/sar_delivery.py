@@ -19,7 +19,7 @@ from app.models.compliance import ComplianceMatch
 from app.models.tenant import Tenant
 from app.models.webhook import WebhookConfig, WebhookSinkEvent
 from app.services.pii_masker import rehydrate_text
-from app.services.goaml_builder import build_goaml_str
+from app.services.goaml_builder import build_goaml_str, build_goaml_xml
 from app.services.sar_pdf import render_sar_pdf
 from app.utils.security import decrypt_json, validate_webhook_url
 
@@ -100,6 +100,12 @@ def finalize_and_deliver(alert, db: Session, approver_name: str, approver_user_i
     rule_ids = _triggered_rule_ids(db, alert.id)
     tenant = db.query(Tenant).filter(Tenant.id == alert.tenant_id).first()
     goaml = build_goaml_str(alert, draft, rule_ids, tenant, approver_name, approved_at_iso)
+    # goAML-aligned XML filing (well-formed; XSD certification pending). Delivered alongside
+    # the JSON so the bank receives an actual submission-ready STR document, not just a struct.
+    try:
+        goaml_xml = build_goaml_xml(goaml)
+    except Exception:
+        goaml_xml = None
 
     # The SAR PDF carries REAL (rehydrated) PII, so it is NOT written to Aegis's disk. Render it
     # in memory: base64 it into the webhook (the bank keeps its OWN copy) and re-render on demand
@@ -121,6 +127,7 @@ def finalize_and_deliver(alert, db: Session, approver_name: str, approver_user_i
         "approved_at": approved_at_iso,
         "approved_by": approver_name,
         "goaml_str": goaml,
+        "goaml_xml": goaml_xml,
         "pdf_url": pdf_url,
         "pdf_base64": pdf_base64,
         "pdf_filename": f"SAR-{draft.id}.pdf",

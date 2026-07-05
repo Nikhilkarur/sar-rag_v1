@@ -12,7 +12,7 @@ report is finalized and delivered back to the bank's compliance console with a d
 ## 1. Prerequisites (already installed on this machine)
 
 - **Java 17** (`C:\Program Files\Java\jdk-17`), **Node 22**, **PostgreSQL** (running, user
-  `postgres` / pw `karur123`), and a portable **Maven** at `C:\Users\nkk77\maven\apache-maven-3.9.9`.
+  `postgres` / password set in your local `backend/.env`), and a portable **Maven** at `C:\Users\nkk77\maven\apache-maven-3.9.9`.
 - Two Postgres DBs already exist: `aegis_db1` (Aegis) and `mockbank` (the bank).
 - `GROQ_API_KEY` is set in `sar-rag_v1/backend/.env` (needed for SAR generation + the RAGAS eval).
 

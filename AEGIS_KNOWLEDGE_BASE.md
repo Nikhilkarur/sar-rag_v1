@@ -120,11 +120,12 @@ What makes the SAR trustworthy:
   report references *“Section 4.1”* of the bank's actual policy, not vague prose.
 - **Personal data never reaches the AI.** PII is tokenized before any LLM call and only
   restored locally, at finalization.
-- **A human makes the final filing call — at the bank.** By default (`AUTO_APPROVE_SARS=True`)
-  Aegis auto-finalizes the drafted SAR and delivers it to the bank; the **bank's own admin**
-  reviews it in their console and decides whether to file with the FIU. Setting the flag to
-  `False` restores the older mode where an Aegis compliance officer approves in the SAR
-  Workspace before anything is delivered.
+- **A human reviews and approves every SAR before it leaves Aegis.** By default
+  (`AUTO_APPROVE_SARS=False`) a drafted SAR waits in the officer's SAR Workspace as
+  `PENDING_REVIEW`; a compliance officer reads it, optionally edits, and **approves** — only then
+  is it finalized and delivered to the bank (where the bank's admin makes the final file-with-FIU
+  call). Setting the flag to `True` auto-finalizes and delivers immediately, leaving the sole
+  human gate at the bank. Two-layer human oversight either way.
 
 ## 2. The mental model
 
@@ -162,7 +163,7 @@ Three principles to keep in mind everywhere:
 | **SAR / STR** | Suspicious Activity / Transaction Report — the legal filing. The product's output. |
 | **FIU-India** | Financial Intelligence Unit of India — the regulator that receives STRs. |
 | **PMLA** | Prevention of Money Laundering Act — the law mandating STR filing. |
-| **goAML** | The standard schema STRs are filed in. Aegis emits a representative goAML JSON. |
+| **goAML** | The standard schema STRs are filed in. Aegis emits the report as JSON *and* goAML-aligned XML (well-formed, FIU-IND `<report>` structure; XSD certification pending). |
 | **Tenant** | One B2B customer (a fintech/broker). Everything is scoped per tenant. Public id `TEN-XXXX`. |
 | **Alert** | One flagged transaction ingested from a tenant. The central unit of work. |
 | **TMS** | Transaction Monitoring System — the bank's software that flags transactions. |
@@ -317,8 +318,8 @@ friendlier public names for the UI (see the note below).
 stateDiagram-v2
     [*] --> PROCESSING: ingest accepted
     PROCESSING --> COMPLETED_CLEAN: risk < 75 (no SAR)
-    PROCESSING --> APPROVED: SAR drafted + auto-finalized (AUTO_APPROVE_SARS=True, default)
-    PROCESSING --> PROCESSING_COMPLETED: SAR drafted OK (manual mode only)
+    PROCESSING --> PROCESSING_COMPLETED: SAR drafted OK (manual review — default)
+    PROCESSING --> APPROVED: SAR drafted + auto-finalized (AUTO_APPROVE_SARS=True)
     PROCESSING --> PROCESSING_FAILED: pipeline error
     PROCESSING_COMPLETED --> APPROVED: officer approves
     PROCESSING_COMPLETED --> REJECTED: officer rejects
@@ -602,16 +603,18 @@ production, only `CHROMA_PERSIST_DIR` / the client call site changes.
 ## 9. Approval, goAML & webhook delivery · [`routers/alerts.py`](backend/app/routers/alerts.py)
 
 Finalization is one shared service — [`sar_delivery.py::finalize_and_deliver`](backend/app/services/sar_delivery.py)
-— invoked by **both** paths: automatically from the ingest background task when
-`AUTO_APPROVE_SARS=True` (the default), or by an officer via
-`POST /api/v1/alerts/queue/{id}/approve` in manual mode. It:
+— invoked by **both** paths: by an officer via `POST /api/v1/alerts/queue/{id}/approve` after
+review (the default, `AUTO_APPROVE_SARS=False`), or automatically from the ingest background task
+when `AUTO_APPROVE_SARS=True`. It:
 
 1. **Rehydrates** the draft: tokens → real PII (stored as `approved_text` / `rehydrated_text`,
    both encrypted at rest).
-2. **Builds the goAML STR** ([`goaml_builder.py`](backend/app/services/goaml_builder.py)) — a
-   representative FIU-India goAML JSON using **real values**: `report_code: "STR"`, mapped
-   `report_indicators` (e.g. `STRUCTURING_BELOW_THRESHOLD`), a `transmode_code` per transaction
-   type, and a bi-party `t_from_my_client` / `t_to` transaction block.
+2. **Builds the goAML STR** ([`goaml_builder.py`](backend/app/services/goaml_builder.py)) — the
+   FIU-India goAML report using **real values**: `report_code: "STR"`, mapped `report_indicators`
+   (e.g. `STRUCTURING_BELOW_THRESHOLD`), a `transmode_code` per transaction type, and a bi-party
+   `t_from_my_client` / `t_to` transaction block. `build_goaml_str` returns the dict;
+   `build_goaml_xml` serializes it to **goAML-aligned XML** (well-formed `<report>` document —
+   XSD certification pending). Both `goaml_str` (JSON) and `goaml_xml` ride the webhook.
 3. **Renders the PDF** ([`sar_pdf.py`](backend/app/services/sar_pdf.py)) **in memory — never
    persisted to disk** (it carries real PII). The bytes are base64'd into the webhook
    (`pdf_base64`) and re-rendered on demand for the authenticated `/files/sar/{id}.pdf` download.

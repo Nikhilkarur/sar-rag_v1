@@ -1,7 +1,9 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
-    DATABASE_URL: str = "postgresql://postgres:karur123@localhost:5432/aegis_db1"
+    # Placeholder default only — the real connection string comes from backend/.env
+    # (DATABASE_URL=...). Never commit a real password here.
+    DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/aegis_db1"
     SECRET_KEY: str = "your-super-secret-jwt-key-min-32-chars"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
@@ -35,10 +37,11 @@ class Settings(BaseSettings):
     SAR_GENERATION_MAX_ATTEMPTS: int = 3
     SAR_GENERATION_RETRY_BACKOFF_SECONDS: float = 2.0
 
-    # SAR workflow: when True, a generated SAR is auto-finalized + delivered to the bank
-    # immediately (no manual officer approval on the Aegis side). The bank's own admin
-    # makes the final file-with-FIU decision. Set False to require officer review.
-    AUTO_APPROVE_SARS: bool = True
+    # SAR workflow: when False (current), a generated SAR waits for a human compliance officer
+    # to review and approve it in the Aegis dashboard BEFORE it is finalized + delivered to the
+    # bank — an explicit human-in-the-loop on the Aegis side. When True, the SAR auto-finalizes
+    # and delivers immediately, leaving the file-with-FIU decision to the bank's own admin.
+    AUTO_APPROVE_SARS: bool = False
 
     # PII encryption at rest (Fernet). MUST be set explicitly in production;
     # when empty, a key is derived from SECRET_KEY so dev works out of the box.

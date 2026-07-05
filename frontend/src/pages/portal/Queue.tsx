@@ -10,12 +10,13 @@ import { EmptyState, ShieldCheckIllustration } from '../../components/ui/EmptySt
 import { SkeletonTableRows } from '../../components/ui/Skeleton'
 import { cls, formatINR, timeAgo, truncId } from '../../utils/format'
 
-type Filter = 'ALL' | 'APPROVED' | 'NOT_APPROVED'
+type Filter = 'ALL' | 'PENDING' | 'APPROVED' | 'NOT_APPROVED'
 
-// Under auto-approve there is no "pending" state, and an alert that doesn't become a filed
-// SAR is either rejected (manual mode) or failed to process — grouped as "Rejected / Not approved".
+// With human review on, a drafted SAR sits in PENDING_REVIEW until an officer approves/rejects it.
+// "Not approved" groups rejected + failed-to-process alerts.
 const FILTERS: { key: Filter; label: string }[] = [
   { key: 'ALL', label: 'All' },
+  { key: 'PENDING', label: 'Pending review' },
   { key: 'APPROVED', label: 'Approved' },
   { key: 'NOT_APPROVED', label: 'Rejected / Not approved' },
 ]
@@ -39,7 +40,9 @@ export function Queue() {
       list = list.filter((a) =>
         filter === 'APPROVED'
           ? a.status === 'APPROVED'
-          : a.status === 'REJECTED' || a.status === 'PROCESSING_FAILED',
+          : filter === 'PENDING'
+            ? a.status === 'PENDING_REVIEW'
+            : a.status === 'REJECTED' || a.status === 'PROCESSING_FAILED',
       )
     }
     if (search.trim()) {
@@ -52,7 +55,7 @@ export function Queue() {
   }, [alerts, filter, search, fromDate, toDate])
 
   const total = alerts?.length ?? 0
-  const notApproved = alerts?.filter((a) => a.status === 'REJECTED' || a.status === 'PROCESSING_FAILED').length ?? 0
+  const pending = alerts?.filter((a) => a.status === 'PENDING_REVIEW').length ?? 0
 
   const submitTestAlert = () => {
     submitTest.mutate('STRUCTURING', {
@@ -68,7 +71,7 @@ export function Queue() {
           <h1 style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em' }}>Alerts</h1>
           <span style={{ fontSize: 13, color: 'var(--text-3)' }}>
             {total} alert{total === 1 ? '' : 's'}
-            {notApproved > 0 ? ` · ${notApproved} not approved` : ''}
+            {pending > 0 ? ` · ${pending} pending review` : ''}
           </span>
         </div>
         {/* Dev/demo affordance only — hidden in production builds. */}
