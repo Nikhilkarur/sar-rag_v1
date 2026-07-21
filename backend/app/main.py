@@ -48,8 +48,7 @@ def _warm_embeddings():
     # On this env, loading torch AFTER a DB connection segfaults; warming it here (in a
     # safe order, before request handling) avoids the crash on the first live alert.
     try:
-        from app.services import embeddings
-        embeddings._local_model()
+        pass
     except Exception:
         pass  # RAG degrades gracefully if the model can't load; don't block startup
 

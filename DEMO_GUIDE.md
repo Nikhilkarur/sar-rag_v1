@@ -9,12 +9,13 @@ report is finalized and delivered back to the bank's compliance console with a d
 
 ---
 
-## 1. Prerequisites (already installed on this machine)
+## 1. Prerequisites
 
-- **Java 17** (`C:\Program Files\Java\jdk-17`), **Node 22**, **PostgreSQL** (running, user
-  `postgres` / password set in your local `backend/.env`), and a portable **Maven** at `C:\Users\nkk77\maven\apache-maven-3.9.9`.
-- Two Postgres DBs already exist: `aegis_db1` (Aegis) and `mockbank` (the bank).
-- `GROQ_API_KEY` is set in `sar-rag_v1/backend/.env` (needed for SAR generation + the RAGAS eval).
+- **Python 3.11+**, **Node 18+**, **PostgreSQL 14+** running on port 5432
+- **Java 17+ JDK** and **Maven 3.8+** (for the mock bank backend)
+- Two Postgres DBs created: `aegis_db1` (Aegis) and `mockbank` (the bank)
+- `GROQ_API_KEY` set in `sar-rag_v1/backend/.env` (needed for SAR generation + the RAGAS eval)
+- See the repo `README.md` for full setup steps if starting fresh.
 
 ## 2. Start the four services
 
@@ -22,23 +23,20 @@ Run each in its own terminal (Git Bash). Order doesn't matter much, but start th
 
 ```bash
 # 1) Aegis API  (:8000)
-cd /c/Users/nkk77/Desktop/rgbackup/sar-rag_v1/backend
-unset GEMINI_API_KEY   # this machine has a stale GEMINI_API_KEY env var that shadows .env;
-                       # unset it so the Gemini FALLBACK key (in .env) is used. See IMPROVEMENTS_LOG.
+cd sar-rag_v1/backend
+# Activate your venv first: .venv\Scripts\activate (Windows) or source .venv/bin/activate
 python -m uvicorn app.main:app --port 8000
 
 # 2) Aegis dashboard  (:5173)
-cd /c/Users/nkk77/Desktop/rgbackup/sar-rag_v1/frontend
+cd sar-rag_v1/frontend
 npm run dev
 
-# 3) Bank backend  (:8001)   — needs JAVA_HOME + the portable Maven on PATH
-cd /c/Users/nkk77/Desktop/mock-bank/backend
-export JAVA_HOME='C:/Program Files/Java/jdk-17'
-export PATH="/c/Users/nkk77/maven/apache-maven-3.9.9/bin:$PATH"
-mvn.cmd spring-boot:run
+# 3) Bank backend  (:8001)  — requires Java 17+ and Maven on PATH
+cd mock-bank/backend
+mvn spring-boot:run
 
 # 4) Bank frontend  (:5174)
-cd /c/Users/nkk77/Desktop/mock-bank/frontend
+cd mock-bank/frontend
 npm run dev
 ```
 
@@ -93,7 +91,7 @@ These run offline against the built-in test client **`client_0`** (a synthetic p
 alerts with a known answer key). They show *why* the SARs are trustworthy. Run from the repo root:
 
 ```bash
-cd /c/Users/nkk77/Desktop/rgbackup/sar-rag_v1
+# From sar-rag_v1/ repo root (venv active):
 
 # Retrieval quality (top-k) — deterministic, no LLM. Proves RAG fetches the RIGHT policy sections.
 python eval/ir_metrics.py client_0
@@ -131,7 +129,7 @@ python eval/ragas_eval.py client_0
 ## 7. One-command health check
 
 ```bash
-cd /c/Users/nkk77/Desktop/rgbackup/sar-rag_v1
+# From sar-rag_v1/ repo root (venv active):
 python scripts/verify_stack.py     # expect: 27 passed, 0 failed
 ```
 

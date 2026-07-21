@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>APISpec.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> or <div class="page"></div> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="aegis-aml--api-specification">Aegis AML — API Specification</h1>
+<p><strong>Version:</strong> 1.0 — MVP
+<strong>Base URL:</strong> <code>https://api.aegis-aml.com</code> (local: <code>http://localhost:8000</code>)
+<strong>Last Updated:</strong> 2026-06-10</p>
+<blockquote>
+<p><strong>Status — original MVP design (2026-06-10).</strong> Several endpoints changed during
+implementation. For the authoritative, code-verified API reference, see
+<code>AEGIS_KNOWLEDGE_BASE.md</code> §13 (paths) and Appendix A (real request/response shapes);
+the deviations are catalogued in §21. Where this document and the code disagree, the
+code wins. Notable changes already in the code:</p>
+<ul>
+<li>Ingestion is <code>POST /api/v1/ingest/</code> returning <code>200</code> — not <code>POST /api/v1/alerts/ingest</code> → <code>202</code>.</li>
+<li>The review queue lives under <code>/api/v1/alerts/queue...</code> (not <code>/api/v1/queue...</code>).</li>
+<li>The simulator is <code>POST /api/v1/alerts/simulator/submit-test-alert</code>.</li>
+<li>There is no standalone <code>/api/v1/webhooks/sink/...</code> router; sink events are read via <code>GET /api/v1/tenant/webhook/events</code>.</li>
+<li>Live handlers return FastAPI's <code>{detail: ...}</code> error shape (same HTTP codes), not the <code>{error:{code,message}}</code> envelope shown below.</li>
+</ul>
+</blockquote>
+<hr>
+<h2 id="table-of-contents">Table of contents</h2>
+<ul>
+<li><a href="#auth-schemes">Auth Schemes</a></li>
+<li><a href="#standard-error-response">Standard Error Response</a></li>
+<li><a href="#domain-1-authentication">Domain 1: Authentication</a>
+<ul>
+<li><a href="#post-apiv1authsignup">POST /api/v1/auth/signup</a></li>
+<li><a href="#post-apiv1authlogin">POST /api/v1/auth/login</a></li>
+<li><a href="#post-apiv1authrefresh">POST /api/v1/auth/refresh</a></li>
+<li><a href="#get-apiv1authme">GET /api/v1/auth/me</a></li>
+</ul>
+</li>
+<li><a href="#domain-2-super-admin">Domain 2: Super Admin</a>
+<ul>
+<li><a href="#get-apiv1adminverifications">GET /api/v1/admin/verifications</a></li>
+<li><a href="#post-apiv1admintenantstenant_idapprove">POST /api/v1/admin/tenants/{tenant_id}/approve</a></li>
+<li><a href="#post-apiv1admintenantstenant_idreject">POST /api/v1/admin/tenants/{tenant_id}/reject</a></li>
+<li><a href="#get-apiv1admintenants">GET /api/v1/admin/tenants</a></li>
+<li><a href="#post-apiv1admintenantstenant_idsuspend">POST /api/v1/admin/tenants/{tenant_id}/suspend</a></li>
+<li><a href="#post-apiv1admintenantstenant_idreinstate">POST /api/v1/admin/tenants/{tenant_id}/reinstate</a></li>
+<li><a href="#get-apiv1adminlogs">GET /api/v1/admin/logs</a></li>
+<li><a href="#get-apiv1admingroq-usage">GET /api/v1/admin/groq-usage</a></li>
+</ul>
+</li>
+<li><a href="#domain-3-tenant-configuration">Domain 3: Tenant Configuration</a>
+<ul>
+<li><a href="#get-apiv1tenantprofile">GET /api/v1/tenant/profile</a></li>
+<li><a href="#get-apiv1tenantcredentials">GET /api/v1/tenant/credentials</a></li>
+<li><a href="#post-apiv1tenantcredentialsrotate">POST /api/v1/tenant/credentials/rotate</a></li>
+<li><a href="#get-apiv1tenantwebhook">GET /api/v1/tenant/webhook</a></li>
+<li><a href="#put-apiv1tenantwebhook">PUT /api/v1/tenant/webhook</a></li>
+<li><a href="#post-apiv1tenantwebhooktest">POST /api/v1/tenant/webhook/test</a></li>
+<li><a href="#get-apiv1tenantschemas">GET /api/v1/tenant/schemas</a></li>
+<li><a href="#post-apiv1tenantschemasselect-preset">POST /api/v1/tenant/schemas/select-preset</a></li>
+<li><a href="#get-apiv1tenantllm-config">GET /api/v1/tenant/llm-config</a></li>
+<li><a href="#put-apiv1tenantllm-config">PUT /api/v1/tenant/llm-config</a></li>
+<li><a href="#get-apiv1tenantusage">GET /api/v1/tenant/usage</a></li>
+</ul>
+</li>
+<li><a href="#domain-4-alert-ingestion">Domain 4: Alert Ingestion</a>
+<ul>
+<li><a href="#post-apiv1alertsingest">POST /api/v1/alerts/ingest</a></li>
+</ul>
+</li>
+<li><a href="#domain-5-sar-review-queue">Domain 5: SAR Review Queue</a>
+<ul>
+<li><a href="#get-apiv1queue">GET /api/v1/queue</a></li>
+<li><a href="#get-apiv1queuealert_id">GET /api/v1/queue/{alert_id}</a></li>
+<li><a href="#put-apiv1queuealert_iddraft">PUT /api/v1/queue/{alert_id}/draft</a></li>
+<li><a href="#get-apiv1queuealert_idpreview-rehydrated">GET /api/v1/queue/{alert_id}/preview-rehydrated</a></li>
+<li><a href="#post-apiv1queuealert_idapprove">POST /api/v1/queue/{alert_id}/approve</a></li>
+<li><a href="#post-apiv1queuealert_idreject">POST /api/v1/queue/{alert_id}/reject</a></li>
+</ul>
+</li>
+<li><a href="#domain-6-webhook-sink-built-in-test-receiver">Domain 6: Webhook Sink (Built-in Test Receiver)</a>
+<ul>
+<li><a href="#post-apiv1webhookssinktenant_id_public">POST /api/v1/webhooks/sink/{tenant_id_public}</a></li>
+<li><a href="#get-apiv1webhookssinktenant_id_publicevents">GET /api/v1/webhooks/sink/{tenant_id_public}/events</a></li>
+</ul>
+</li>
+<li><a href="#domain-7-simulator">Domain 7: Simulator</a>
+<ul>
+<li><a href="#post-apiv1simulatorsubmit-test-alert">POST /api/v1/simulator/submit-test-alert</a></li>
+</ul>
+</li>
+<li><a href="#webhook-payload-verification-client-side-reference">Webhook Payload Verification (Client-Side Reference)</a></li>
+<li><a href="#rate-limits-mvp-defaults-not-enforced-per-tenant">Rate Limits (MVP defaults, not enforced per-tenant)</a></li>
+</ul>
+<hr>
+<h2 id="auth-schemes">Auth Schemes</h2>
+<p>Two authentication mechanisms are used:</p>
+<p><strong>1. Bearer JWT (Portal users)</strong>
+All portal endpoints (client portal + admin dashboard) use JWT.</p>
+<pre class="hljs"><code><div>Authorization: Bearer &lt;access_token&gt;
+</div></code></pre>
+<p><strong>2. API Key (Headless ingestion)</strong>
+The alert ingestion endpoint uses API key + tenant ID headers:</p>
+<pre class="hljs"><code><div>X-API-Key: sk-ae-a1b2c3d4e5f6...
+X-Tenant-ID: TEN-0001
+</div></code></pre>
+<hr>
+<h2 id="standard-error-response">Standard Error Response</h2>
+<p>All errors follow this shape:</p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;error&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;code&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;INVALID_API_KEY&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;message&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;The provided API key is invalid or has been revoked.&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;details&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span><span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<p><strong>Common error codes:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>HTTP</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>UNAUTHORIZED</code></td>
+<td>401</td>
+<td>Missing or invalid credentials</td>
+</tr>
+<tr>
+<td><code>FORBIDDEN</code></td>
+<td>403</td>
+<td>Authenticated but insufficient role</td>
+</tr>
+<tr>
+<td><code>NOT_FOUND</code></td>
+<td>404</td>
+<td>Resource does not exist</td>
+</tr>
+<tr>
+<td><code>VALIDATION_ERROR</code></td>
+<td>422</td>
+<td>Request body failed validation</td>
+</tr>
+<tr>
+<td><code>TENANT_SUSPENDED</code></td>
+<td>403</td>
+<td>Tenant's API key is suspended</td>
+</tr>
+<tr>
+<td><code>TENANT_NOT_ACTIVE</code></td>
+<td>403</td>
+<td>Tenant is still pending/rejected</td>
+</tr>
+<tr>
+<td><code>RATE_LIMITED</code></td>
+<td>429</td>
+<td>Too many requests</td>
+</tr>
+<tr>
+<td><code>INTERNAL_ERROR</code></td>
+<td>500</td>
+<td>Server-side failure</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="domain-1-authentication">Domain 1: Authentication</h2>
+<h3 id="post-apiv1authsignup"><code>POST /api/v1/auth/signup</code></h3>
+<p>Register a new tenant + admin user. Sets status to <code>PENDING_VERIFICATION</code>.</p>
+<p><strong>Auth:</strong> None</p>
+<p><strong>Request:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;company_name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;PayFast India Pvt Ltd&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;company_type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;FINTECH&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;cin&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;U74999MH2021PTC123456&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;sebi_reg_no&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-literal"><span class="hljs-keyword">null</span></span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;website&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;https://payfast.in&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;admin_name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Nikhil Karur&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;admin_email&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;nikhil@payfast.in&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;admin_phone&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;+919876543210&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;admin_designation&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Head of Compliance&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;password&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;SecurePass123!&quot;</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<p><strong>Response <code>201</code>:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;tenant_id_public&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-literal"><span class="hljs-keyword">null</span></span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;status&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;PENDING_VERIFICATION&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;message&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Application submitted successfully. You will be notified once verified.&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;user&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;550e8400-e29b-41d4-a716-446655440000&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;email&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;nikhil@payfast.in&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;full_name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Nikhil Karur&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;role&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;TENANT_ADMIN&quot;</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<p><strong>Business Logic:</strong></p>
+<ol>
+<li>Validate uniqueness of email</li>
+<li>Create <code>tenant</code> record with status <code>PENDING_VERIFICATION</code></li>
+<li>Create <code>user</code> record with role <code>TENANT_ADMIN</code>, linked to tenant</li>
+<li>Log <code>TENANT_SIGNUP</code> to audit_logs</li>
+<li>Return JWT (access + refresh) so user can immediately see their status page</li>
+</ol>
+<hr>
+<h3 id="post-apiv1authlogin"><code>POST /api/v1/auth/login</code></h3>
+<p><strong>Auth:</strong> None</p>
+<p><strong>Request:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;email&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;nikhil@payfast.in&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;password&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;SecurePass123!&quot;</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<p><strong>Response <code>200</code>:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;access_token&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;eyJ...&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;refresh_token&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;eyJ...&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;token_type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;bearer&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;expires_in&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">900</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;user&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;550e8400-...&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;email&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;nikhil@payfast.in&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;full_name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Nikhil Karur&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;role&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;TENANT_ADMIN&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;tenant_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;uuid&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;tenant_status&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;ACTIVE&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;tenant_name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;PayFast India Pvt Ltd&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;tenant_id_public&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;TEN-0001&quot;</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<hr>
+<h3 id="post-apiv1authrefresh"><code>POST /api/v1/auth/refresh</code></h3>
+<p><strong>Auth:</strong> None (refresh token in body)</p>
+<p><strong>Request:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;refresh_token&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;eyJ...&quot;</span> <span class="hljs-punctuation">}</span>
+</div></code></pre>
+<p><strong>Response <code>200</code>:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;access_token&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;eyJ...&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;expires_in&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">900</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<hr>
+<h3 id="get-apiv1authme"><code>GET /api/v1/auth/me</code></h3>
+<p><strong>Auth:</strong> Bearer JWT</p>
+<p><strong>Response <code>200</code>:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;uuid&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;email&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;nikhil@payfast.in&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;full_name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Nikhil Karur&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;role&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;TENANT_ADMIN&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;tenant&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;uuid&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;PayFast India Pvt Ltd&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;status&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;ACTIVE&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;tenant_id_public&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;TEN-0001&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;company_type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;FINTECH&quot;</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<hr>
+<h2 id="domain-2-super-admin">Domain 2: Super Admin</h2>
+<p>All endpoints require role <code>SUPER_ADMIN</code>.</p>
+<h3 id="get-apiv1adminverifications"><code>GET /api/v1/admin/verifications</code></h3>
+<p>Pending tenant applications.</p>
+<p><strong>Query Params:</strong> <code>?page=1&amp;per_page=20</code></p>
+<p><strong>Response <code>200</code>:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;items&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+    <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">&quot;id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;uuid&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;PayFast India Pvt Ltd&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;company_type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;FINTECH&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;cin&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;U74999MH2021PTC123456&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;website&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;https://payfast.in&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;admin_name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Nikhil Karur&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;admin_email&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;nikhil@payfast.in&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;admin_phone&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;+919876543210&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;created_at&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-06-10T09:00:00Z&quot;</span>
+    <span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;total&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">3</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;page&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">1</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;per_page&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">20</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<hr>
+<h3 id="post-apiv1admintenantstenant_idapprove"><code>POST /api/v1/admin/tenants/{tenant_id}/approve</code></h3>
+<p><strong>Auth:</strong> SUPER_ADMIN Bearer JWT</p>
+<p><strong>Request:</strong> Empty body</p>
+<p><strong>Response <code>200</code>:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;message&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Tenant approved successfully.&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;tenant&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;uuid&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;PayFast India Pvt Ltd&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;status&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;ACTIVE&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;tenant_id_public&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;TEN-0001&quot;</span>
+  <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;credentials&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;api_key&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;sk-ae-a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;api_key_prefix&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;sk-ae-a1b2&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;tenant_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;TEN-0001&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;warning&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;This is the only time the full API key will be shown. Store it securely.&quot;</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<p><strong>Business Logic:</strong></p>
+<ol>
+<li>Validate tenant is in <code>PENDING_VERIFICATION</code> status</li>
+<li>Generate cryptographically secure API key (<code>sk-ae-</code> + 34 hex chars)</li>
+<li>bcrypt-hash and store the key; store only the prefix for display</li>
+<li>Generate <code>tenant_id_public</code> (format: <code>TEN-XXXX</code>, auto-incremented)</li>
+<li>Update tenant status to <code>ACTIVE</code>, set <code>approved_at</code>, <code>approved_by</code></li>
+<li>Create default <code>webhook_configs</code> (use_internal_sink=true, is_active=true)</li>
+<li>Create default <code>llm_configs</code> (provider=GROQ, model=llama-3.3-70b-versatile)</li>
+<li>Log <code>TENANT_APPROVED</code> + <code>API_KEY_GENERATED</code> to audit_logs</li>
+<li>Return full plaintext API key (ONCE ONLY)</li>
+</ol>
+<hr>
+<h3 id="post-apiv1admintenantstenant_idreject"><code>POST /api/v1/admin/tenants/{tenant_id}/reject</code></h3>
+<p><strong>Request:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;reason&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Unable to verify corporate registration number.&quot;</span> <span class="hljs-punctuation">}</span>
+</div></code></pre>
+<p><strong>Response <code>200</code>:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;message&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Tenant rejected.&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;status&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;REJECTED&quot;</span> <span class="hljs-punctuation">}</span>
+</div></code></pre>
+<hr>
+<h3 id="get-apiv1admintenants"><code>GET /api/v1/admin/tenants</code></h3>
+<p><strong>Query Params:</strong> <code>?status=ACTIVE&amp;page=1&amp;per_page=20&amp;search=payfast</code></p>
+<p><strong>Response <code>200</code>:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;items&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+    <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">&quot;id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;uuid&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;PayFast India Pvt Ltd&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;tenant_id_public&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;TEN-0001&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;company_type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;FINTECH&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;status&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;ACTIVE&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;total_alerts&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">47</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;approved_sars&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">31</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;joined_at&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-06-01T00:00:00Z&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;last_active_at&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-06-10T08:45:00Z&quot;</span>
+    <span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;total&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">1</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;page&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">1</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;per_page&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">20</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<hr>
+<h3 id="post-apiv1admintenantstenant_idsuspend"><code>POST /api/v1/admin/tenants/{tenant_id}/suspend</code></h3>
+<p><strong>Request:</strong> Empty body</p>
+<p><strong>Response <code>200</code>:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;message&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Tenant API key suspended. All ingestion requests will be rejected.&quot;</span> <span class="hljs-punctuation">}</span>
+</div></code></pre>
+<hr>
+<h3 id="post-apiv1admintenantstenant_idreinstate"><code>POST /api/v1/admin/tenants/{tenant_id}/reinstate</code></h3>
+<p><strong>Response <code>200</code>:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;message&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Tenant reinstated. API key is active.&quot;</span> <span class="hljs-punctuation">}</span>
+</div></code></pre>
+<hr>
+<h3 id="get-apiv1adminlogs"><code>GET /api/v1/admin/logs</code></h3>
+<p><strong>Query Params:</strong> <code>?tenant_id=uuid&amp;endpoint=/api/v1/alerts/ingest&amp;status_code=500&amp;from=2026-06-01&amp;to=2026-06-10&amp;page=1&amp;per_page=50</code></p>
+<p><strong>Response <code>200</code>:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;items&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+    <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">&quot;id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;uuid&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;tenant_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;uuid&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;tenant_name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;PayFast India Pvt Ltd&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;method&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;POST&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;endpoint&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;/api/v1/alerts/ingest&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;status_code&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">200</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;latency_ms&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">342</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;request_ip&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;52.66.12.34&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;created_at&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-06-10T08:45:00Z&quot;</span>
+    <span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;total&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">154</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<hr>
+<h3 id="get-apiv1admingroq-usage"><code>GET /api/v1/admin/groq-usage</code></h3>
+<p><strong>Response <code>200</code>:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;total_tokens_all_time&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">2847593</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;total_tokens_this_month&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">184720</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;estimated_cost_usd_this_month&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0.28</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;per_tenant&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+    <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">&quot;tenant_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;uuid&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;tenant_name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;PayFast India Pvt Ltd&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;tokens_this_month&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">120000</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;total_requests&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">89</span>
+    <span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">]</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<hr>
+<h2 id="domain-3-tenant-configuration">Domain 3: Tenant Configuration</h2>
+<p>All endpoints require Bearer JWT with role <code>TENANT_ADMIN</code>. All operations are scoped to the JWT's <code>tenant_id</code>.</p>
+<h3 id="get-apiv1tenantprofile"><code>GET /api/v1/tenant/profile</code></h3>
+<p><strong>Response <code>200</code>:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;uuid&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;PayFast India Pvt Ltd&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;company_type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;FINTECH&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;cin&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;U74999MH...&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;website&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;https://payfast.in&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;status&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;ACTIVE&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;tenant_id_public&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;TEN-0001&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;api_key_prefix&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;sk-ae-a1b2&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;joined_at&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-06-01T00:00:00Z&quot;</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<hr>
+<h3 id="get-apiv1tenantcredentials"><code>GET /api/v1/tenant/credentials</code></h3>
+<p>Returns visible credential info (not the full API key — that's gone).</p>
+<p><strong>Response <code>200</code>:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;tenant_id_public&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;TEN-0001&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;api_key_prefix&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;sk-ae-a1b2&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;api_key_last_rotated&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-literal"><span class="hljs-keyword">null</span></span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<hr>
+<h3 id="post-apiv1tenantcredentialsrotate"><code>POST /api/v1/tenant/credentials/rotate</code></h3>
+<p>Generates a new API key, invalidating the old one.</p>
+<p><strong>Request:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;confirm_password&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;SecurePass123!&quot;</span> <span class="hljs-punctuation">}</span>
+</div></code></pre>
+<p><strong>Response <code>200</code>:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;new_api_key&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;sk-ae-z9y8x7w6v5u4t3s2r1q0p9o8n7m6l5k4j3i2h1&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;api_key_prefix&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;sk-ae-z9y8&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;warning&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Your old API key is now invalid. Update your integration immediately.&quot;</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<hr>
+<h3 id="get-apiv1tenantwebhook"><code>GET /api/v1/tenant/webhook</code></h3>
+<p><strong>Response <code>200</code>:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;callback_url&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;https://payfast.in/aegis/callback&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;use_internal_sink&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-literal"><span class="hljs-keyword">false</span></span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;internal_sink_url&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;https://api.aegis-aml.com/api/v1/webhooks/sink/TEN-0001&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;secret_prefix&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;wh-sec-a1b2&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;last_tested_at&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-06-10T07:00:00Z&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;last_test_status&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;SUCCESS&quot;</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<hr>
+<h3 id="put-apiv1tenantwebhook"><code>PUT /api/v1/tenant/webhook</code></h3>
+<p><strong>Request:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;callback_url&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;https://payfast.in/aegis/callback&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;use_internal_sink&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-literal"><span class="hljs-keyword">false</span></span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<p><strong>Response <code>200</code>:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;message&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Webhook configuration updated.&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;callback_url&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;https://payfast.in/aegis/callback&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;use_internal_sink&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-literal"><span class="hljs-keyword">false</span></span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;new_secret&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;wh-sec-z9y8x7w6v5u4t3s2r1q0p9o8n7m6...&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;secret_prefix&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;wh-sec-z9y8&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;warning&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;New webhook secret generated. Update your HMAC verification immediately.&quot;</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<p><strong>Note:</strong> Every time webhook config is updated, a new secret is generated and returned once.</p>
+<hr>
+<h3 id="post-apiv1tenantwebhooktest"><code>POST /api/v1/tenant/webhook/test</code></h3>
+<p>Sends a mock SAR payload to the configured webhook destination.</p>
+<p><strong>Request:</strong> Empty body</p>
+<p><strong>Response <code>200</code>:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;message&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Test payload sent.&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;destination&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;internal_sink&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;delivery_status&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;DELIVERED&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;http_status&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-literal"><span class="hljs-keyword">null</span></span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;sink_event_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;uuid&quot;</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<hr>
+<h3 id="get-apiv1tenantschemas"><code>GET /api/v1/tenant/schemas</code></h3>
+<p><strong>Response <code>200</code>:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;active_schema&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;uuid&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Standard Fintech Transaction Alert&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;template_key&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;STANDARD_FINTECH&quot;</span>
+  <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;available_presets&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+    <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">&quot;template_key&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;STANDARD_FINTECH&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Standard Fintech Transaction Alert&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;description&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Covers UPI/NEFT/RTGS/IMPS transactions from digital lending, wallets, and payment apps.&quot;</span>
+    <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">&quot;template_key&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;SEBI_BROKER&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;SEBI Stock Broker Trading Alert&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;description&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Covers equity, F&amp;O, and commodity trades. Uses PAN and Demat account identifiers.&quot;</span>
+    <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">&quot;template_key&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;PAYMENT_GW&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Payment Gateway Alert&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;description&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Covers payment gateway transactions with UPI VPA, merchant ID, and device fingerprint.&quot;</span>
+    <span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">]</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<hr>
+<h3 id="post-apiv1tenantschemasselect-preset"><code>POST /api/v1/tenant/schemas/select-preset</code></h3>
+<p><strong>Request:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;template_key&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;SEBI_BROKER&quot;</span> <span class="hljs-punctuation">}</span>
+</div></code></pre>
+<p><strong>Response <code>200</code>:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;message&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Schema updated to SEBI Stock Broker Trading Alert.&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;schema_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;uuid&quot;</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<hr>
+<h3 id="get-apiv1tenantllm-config"><code>GET /api/v1/tenant/llm-config</code></h3>
+<p><strong>Response <code>200</code>:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;provider&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;GROQ&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;model_name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;llama-3.3-70b-versatile&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;sar_template_style&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;BOTH&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;total_tokens_used&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">120000</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;total_requests&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">89</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<hr>
+<h3 id="put-apiv1tenantllm-config"><code>PUT /api/v1/tenant/llm-config</code></h3>
+<p><strong>Request:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;sar_template_style&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;NARRATIVE&quot;</span> <span class="hljs-punctuation">}</span>
+</div></code></pre>
+<p><strong>Response <code>200</code>:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;message&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;LLM configuration updated.&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;sar_template_style&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;NARRATIVE&quot;</span> <span class="hljs-punctuation">}</span>
+</div></code></pre>
+<hr>
+<h3 id="get-apiv1tenantusage"><code>GET /api/v1/tenant/usage</code></h3>
+<p><strong>Response <code>200</code>:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;period&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;last_30_days&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;alerts_ingested&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">47</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;sars_approved&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">31</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;alerts_rejected&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">6</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;false_positives_cleared&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">10</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;avg_review_time_minutes&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">8.3</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;daily_breakdown&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+    <span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;date&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-06-01&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;alerts&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">3</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;approved&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">2</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+    ...
+  <span class="hljs-punctuation">]</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<hr>
+<h2 id="domain-4-alert-ingestion">Domain 4: Alert Ingestion</h2>
+<h3 id="post-apiv1alertsingest"><code>POST /api/v1/alerts/ingest</code></h3>
+<p>The primary headless API. Called by the fintech's TMS.</p>
+<p><strong>Auth:</strong> API Key headers</p>
+<pre class="hljs"><code><div>X-API-Key: sk-ae-a1b2c3d4...
+X-Tenant-ID: TEN-0001
+Content-Type: application/json
+</div></code></pre>
+<p><strong>Request:</strong> (varies per schema — this is the STANDARD_FINTECH example)</p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;customer&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;full_name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Rajesh Kumar Sharma&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;CUST-98271&quot;</span>
+  <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;account&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;number&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;HDFC-00123456789&quot;</span>
+  <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;txn&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;ref_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;TXN-2026-061099182&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;amount&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">990000.00</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;currency&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;INR&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;NEFT_TRANSFER&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;direction&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;DEBIT&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;timestamp&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-06-10T09:30:00+05:30&quot;</span>
+  <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;counterparty&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;account&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;ICICI-00987654321&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Priya Enterprises&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;bank&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;ICICI Bank&quot;</span>
+  <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;metadata&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;ip&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;192.168.1.100&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;device_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;MOB-a1b2c3d4e5f6&quot;</span>
+  <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;risk&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;score&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">87</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;reason&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Large outward transfer near reporting threshold&quot;</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<p><strong>Response <code>202</code> (Accepted — processing begins async):</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;alert_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;550e8400-e29b-41d4-a716-446655440000&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;status&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;PROCESSING&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;message&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Alert received and queued for analysis. Check the review queue for results.&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;estimated_completion_seconds&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">8</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<p><strong>Response <code>401</code> (Invalid API Key):</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;error&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;code&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;INVALID_API_KEY&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;message&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;The provided API key is invalid or has been revoked.&quot;</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<p><strong>Response <code>403</code> (Tenant Suspended):</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;error&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;code&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;TENANT_SUSPENDED&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;message&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;This tenant&#x27;s access has been suspended. Contact Aegis support.&quot;</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<p><strong>Business Logic (runs as FastAPI BackgroundTask after 202 is returned):</strong></p>
+<ol>
+<li>Mark alert status: <code>PROCESSING</code></li>
+<li>Look up tenant's active <code>ingestion_schema</code></li>
+<li>Normalize payload using <code>field_map</code> (map tenant keys → Aegis standard fields)</li>
+<li>Validate required standard fields are present</li>
+<li>Run PII masker on all <code>pii_fields</code> → generate token map → store in <code>pii_maps</code></li>
+<li>Run 8 AML compliance checks on masked payload → store in <code>compliance_matches</code></li>
+<li>Build Groq prompt with masked transaction + triggered rules + SAR format instructions</li>
+<li>Call Groq API → parse response → store draft in <code>sar_drafts</code></li>
+<li>Mark alert status: <code>PENDING_REVIEW</code></li>
+<li>Log <code>ALERT_INGESTED</code>, <code>ALERT_MASKING_COMPLETE</code>, <code>ALERT_DRAFT_GENERATED</code> to audit_logs</li>
+</ol>
+<hr>
+<h2 id="domain-5-sar-review-queue">Domain 5: SAR Review Queue</h2>
+<p>All endpoints require Bearer JWT with role <code>TENANT_ADMIN</code> or <code>COMPLIANCE_OFFICER</code>.</p>
+<h3 id="get-apiv1queue"><code>GET /api/v1/queue</code></h3>
+<p><strong>Query Params:</strong> <code>?status=PENDING_REVIEW&amp;page=1&amp;per_page=20&amp;sort=created_at_desc&amp;search=TXN-2026</code></p>
+<p><strong>Response <code>200</code>:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;items&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+    <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">&quot;id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;uuid&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;transaction_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;TXN-2026-061099182&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;transaction_amount&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">990000.00</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;transaction_currency&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;INR&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;transaction_type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;NEFT_TRANSFER&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;transaction_timestamp&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-06-10T09:30:00Z&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;risk_score&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">87</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;triggered_rules&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-string">&quot;STRUCTURING&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-string">&quot;RISK_SCORE_THRESHOLD&quot;</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;status&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;PENDING_REVIEW&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;source&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;API&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;created_at&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-06-10T09:30:05Z&quot;</span>
+    <span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;total&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">12</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;pending_count&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">12</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<hr>
+<h3 id="get-apiv1queuealert_id"><code>GET /api/v1/queue/{alert_id}</code></h3>
+<p>Full alert detail for the SAR Workspace. Loads all 3 panels of data.</p>
+<p><strong>Response <code>200</code>:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;alert&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;uuid&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;transaction_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;TXN-2026-061099182&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;status&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;PENDING_REVIEW&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;transaction_amount&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">990000.00</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;transaction_currency&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;INR&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;transaction_type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;NEFT_TRANSFER&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;transaction_direction&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;DEBIT&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;transaction_timestamp&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-06-10T09:30:00Z&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;risk_score&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">87</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;source&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;API&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;created_at&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-06-10T09:30:05Z&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;masked_payload&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">&quot;customer_name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;USR_a1b2c3d4&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;account_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;ACC_e5f6a7b8&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;counterparty_account&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;ACC_c9d0e1f2&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;ip_address&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;IP_a3b4c5d6&quot;</span><span class="hljs-punctuation">,</span>
+      ...
+    <span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;compliance&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;overall_risk&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;HIGH&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;triggered_rules&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+      <span class="hljs-punctuation">{</span>
+        <span class="hljs-attr">&quot;rule_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;STRUCTURING&quot;</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;rule_name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Structuring / Smurfing Detected&quot;</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;triggered&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-literal"><span class="hljs-keyword">true</span></span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;confidence&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;HIGH&quot;</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;evidence&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+          <span class="hljs-attr">&quot;field&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;transaction_amount&quot;</span><span class="hljs-punctuation">,</span>
+          <span class="hljs-attr">&quot;value&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;990000&quot;</span><span class="hljs-punctuation">,</span>
+          <span class="hljs-attr">&quot;explanation&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Transaction amount of ₹9,90,000 is just below the ₹10,00,000 reporting threshold. This pattern is a common structuring indicator.&quot;</span>
+        <span class="hljs-punctuation">}</span>
+      <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-punctuation">{</span>
+        <span class="hljs-attr">&quot;rule_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;RISK_SCORE_THRESHOLD&quot;</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;rule_name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Risk Score Threshold Exceeded&quot;</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;triggered&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-literal"><span class="hljs-keyword">true</span></span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;confidence&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;HIGH&quot;</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;evidence&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+          <span class="hljs-attr">&quot;field&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;risk_score&quot;</span><span class="hljs-punctuation">,</span>
+          <span class="hljs-attr">&quot;value&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">87</span><span class="hljs-punctuation">,</span>
+          <span class="hljs-attr">&quot;explanation&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Incoming risk score of 87 exceeds the configured threshold of 75.&quot;</span>
+        <span class="hljs-punctuation">}</span>
+      <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-punctuation">{</span>
+        <span class="hljs-attr">&quot;rule_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;RAPID_MOVEMENT&quot;</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;rule_name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Rapid Fund Movement&quot;</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;triggered&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-literal"><span class="hljs-keyword">false</span></span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;confidence&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;LOW&quot;</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;evidence&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span><span class="hljs-punctuation">}</span>
+      <span class="hljs-punctuation">}</span>
+    <span class="hljs-punctuation">]</span>
+  <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;sar_draft&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;uuid&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;draft_text&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;SUSPICIOUS ACTIVITY REPORT\n\nReporting Entity: [TENANT_NAME]\nDate of Report: 10 June 2026\n\n1. SUBJECT OF REPORT\nCustomer Reference: USR_a1b2c3d4\nAccount Reference: ACC_e5f6a7b8\n\n2. NATURE OF SUSPICIOUS ACTIVITY\nA debit transaction of INR 9,90,000 was flagged on 10 June 2026...&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;officer_edit_count&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;last_edited_at&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-literal"><span class="hljs-keyword">null</span></span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;llm_model&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;llama-3.3-70b-versatile&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;generation_latency_ms&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">2341</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;created_at&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-06-10T09:30:12Z&quot;</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<hr>
+<h3 id="put-apiv1queuealert_iddraft"><code>PUT /api/v1/queue/{alert_id}/draft</code></h3>
+<p>Officer edits the draft text inline.</p>
+<p><strong>Request:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;draft_text&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;SUSPICIOUS ACTIVITY REPORT\n\n[Updated narrative by officer]...&quot;</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<p><strong>Response <code>200</code>:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;message&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Draft updated.&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;officer_edit_count&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">1</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;last_edited_at&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-06-10T10:15:00Z&quot;</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<hr>
+<h3 id="get-apiv1queuealert_idpreview-rehydrated"><code>GET /api/v1/queue/{alert_id}/preview-rehydrated</code></h3>
+<p>Returns the SAR draft with real PII values restored (for preview only, never stored).</p>
+<p><strong>Response <code>200</code>:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;rehydrated_text&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;SUSPICIOUS ACTIVITY REPORT\n\nReporting Entity: PayFast India Pvt Ltd\nDate of Report: 10 June 2026\n\n1. SUBJECT OF REPORT\nCustomer Name: Rajesh Kumar Sharma\nAccount Number: HDFC-00123456789\n\n2. NATURE OF SUSPICIOUS ACTIVITY\n...&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;warning&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;This preview contains real PII. Do not share this response. It is for officer review only.&quot;</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<hr>
+<h3 id="post-apiv1queuealert_idapprove"><code>POST /api/v1/queue/{alert_id}/approve</code></h3>
+<p>Officer approves the SAR. Triggers re-hydration, PDF generation, and webhook delivery.</p>
+<p><strong>Request:</strong> Empty body (officer ID taken from JWT)</p>
+<p><strong>Response <code>200</code>:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;message&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;SAR approved and delivery initiated.&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;sar_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;uuid&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;approved_at&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-06-10T10:20:00Z&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;delivery&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">&quot;status&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;DELIVERED&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;destination&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;internal_sink&quot;</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">&quot;delivery_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;uuid&quot;</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<p><strong>Background Process (synchronous for MVP — within 5s):</strong></p>
+<ol>
+<li>Validate alert is in <code>PENDING_REVIEW</code> status</li>
+<li>Retrieve current <code>draft_text</code> from <code>sar_drafts</code></li>
+<li>Retrieve <code>token_map</code> from <code>pii_maps</code></li>
+<li>Re-hydrate: replace all tokens in draft_text with real values → store as <code>rehydrated_text</code></li>
+<li>Generate PDF using reportlab template → store as <code>pdf_path</code></li>
+<li>Compute HMAC-SHA256 signature over <code>{sar_id}:{approved_at}:{pdf_base64}</code></li>
+<li>Deliver webhook (to callback URL or internal sink)</li>
+<li>Update alert status to <code>APPROVED</code></li>
+<li>Store delivery record in <code>webhook_deliveries</code></li>
+<li>Log <code>ALERT_APPROVED</code>, <code>SAR_REHYDRATED</code>, <code>PDF_GENERATED</code>, <code>WEBHOOK_DELIVERED</code></li>
+</ol>
+<hr>
+<h3 id="post-apiv1queuealert_idreject"><code>POST /api/v1/queue/{alert_id}/reject</code></h3>
+<p><strong>Request:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;reason&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Transaction reviewed — determined to be legitimate payroll disbursement.&quot;</span> <span class="hljs-punctuation">}</span>
+</div></code></pre>
+<p><strong>Response <code>200</code>:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;message&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Alert rejected and cleared from queue.&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;rejection_reason&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Transaction reviewed — determined to be legitimate payroll disbursement.&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;rejected_at&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-06-10T10:20:00Z&quot;</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<hr>
+<h2 id="domain-6-webhook-sink-built-in-test-receiver">Domain 6: Webhook Sink (Built-in Test Receiver)</h2>
+<h3 id="post-apiv1webhookssinktenant_id_public"><code>POST /api/v1/webhooks/sink/{tenant_id_public}</code></h3>
+<p>The built-in receiver endpoint. Accepts the same payload the real webhook would receive.</p>
+<p><strong>Auth:</strong> HMAC verification (X-Aegis-Signature header)</p>
+<p><strong>Headers (sent by Aegis WebhookDispatcher):</strong></p>
+<pre class="hljs"><code><div>Content-Type: application/json
+X-Aegis-Signature: sha256=a1b2c3d4...
+X-Aegis-Delivery-ID: uuid
+X-Aegis-Timestamp: 1717999200
+</div></code></pre>
+<p><strong>Request Body:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;sar_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;uuid&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;alert_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;uuid&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;approved_at&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-06-10T10:20:00Z&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;approved_by&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Nikhil Karur&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;tenant_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;TEN-0001&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;narrative_text&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;SUSPICIOUS ACTIVITY REPORT\n\nReporting Entity: PayFast India...&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;pdf_base64&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;JVBERi0xLjQK...&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;compliance_rules_triggered&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-string">&quot;STRUCTURING&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-string">&quot;RISK_SCORE_THRESHOLD&quot;</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;hmac_signature&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;sha256=a1b2c3d4...&quot;</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<p><strong>Response <code>200</code>:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span> <span class="hljs-attr">&quot;status&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;received&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;event_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;uuid&quot;</span> <span class="hljs-punctuation">}</span>
+</div></code></pre>
+<hr>
+<h3 id="get-apiv1webhookssinktenant_id_publicevents"><code>GET /api/v1/webhooks/sink/{tenant_id_public}/events</code></h3>
+<p>Returns last 10 events received by the built-in sink for this tenant.</p>
+<p><strong>Auth:</strong> Bearer JWT (TENANT_ADMIN)</p>
+<p><strong>Response <code>200</code>:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;events&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+    <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">&quot;id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;uuid&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;received_at&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-06-10T10:20:03Z&quot;</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;hmac_valid&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-literal"><span class="hljs-keyword">true</span></span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">&quot;payload&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+        <span class="hljs-attr">&quot;sar_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;uuid&quot;</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;approved_at&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-06-10T10:20:00Z&quot;</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;narrative_text&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;SUSPICIOUS ACTIVITY REPORT...&quot;</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">&quot;compliance_rules_triggered&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-string">&quot;STRUCTURING&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-string">&quot;RISK_SCORE_THRESHOLD&quot;</span><span class="hljs-punctuation">]</span>
+      <span class="hljs-punctuation">}</span>
+    <span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">]</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<hr>
+<h2 id="domain-7-simulator">Domain 7: Simulator</h2>
+<h3 id="post-apiv1simulatorsubmit-test-alert"><code>POST /api/v1/simulator/submit-test-alert</code></h3>
+<p>Generates a realistic synthetic alert and injects it through the full pipeline.</p>
+<p><strong>Auth:</strong> Bearer JWT (TENANT_ADMIN or COMPLIANCE_OFFICER)</p>
+<p><strong>Request:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;scenario&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;STRUCTURING&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;custom_risk_score&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">87</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<p>Valid scenarios: <code>STRUCTURING</code>, <code>RAPID_MOVEMENT</code>, <code>HIGH_RISK_TYPE</code>, <code>VELOCITY</code>, <code>DEFAULT</code></p>
+<p><strong>Response <code>202</code>:</strong></p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">&quot;alert_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;uuid&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;message&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Test alert injected. Check the review queue in ~8 seconds.&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;scenario_used&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;STRUCTURING&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;synthetic_transaction_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;TEST-TXN-2026061099999&quot;</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+<p><strong>Business Logic:</strong></p>
+<ol>
+<li>Generate a synthetic transaction payload matching the tenant's active schema template</li>
+<li>For the requested scenario, populate transaction fields to trigger the corresponding AML rule</li>
+<li>Inject directly into the pipeline (same as if it came from <code>POST /alerts/ingest</code>)</li>
+<li>Flag alert with <code>source = SIMULATOR</code></li>
+</ol>
+<hr>
+<h2 id="webhook-payload-verification-client-side-reference">Webhook Payload Verification (Client-Side Reference)</h2>
+<p>Clients verifying the HMAC on received webhooks:</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">import</span> hmac
+<span class="hljs-keyword">import</span> hashlib
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">verify_aegis_webhook</span>(<span class="hljs-params">payload_bytes: <span class="hljs-built_in">bytes</span>, signature_header: <span class="hljs-built_in">str</span>, secret: <span class="hljs-built_in">str</span></span>) -&gt; <span class="hljs-built_in">bool</span>:
+    expected = hmac.new(
+        secret.encode(<span class="hljs-string">&#x27;utf-8&#x27;</span>),
+        payload_bytes,
+        hashlib.sha256
+    ).hexdigest()
+    received = signature_header.replace(<span class="hljs-string">&quot;sha256=&quot;</span>, <span class="hljs-string">&quot;&quot;</span>)
+    <span class="hljs-keyword">return</span> hmac.compare_digest(expected, received)
+</div></code></pre>
+<p>The <code>X-Aegis-Signature</code> header format: <code>sha256=&lt;hex_digest&gt;</code>
+The HMAC is computed over the <strong>raw request body bytes</strong> (not parsed JSON).</p>
+<hr>
+<h2 id="rate-limits-mvp-defaults-not-enforced-per-tenant">Rate Limits (MVP defaults, not enforced per-tenant)</h2>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Limit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>POST /auth/login</code></td>
+<td>10/min per IP</td>
+</tr>
+<tr>
+<td><code>POST /alerts/ingest</code></td>
+<td>60/min per tenant</td>
+</tr>
+<tr>
+<td><code>POST /simulator/submit-test-alert</code></td>
+<td>10/min per tenant</td>
+</tr>
+<tr>
+<td>All other endpoints</td>
+<td>120/min per user</td>
+</tr>
+</tbody>
+</table>
+
+</body>
+</html>

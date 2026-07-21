@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>DatabaseSchema.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> or <div class="page"></div> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="aegis-aml--database-schema">Aegis AML — Database Schema</h1>
+<p><strong>Version:</strong> 1.0 — MVP
+<strong>Engine:</strong> PostgreSQL 15
+<strong>ORM:</strong> SQLAlchemy 2.0 with Alembic migrations
+<strong>Last Updated:</strong> 2026-06-10</p>
+<hr>
+<h2 id="table-of-contents">Table of contents</h2>
+<ul>
+<li><a href="#design-principles">Design Principles</a></li>
+<li><a href="#entity-relationship-summary">Entity Relationship Summary</a></li>
+<li><a href="#table-definitions">Table Definitions</a>
+<ul>
+<li><a href="#1-tenants">1. tenants</a></li>
+<li><a href="#2-users">2. users</a></li>
+<li><a href="#3-ingestion_schemas">3. ingestion_schemas</a></li>
+<li><a href="#4-webhook_configs">4. webhook_configs</a></li>
+<li><a href="#5-llm_configs">5. llm_configs</a></li>
+<li><a href="#6-alerts">6. alerts</a></li>
+<li><a href="#7-pii_maps">7. pii_maps</a></li>
+<li><a href="#8-compliance_matches">8. compliance_matches</a></li>
+<li><a href="#9-sar_drafts">9. sar_drafts</a></li>
+<li><a href="#10-webhook_deliveries">10. webhook_deliveries</a></li>
+<li><a href="#11-webhook_sink_events">11. webhook_sink_events</a></li>
+<li><a href="#12-audit_logs">12. audit_logs</a></li>
+<li><a href="#13-api_logs">13. api_logs</a></li>
+</ul>
+</li>
+<li><a href="#seed-data">Seed Data</a>
+<ul>
+<li><a href="#super-admin-user">Super Admin User</a></li>
+<li><a href="#demo-tenant-pre-approved-for-demo-sessions">Demo Tenant (Pre-approved for demo sessions)</a></li>
+<li><a href="#preset-schema-templates-hardcoded-in-backend">Preset Schema Templates (Hardcoded in Backend)</a></li>
+</ul>
+</li>
+<li><a href="#migration-strategy">Migration Strategy</a></li>
+</ul>
+<hr>
+<h2 id="design-principles">Design Principles</h2>
+<ol>
+<li><strong>Row-level multi-tenancy.</strong> Every data table has a <code>tenant_id</code> FK. No cross-tenant queries are possible without explicitly providing the wrong tenant_id (enforced at service layer).</li>
+<li><strong>Soft deletes where data has legal value.</strong> Alerts, SARs, and audit logs are never hard-deleted in production.</li>
+<li><strong>JSONB for variable-structure data.</strong> Schema maps, raw payloads, and compliance rule results are stored as JSONB — avoids premature column proliferation.</li>
+<li><strong>Append-only audit log.</strong> <code>audit_logs</code> has no UPDATE or DELETE operations. Ever.</li>
+<li><strong>Timestamps on everything.</strong> Every table has <code>created_at</code>. Tables tracking state changes also have <code>updated_at</code>.</li>
+</ol>
+<hr>
+<h2 id="entity-relationship-summary">Entity Relationship Summary</h2>
+<pre class="hljs"><code><div>tenants
+  ├── users (1:many)
+  ├── ingestion_schemas (1:many)
+  ├── webhook_configs (1:1)
+  ├── llm_configs (1:1)
+  ├── alerts (1:many)
+  │     ├── pii_maps (1:1)
+  │     ├── compliance_matches (1:many)
+  │     └── sar_drafts (1:1)
+  │           └── webhook_deliveries (1:many)
+  ├── webhook_sink_events (1:many)
+  ├── audit_logs (1:many)
+  └── api_logs (1:many)
+</div></code></pre>
+<hr>
+<h2 id="table-definitions">Table Definitions</h2>
+<hr>
+<h3 id="1-tenants">1. <code>tenants</code></h3>
+<p>The root entity. Each B2B client (fintech / broker) is one tenant.</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">CREATE TABLE</span> tenants (
+    id              UUID <span class="hljs-keyword">PRIMARY KEY</span> <span class="hljs-keyword">DEFAULT</span> gen_random_uuid(),
+    name            <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">255</span>) <span class="hljs-keyword">NOT NULL</span>,
+    slug            <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">100</span>) <span class="hljs-keyword">UNIQUE</span> <span class="hljs-keyword">NOT NULL</span>,           <span class="hljs-comment">-- URL-safe identifier e.g. &quot;payu-india&quot;</span>
+    company_type    <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">50</span>) <span class="hljs-keyword">NOT NULL</span>,                   <span class="hljs-comment">-- FINTECH | BROKER | NBFC | PAYMENT_CO | OTHER</span>
+    cin             <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">50</span>),                            <span class="hljs-comment">-- Corporate Identity Number (India)</span>
+    sebi_reg_no     <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">50</span>),                            <span class="hljs-comment">-- SEBI Registration Number (for brokers)</span>
+    website         <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">255</span>),
+    
+    <span class="hljs-comment">-- Status machine</span>
+    status          <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">30</span>) <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-string">&#x27;PENDING_VERIFICATION&#x27;</span>,
+                    <span class="hljs-comment">-- PENDING_VERIFICATION | ACTIVE | REJECTED | SUSPENDED</span>
+    rejection_reason TEXT,                                  <span class="hljs-comment">-- Set when status = REJECTED</span>
+    
+    <span class="hljs-comment">-- API credentials (generated on approval)</span>
+    api_key_hash    <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">255</span>),                           <span class="hljs-comment">-- bcrypt hash of the actual API key</span>
+    api_key_prefix  <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">12</span>),                            <span class="hljs-comment">-- First 8 chars for display e.g. &quot;sk-ae-a1b2&quot;</span>
+    tenant_id_public <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">20</span>) <span class="hljs-keyword">UNIQUE</span>,                    <span class="hljs-comment">-- Short public tenant ID e.g. &quot;TEN-0001&quot;</span>
+    
+    <span class="hljs-comment">-- Metadata</span>
+    approved_at     TIMESTAMPTZ,
+    approved_by     UUID,                                   <span class="hljs-comment">-- FK to users (super admin)</span>
+    suspended_at    TIMESTAMPTZ,
+    suspended_by    UUID,
+    
+    created_at      TIMESTAMPTZ <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> NOW(),
+    updated_at      TIMESTAMPTZ <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> NOW()
+);
+
+<span class="hljs-keyword">CREATE</span> INDEX idx_tenants_status <span class="hljs-keyword">ON</span> tenants(status);
+<span class="hljs-keyword">CREATE</span> INDEX idx_tenants_api_key_prefix <span class="hljs-keyword">ON</span> tenants(api_key_prefix);
+</div></code></pre>
+<p><strong>Notes:</strong></p>
+<ul>
+<li>The actual plaintext API key is returned ONCE at approval and never stored. Only the bcrypt hash is stored.</li>
+<li><code>api_key_prefix</code> is used to identify which tenant an incoming request is from before running the bcrypt check.</li>
+<li><code>tenant_id_public</code> is the <code>X-Tenant-ID</code> header value clients use.</li>
+</ul>
+<hr>
+<h3 id="2-users">2. <code>users</code></h3>
+<p>Portal users. For MVP, one user per tenant (the admin). Post-MVP, multiple users with roles.</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">CREATE TABLE</span> users (
+    id              UUID <span class="hljs-keyword">PRIMARY KEY</span> <span class="hljs-keyword">DEFAULT</span> gen_random_uuid(),
+    tenant_id       UUID <span class="hljs-keyword">REFERENCES</span> tenants(id) <span class="hljs-keyword">ON</span> <span class="hljs-keyword">DELETE</span> CASCADE,
+                    <span class="hljs-comment">-- NULL for SUPER_ADMIN users (they belong to no tenant)</span>
+    
+    email           <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">255</span>) <span class="hljs-keyword">UNIQUE</span> <span class="hljs-keyword">NOT NULL</span>,
+    password_hash   <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">255</span>) <span class="hljs-keyword">NOT NULL</span>,                  <span class="hljs-comment">-- bcrypt</span>
+    full_name       <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">255</span>) <span class="hljs-keyword">NOT NULL</span>,
+    designation     <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">100</span>),
+    phone           <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">20</span>),
+    
+    role            <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">30</span>) <span class="hljs-keyword">NOT NULL</span>,
+                    <span class="hljs-comment">-- SUPER_ADMIN | TENANT_ADMIN | COMPLIANCE_OFFICER</span>
+    
+    is_active       <span class="hljs-type">BOOLEAN</span> <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-literal">TRUE</span>,
+    last_login_at   TIMESTAMPTZ,
+    
+    <span class="hljs-comment">-- JWT refresh token tracking</span>
+    refresh_token_hash  <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">255</span>),
+    refresh_token_exp   TIMESTAMPTZ,
+    
+    created_at      TIMESTAMPTZ <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> NOW(),
+    updated_at      TIMESTAMPTZ <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> NOW()
+);
+
+<span class="hljs-keyword">CREATE</span> INDEX idx_users_tenant_id <span class="hljs-keyword">ON</span> users(tenant_id);
+<span class="hljs-keyword">CREATE</span> INDEX idx_users_email <span class="hljs-keyword">ON</span> users(email);
+<span class="hljs-keyword">CREATE</span> INDEX idx_users_role <span class="hljs-keyword">ON</span> users(role);
+</div></code></pre>
+<hr>
+<h3 id="3-ingestion_schemas">3. <code>ingestion_schemas</code></h3>
+<p>Defines how a tenant's raw JSON alert payload maps to Aegis standard fields.</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">CREATE TABLE</span> ingestion_schemas (
+    id              UUID <span class="hljs-keyword">PRIMARY KEY</span> <span class="hljs-keyword">DEFAULT</span> gen_random_uuid(),
+    tenant_id       UUID <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">REFERENCES</span> tenants(id) <span class="hljs-keyword">ON</span> <span class="hljs-keyword">DELETE</span> CASCADE,
+    
+    name            <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">255</span>) <span class="hljs-keyword">NOT NULL</span>,                  <span class="hljs-comment">-- e.g. &quot;Standard Fintech Alert&quot;</span>
+    template_key    <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">50</span>),                            <span class="hljs-comment">-- STANDARD_FINTECH | SEBI_BROKER | PAYMENT_GW | CUSTOM</span>
+    is_active       <span class="hljs-type">BOOLEAN</span> <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-literal">TRUE</span>,
+    
+    <span class="hljs-comment">-- The actual mapping: Aegis standard field → tenant&#x27;s JSON key path</span>
+    <span class="hljs-comment">-- Example: {&quot;customer_name&quot;: &quot;user.full_name&quot;, &quot;account_id&quot;: &quot;account.number&quot;, ...}</span>
+    field_map       JSONB <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-string">&#x27;{}&#x27;</span>,
+    
+    <span class="hljs-comment">-- Which fields contain PII and should be masked</span>
+    <span class="hljs-comment">-- Example: [&quot;customer_name&quot;, &quot;account_id&quot;, &quot;counterparty_account&quot;, &quot;ip_address&quot;]</span>
+    pii_fields      JSONB <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-string">&#x27;[]&#x27;</span>,
+    
+    created_at      TIMESTAMPTZ <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> NOW(),
+    updated_at      TIMESTAMPTZ <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> NOW()
+);
+
+<span class="hljs-keyword">CREATE</span> INDEX idx_schemas_tenant_id <span class="hljs-keyword">ON</span> ingestion_schemas(tenant_id);
+<span class="hljs-keyword">CREATE</span> INDEX idx_schemas_active <span class="hljs-keyword">ON</span> ingestion_schemas(tenant_id, is_active);
+</div></code></pre>
+<p><strong>Aegis Standard Fields (the target of all schema mappings):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Standard Field</th>
+<th>Description</th>
+<th>PII?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>customer_name</code></td>
+<td>Full legal name of the subject</td>
+<td>YES</td>
+</tr>
+<tr>
+<td><code>customer_id</code></td>
+<td>Internal customer identifier</td>
+<td>YES</td>
+</tr>
+<tr>
+<td><code>account_id</code></td>
+<td>Source account number</td>
+<td>YES</td>
+</tr>
+<tr>
+<td><code>transaction_id</code></td>
+<td>Unique transaction reference</td>
+<td>NO</td>
+</tr>
+<tr>
+<td><code>transaction_amount</code></td>
+<td>Amount in base currency unit</td>
+<td>NO</td>
+</tr>
+<tr>
+<td><code>transaction_currency</code></td>
+<td>ISO currency code</td>
+<td>NO</td>
+</tr>
+<tr>
+<td><code>transaction_type</code></td>
+<td>e.g. TRANSFER, WITHDRAWAL, PURCHASE</td>
+<td>NO</td>
+</tr>
+<tr>
+<td><code>transaction_direction</code></td>
+<td>CREDIT / DEBIT</td>
+<td>NO</td>
+</tr>
+<tr>
+<td><code>transaction_timestamp</code></td>
+<td>ISO 8601 datetime</td>
+<td>NO</td>
+</tr>
+<tr>
+<td><code>counterparty_account</code></td>
+<td>Destination/source account</td>
+<td>YES</td>
+</tr>
+<tr>
+<td><code>counterparty_name</code></td>
+<td>Destination/source name</td>
+<td>YES</td>
+</tr>
+<tr>
+<td><code>counterparty_institution</code></td>
+<td>Bank/NBFC name</td>
+<td>NO</td>
+</tr>
+<tr>
+<td><code>ip_address</code></td>
+<td>Client IP at time of transaction</td>
+<td>YES</td>
+</tr>
+<tr>
+<td><code>device_id</code></td>
+<td>Device fingerprint</td>
+<td>YES</td>
+</tr>
+<tr>
+<td><code>risk_score</code></td>
+<td>Numeric risk score (0–100)</td>
+<td>NO</td>
+</tr>
+<tr>
+<td><code>alert_reason</code></td>
+<td>TMS-provided reason text</td>
+<td>NO</td>
+</tr>
+<tr>
+<td><code>geo_country</code></td>
+<td>Country of origin</td>
+<td>NO</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h3 id="4-webhook_configs">4. <code>webhook_configs</code></h3>
+<p>One webhook configuration per tenant.</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">CREATE TABLE</span> webhook_configs (
+    id              UUID <span class="hljs-keyword">PRIMARY KEY</span> <span class="hljs-keyword">DEFAULT</span> gen_random_uuid(),
+    tenant_id       UUID <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">UNIQUE</span> <span class="hljs-keyword">REFERENCES</span> tenants(id) <span class="hljs-keyword">ON</span> <span class="hljs-keyword">DELETE</span> CASCADE,
+    
+    callback_url    <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">500</span>),                           <span class="hljs-comment">-- NULL if using internal sink</span>
+    use_internal_sink <span class="hljs-type">BOOLEAN</span> <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-literal">FALSE</span>,       <span class="hljs-comment">-- TRUE = built-in test receiver</span>
+    
+    <span class="hljs-comment">-- HMAC signing secret (generated on save, revealed once)</span>
+    secret_hash     <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">255</span>),                           <span class="hljs-comment">-- bcrypt hash</span>
+    secret_prefix   <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">12</span>),                            <span class="hljs-comment">-- First chars for display</span>
+    
+    is_active       <span class="hljs-type">BOOLEAN</span> <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-literal">TRUE</span>,
+    last_tested_at  TIMESTAMPTZ,
+    last_test_status <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">20</span>),                           <span class="hljs-comment">-- SUCCESS | FAILED | NULL</span>
+    
+    created_at      TIMESTAMPTZ <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> NOW(),
+    updated_at      TIMESTAMPTZ <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> NOW()
+);
+</div></code></pre>
+<hr>
+<h3 id="5-llm_configs">5. <code>llm_configs</code></h3>
+<p>LLM provider settings per tenant. MVP only supports Groq (SaaS Managed).</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">CREATE TABLE</span> llm_configs (
+    id              UUID <span class="hljs-keyword">PRIMARY KEY</span> <span class="hljs-keyword">DEFAULT</span> gen_random_uuid(),
+    tenant_id       UUID <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">UNIQUE</span> <span class="hljs-keyword">REFERENCES</span> tenants(id) <span class="hljs-keyword">ON</span> <span class="hljs-keyword">DELETE</span> CASCADE,
+    
+    provider        <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">30</span>) <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-string">&#x27;GROQ&#x27;</span>,    <span class="hljs-comment">-- GROQ | PRIVATE (future)</span>
+    model_name      <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">100</span>) <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-string">&#x27;llama-3.3-70b-versatile&#x27;</span>,
+    sar_template_style <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">20</span>) <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-string">&#x27;BOTH&#x27;</span>, <span class="hljs-comment">-- NARRATIVE | STRUCTURED | BOTH</span>
+    
+    <span class="hljs-comment">-- For PRIVATE provider (future)</span>
+    private_base_url    <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">500</span>),
+    private_token_hash  <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">255</span>),                       <span class="hljs-comment">-- Encrypted, not bcrypt</span>
+    
+    <span class="hljs-comment">-- Token usage tracking</span>
+    total_tokens_used   <span class="hljs-type">BIGINT</span> <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-number">0</span>,
+    total_requests      <span class="hljs-type">INTEGER</span> <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-number">0</span>,
+    
+    created_at      TIMESTAMPTZ <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> NOW(),
+    updated_at      TIMESTAMPTZ <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> NOW()
+);
+</div></code></pre>
+<hr>
+<h3 id="6-alerts">6. <code>alerts</code></h3>
+<p>Each flagged transaction alert ingested from a tenant's TMS.</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">CREATE TABLE</span> alerts (
+    id              UUID <span class="hljs-keyword">PRIMARY KEY</span> <span class="hljs-keyword">DEFAULT</span> gen_random_uuid(),
+    tenant_id       UUID <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">REFERENCES</span> tenants(id) <span class="hljs-keyword">ON</span> <span class="hljs-keyword">DELETE</span> RESTRICT,
+    schema_id       UUID <span class="hljs-keyword">REFERENCES</span> ingestion_schemas(id),
+    
+    <span class="hljs-comment">-- Status machine</span>
+    status          <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">30</span>) <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-string">&#x27;PENDING_INGESTION&#x27;</span>,
+                    <span class="hljs-comment">-- PENDING_INGESTION | PROCESSING | PENDING_REVIEW</span>
+                    <span class="hljs-comment">-- | APPROVED | REJECTED | DELIVERED | DELIVERY_FAILED</span>
+    
+    <span class="hljs-comment">-- Raw and processed payloads</span>
+    <span class="hljs-comment">-- raw/normalized carry REAL PII → Fernet-encrypted at rest by the app layer</span>
+    <span class="hljs-comment">-- (EncryptedJSONB, stored as {&quot;__enc__&quot;: &quot;&lt;token&gt;&quot;} inside the JSONB; legacy</span>
+    <span class="hljs-comment">-- plaintext rows still decode). masked stays plaintext — tokens only, no PII.</span>
+    raw_payload     JSONB <span class="hljs-keyword">NOT NULL</span>,                         <span class="hljs-comment">-- Exact payload received from TMS (ENCRYPTED at rest)</span>
+    normalized_payload JSONB,                               <span class="hljs-comment">-- After schema mapping, before masking (ENCRYPTED at rest)</span>
+    masked_payload  JSONB,                                  <span class="hljs-comment">-- After PII masking (tokens, not real values)</span>
+    
+    <span class="hljs-comment">-- Extracted standard fields (denormalized for easy querying)</span>
+    transaction_id  <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">255</span>),
+    transaction_amount <span class="hljs-type">NUMERIC</span>(<span class="hljs-number">20</span>, <span class="hljs-number">4</span>),
+    transaction_currency <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">10</span>) <span class="hljs-keyword">DEFAULT</span> <span class="hljs-string">&#x27;INR&#x27;</span>,
+    transaction_type <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">50</span>),
+    transaction_timestamp TIMESTAMPTZ,
+    risk_score      <span class="hljs-type">INTEGER</span>,                                <span class="hljs-comment">-- 0–100</span>
+    
+    <span class="hljs-comment">-- Processing metadata</span>
+    processing_started_at   TIMESTAMPTZ,
+    processing_completed_at TIMESTAMPTZ,
+    processing_error        TEXT,                           <span class="hljs-comment">-- Set if pipeline failed</span>
+    
+    <span class="hljs-comment">-- Review metadata</span>
+    reviewed_by     UUID <span class="hljs-keyword">REFERENCES</span> users(id),
+    reviewed_at     TIMESTAMPTZ,
+    rejection_reason TEXT,
+    
+    <span class="hljs-comment">-- Soft delete</span>
+    is_deleted      <span class="hljs-type">BOOLEAN</span> <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-literal">FALSE</span>,
+    deleted_at      TIMESTAMPTZ,
+    
+    <span class="hljs-comment">-- Source tracking</span>
+    source          <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">20</span>) <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-string">&#x27;API&#x27;</span>,     <span class="hljs-comment">-- API | SIMULATOR</span>
+    ingested_from_ip <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">50</span>),
+    
+    created_at      TIMESTAMPTZ <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> NOW(),
+    updated_at      TIMESTAMPTZ <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> NOW()
+);
+
+<span class="hljs-keyword">CREATE</span> INDEX idx_alerts_tenant_id <span class="hljs-keyword">ON</span> alerts(tenant_id);
+<span class="hljs-keyword">CREATE</span> INDEX idx_alerts_status <span class="hljs-keyword">ON</span> alerts(tenant_id, status);
+<span class="hljs-keyword">CREATE</span> INDEX idx_alerts_created_at <span class="hljs-keyword">ON</span> alerts(tenant_id, created_at <span class="hljs-keyword">DESC</span>);
+<span class="hljs-keyword">CREATE</span> INDEX idx_alerts_transaction_id <span class="hljs-keyword">ON</span> alerts(tenant_id, transaction_id);
+</div></code></pre>
+<hr>
+<h3 id="7-pii_maps">7. <code>pii_maps</code></h3>
+<p>Stores the tokenization mapping for a specific alert. One row per alert.</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">CREATE TABLE</span> pii_maps (
+    id              UUID <span class="hljs-keyword">PRIMARY KEY</span> <span class="hljs-keyword">DEFAULT</span> gen_random_uuid(),
+    alert_id        UUID <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">UNIQUE</span> <span class="hljs-keyword">REFERENCES</span> alerts(id) <span class="hljs-keyword">ON</span> <span class="hljs-keyword">DELETE</span> CASCADE,
+    tenant_id       UUID <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">REFERENCES</span> tenants(id),
+    
+    <span class="hljs-comment">-- The token ↔ real value mapping — Fernet-ENCRYPTED at rest by the app layer</span>
+    <span class="hljs-comment">-- (EncryptedJSONB: stored as {&quot;__enc__&quot;: &quot;&lt;token&gt;&quot;}; a DB dump exposes only ciphertext)</span>
+    <span class="hljs-comment">-- Decrypted example: {&quot;USR_a1b2c3d4&quot;: &quot;Rajesh Kumar&quot;, &quot;ACC_e5f6g7h8&quot;: &quot;HDFC-00123456&quot;}</span>
+    token_map       JSONB <span class="hljs-keyword">NOT NULL</span>,
+    
+    <span class="hljs-comment">-- Audit</span>
+    masked_at       TIMESTAMPTZ <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> NOW(),
+    rehydrated_at   TIMESTAMPTZ,                            <span class="hljs-comment">-- Set when rehydration happens on approval</span>
+    
+    created_at      TIMESTAMPTZ <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> NOW()
+);
+
+<span class="hljs-keyword">CREATE</span> INDEX idx_pii_maps_tenant_id <span class="hljs-keyword">ON</span> pii_maps(tenant_id);
+</div></code></pre>
+<p><strong>Token Format:</strong></p>
+<ul>
+<li>User tokens: <code>USR_&lt;8 random hex chars&gt;</code> e.g. <code>USR_a1b2c3d4</code></li>
+<li>Account tokens: <code>ACC_&lt;8 hex&gt;</code> e.g. <code>ACC_e5f6a7b8</code></li>
+<li>Transaction tokens: <code>TXN_&lt;8 hex&gt;</code></li>
+<li>IP tokens: <code>IP_&lt;8 hex&gt;</code></li>
+<li>Device tokens: <code>DEV_&lt;8 hex&gt;</code></li>
+</ul>
+<hr>
+<h3 id="8-compliance_matches">8. <code>compliance_matches</code></h3>
+<p>Records which AML typology rules fired for an alert, and the evidence.</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">CREATE TABLE</span> compliance_matches (
+    id              UUID <span class="hljs-keyword">PRIMARY KEY</span> <span class="hljs-keyword">DEFAULT</span> gen_random_uuid(),
+    alert_id        UUID <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">REFERENCES</span> alerts(id) <span class="hljs-keyword">ON</span> <span class="hljs-keyword">DELETE</span> CASCADE,
+    tenant_id       UUID <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">REFERENCES</span> tenants(id),
+    
+    rule_id         <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">50</span>) <span class="hljs-keyword">NOT NULL</span>,
+                    <span class="hljs-comment">-- STRUCTURING | RAPID_MOVEMENT | ROUND_NUMBER | DORMANT_ACTIVATION</span>
+                    <span class="hljs-comment">-- | HIGH_RISK_TYPE | VELOCITY | COUNTERPARTY_RISK | RISK_SCORE_THRESHOLD</span>
+    
+    rule_name       <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">255</span>) <span class="hljs-keyword">NOT NULL</span>,                  <span class="hljs-comment">-- Human-readable name</span>
+    triggered       <span class="hljs-type">BOOLEAN</span> <span class="hljs-keyword">NOT NULL</span>,                       <span class="hljs-comment">-- TRUE = fired, FALSE = clean</span>
+    confidence      <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">10</span>) <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-string">&#x27;LOW&#x27;</span>,     <span class="hljs-comment">-- HIGH | MEDIUM | LOW</span>
+    
+    <span class="hljs-comment">-- Why this rule fired: specific field values + explanation</span>
+    evidence        JSONB <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-string">&#x27;{}&#x27;</span>,
+    <span class="hljs-comment">-- Example: {&quot;field&quot;: &quot;transaction_amount&quot;, &quot;value&quot;: &quot;990000&quot;, </span>
+    <span class="hljs-comment">--           &quot;explanation&quot;: &quot;Amount is ₹9.9L, just below ₹10L reporting threshold&quot;}</span>
+    
+    created_at      TIMESTAMPTZ <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> NOW()
+);
+
+<span class="hljs-keyword">CREATE</span> INDEX idx_matches_alert_id <span class="hljs-keyword">ON</span> compliance_matches(alert_id);
+<span class="hljs-keyword">CREATE</span> INDEX idx_matches_tenant_rule <span class="hljs-keyword">ON</span> compliance_matches(tenant_id, rule_id, triggered);
+</div></code></pre>
+<hr>
+<h3 id="9-sar_drafts">9. <code>sar_drafts</code></h3>
+<p>The AI-generated SAR draft associated with an alert. One-to-one with alerts.</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">CREATE TABLE</span> sar_drafts (
+    id              UUID <span class="hljs-keyword">PRIMARY KEY</span> <span class="hljs-keyword">DEFAULT</span> gen_random_uuid(),
+    alert_id        UUID <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">UNIQUE</span> <span class="hljs-keyword">REFERENCES</span> alerts(id) <span class="hljs-keyword">ON</span> <span class="hljs-keyword">DELETE</span> RESTRICT,
+    tenant_id       UUID <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">REFERENCES</span> tenants(id),
+    
+    <span class="hljs-comment">-- Draft content</span>
+    draft_text      TEXT <span class="hljs-keyword">NOT NULL</span>,                          <span class="hljs-comment">-- LLM-generated narrative (masked PII)</span>
+    draft_structured JSONB,                                 <span class="hljs-comment">-- Structured fields if template_style = STRUCTURED or BOTH</span>
+    
+    <span class="hljs-comment">-- Edit tracking</span>
+    officer_edit_count <span class="hljs-type">INTEGER</span> <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-number">0</span>,
+    last_edited_by  UUID <span class="hljs-keyword">REFERENCES</span> users(id),
+    last_edited_at  TIMESTAMPTZ,
+    
+    <span class="hljs-comment">-- Final approved version (populated on finalization — auto-approve or officer)</span>
+    <span class="hljs-comment">-- Both carry REAL PII → Fernet-ENCRYPTED at rest by the app layer (EncryptedText,</span>
+    <span class="hljs-comment">-- stored with an &quot;enc::v1::&quot; prefix; legacy plaintext rows still decode)</span>
+    approved_text   TEXT,                                   <span class="hljs-comment">-- Finalized text, real PII (ENCRYPTED at rest)</span>
+    rehydrated_text TEXT,                                   <span class="hljs-comment">-- Rehydrated text, real PII (ENCRYPTED at rest)</span>
+    pdf_path        <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">500</span>),                           <span class="hljs-comment">-- LEGACY/unused: live PDFs are rendered in-memory,</span>
+                                                            <span class="hljs-comment">--   never persisted (changed 2026-07-05)</span>
+    pdf_generated_at TIMESTAMPTZ,
+    
+    <span class="hljs-comment">-- LLM metadata</span>
+    llm_provider    <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">30</span>),
+    llm_model       <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">100</span>),
+    prompt_tokens   <span class="hljs-type">INTEGER</span>,
+    completion_tokens <span class="hljs-type">INTEGER</span>,
+    generation_latency_ms <span class="hljs-type">INTEGER</span>,
+    
+    <span class="hljs-comment">-- Groq generation prompt stored for auditability</span>
+    prompt_used     TEXT,
+    
+    created_at      TIMESTAMPTZ <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> NOW(),
+    updated_at      TIMESTAMPTZ <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> NOW()
+);
+
+<span class="hljs-keyword">CREATE</span> INDEX idx_sar_drafts_tenant_id <span class="hljs-keyword">ON</span> sar_drafts(tenant_id);
+<span class="hljs-keyword">CREATE</span> INDEX idx_sar_drafts_alert_id <span class="hljs-keyword">ON</span> sar_drafts(alert_id);
+</div></code></pre>
+<hr>
+<h3 id="10-webhook_deliveries">10. <code>webhook_deliveries</code></h3>
+<p>Tracks each delivery attempt for an approved SAR.</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">CREATE TABLE</span> webhook_deliveries (
+    id              UUID <span class="hljs-keyword">PRIMARY KEY</span> <span class="hljs-keyword">DEFAULT</span> gen_random_uuid(),
+    sar_draft_id    UUID <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">REFERENCES</span> sar_drafts(id) <span class="hljs-keyword">ON</span> <span class="hljs-keyword">DELETE</span> RESTRICT,
+    tenant_id       UUID <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">REFERENCES</span> tenants(id),
+    
+    destination_url <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">500</span>) <span class="hljs-keyword">NOT NULL</span>,                  <span class="hljs-comment">-- The URL we attempted to POST to</span>
+    is_internal_sink <span class="hljs-type">BOOLEAN</span> <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-literal">FALSE</span>,
+    
+    <span class="hljs-comment">-- Delivery status</span>
+    status          <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">20</span>) <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-string">&#x27;PENDING&#x27;</span>,
+                    <span class="hljs-comment">-- PENDING | DELIVERED | FAILED | RETRYING</span>
+    
+    <span class="hljs-comment">-- Attempt tracking</span>
+    attempt_number  <span class="hljs-type">INTEGER</span> <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-number">1</span>,
+    max_attempts    <span class="hljs-type">INTEGER</span> <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-number">3</span>,
+    
+    <span class="hljs-comment">-- HTTP details</span>
+    http_status_code <span class="hljs-type">INTEGER</span>,
+    response_body   TEXT,
+    request_headers JSONB,
+    request_body_hash <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">64</span>),                          <span class="hljs-comment">-- SHA256 of body (not storing full body)</span>
+    
+    <span class="hljs-comment">-- HMAC</span>
+    hmac_signature  <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">128</span>),                           <span class="hljs-comment">-- The X-Aegis-Signature we sent</span>
+    
+    <span class="hljs-comment">-- Timing</span>
+    attempted_at    TIMESTAMPTZ <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> NOW(),
+    delivered_at    TIMESTAMPTZ,
+    next_retry_at   TIMESTAMPTZ,
+    
+    error_message   TEXT,
+    
+    created_at      TIMESTAMPTZ <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> NOW()
+);
+
+<span class="hljs-keyword">CREATE</span> INDEX idx_deliveries_sar_draft_id <span class="hljs-keyword">ON</span> webhook_deliveries(sar_draft_id);
+<span class="hljs-keyword">CREATE</span> INDEX idx_deliveries_tenant_status <span class="hljs-keyword">ON</span> webhook_deliveries(tenant_id, status);
+<span class="hljs-keyword">CREATE</span> INDEX idx_deliveries_next_retry <span class="hljs-keyword">ON</span> webhook_deliveries(next_retry_at) 
+    <span class="hljs-keyword">WHERE</span> status <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;RETRYING&#x27;</span>;
+</div></code></pre>
+<hr>
+<h3 id="11-webhook_sink_events">11. <code>webhook_sink_events</code></h3>
+<p>Stores payloads received by the built-in test webhook receiver.</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">CREATE TABLE</span> webhook_sink_events (
+    id              UUID <span class="hljs-keyword">PRIMARY KEY</span> <span class="hljs-keyword">DEFAULT</span> gen_random_uuid(),
+    tenant_id       UUID <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">REFERENCES</span> tenants(id) <span class="hljs-keyword">ON</span> <span class="hljs-keyword">DELETE</span> CASCADE,
+    
+    <span class="hljs-comment">-- Received payload — approval events include the goAML STR (REAL PII) →</span>
+    <span class="hljs-comment">-- Fernet-ENCRYPTED at rest by the app layer (EncryptedJSONB). Headers hold no PII.</span>
+    payload         JSONB <span class="hljs-keyword">NOT NULL</span>,
+    headers         JSONB,
+    
+    <span class="hljs-comment">-- Verification</span>
+    hmac_valid      <span class="hljs-type">BOOLEAN</span>,                                <span class="hljs-comment">-- Did signature verification pass?</span>
+    
+    <span class="hljs-comment">-- Source tracking</span>
+    source_ip       <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">50</span>),
+    delivery_id     UUID <span class="hljs-keyword">REFERENCES</span> webhook_deliveries(id),
+    
+    received_at     TIMESTAMPTZ <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> NOW()
+);
+
+<span class="hljs-keyword">CREATE</span> INDEX idx_sink_events_tenant_id <span class="hljs-keyword">ON</span> webhook_sink_events(tenant_id, received_at <span class="hljs-keyword">DESC</span>);
+</div></code></pre>
+<hr>
+<h3 id="12-audit_logs">12. <code>audit_logs</code></h3>
+<p>Immutable audit trail. No UPDATEs or DELETEs. Insert only.</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">CREATE TABLE</span> audit_logs (
+    id              UUID <span class="hljs-keyword">PRIMARY KEY</span> <span class="hljs-keyword">DEFAULT</span> gen_random_uuid(),
+    tenant_id       UUID <span class="hljs-keyword">REFERENCES</span> tenants(id),            <span class="hljs-comment">-- NULL for super admin actions</span>
+    user_id         UUID <span class="hljs-keyword">REFERENCES</span> users(id),
+    
+    <span class="hljs-comment">-- What happened</span>
+    action          <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">100</span>) <span class="hljs-keyword">NOT NULL</span>,
+                    <span class="hljs-comment">-- TENANT_APPROVED | TENANT_REJECTED | TENANT_SUSPENDED</span>
+                    <span class="hljs-comment">-- | API_KEY_GENERATED | API_KEY_ROTATED</span>
+                    <span class="hljs-comment">-- | ALERT_INGESTED | ALERT_MASKING_COMPLETE | ALERT_DRAFT_GENERATED</span>
+                    <span class="hljs-comment">-- | DRAFT_EDITED | ALERT_APPROVED | ALERT_REJECTED</span>
+                    <span class="hljs-comment">-- | SAR_REHYDRATED | PDF_GENERATED | WEBHOOK_DELIVERED | WEBHOOK_FAILED</span>
+                    <span class="hljs-comment">-- | SCHEMA_UPDATED | WEBHOOK_CONFIG_UPDATED | TEST_ALERT_SUBMITTED</span>
+    
+    <span class="hljs-comment">-- Context</span>
+    entity_type     <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">50</span>),                            <span class="hljs-comment">-- alert | sar_draft | tenant | user</span>
+    entity_id       UUID,
+    
+    <span class="hljs-comment">-- Details (arbitrary metadata about the action)</span>
+    details         JSONB <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-string">&#x27;{}&#x27;</span>,
+    
+    <span class="hljs-comment">-- Actor context</span>
+    actor_ip        <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">50</span>),
+    actor_user_agent <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">500</span>),
+    
+    created_at      TIMESTAMPTZ <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> NOW()
+    <span class="hljs-comment">-- NO updated_at. This table is append-only.</span>
+);
+
+<span class="hljs-keyword">CREATE</span> INDEX idx_audit_tenant_id <span class="hljs-keyword">ON</span> audit_logs(tenant_id, created_at <span class="hljs-keyword">DESC</span>);
+<span class="hljs-keyword">CREATE</span> INDEX idx_audit_entity <span class="hljs-keyword">ON</span> audit_logs(entity_type, entity_id);
+<span class="hljs-keyword">CREATE</span> INDEX idx_audit_action <span class="hljs-keyword">ON</span> audit_logs(action, created_at <span class="hljs-keyword">DESC</span>);
+</div></code></pre>
+<hr>
+<h3 id="13-api_logs">13. <code>api_logs</code></h3>
+<p>HTTP request/response log for every call to the ingestion and tenant APIs.</p>
+<pre class="hljs"><code><div><span class="hljs-keyword">CREATE TABLE</span> api_logs (
+    id              UUID <span class="hljs-keyword">PRIMARY KEY</span> <span class="hljs-keyword">DEFAULT</span> gen_random_uuid(),
+    tenant_id       UUID <span class="hljs-keyword">REFERENCES</span> tenants(id),
+    user_id         UUID <span class="hljs-keyword">REFERENCES</span> users(id),
+    
+    <span class="hljs-keyword">method</span>          <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">10</span>) <span class="hljs-keyword">NOT NULL</span>,
+    endpoint        <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">255</span>) <span class="hljs-keyword">NOT NULL</span>,
+    status_code     <span class="hljs-type">INTEGER</span> <span class="hljs-keyword">NOT NULL</span>,
+    
+    request_ip      <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">50</span>),
+    user_agent      <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">500</span>),
+    
+    <span class="hljs-comment">-- Performance</span>
+    latency_ms      <span class="hljs-type">INTEGER</span>,
+    
+    <span class="hljs-comment">-- Error detail (only set on 4xx/5xx)</span>
+    error_code      <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">50</span>),
+    error_message   TEXT,
+    
+    created_at      TIMESTAMPTZ <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> NOW()
+);
+
+<span class="hljs-keyword">CREATE</span> INDEX idx_api_logs_tenant_id <span class="hljs-keyword">ON</span> api_logs(tenant_id, created_at <span class="hljs-keyword">DESC</span>);
+<span class="hljs-keyword">CREATE</span> INDEX idx_api_logs_endpoint <span class="hljs-keyword">ON</span> api_logs(endpoint, created_at <span class="hljs-keyword">DESC</span>);
+<span class="hljs-keyword">CREATE</span> INDEX idx_api_logs_status <span class="hljs-keyword">ON</span> api_logs(status_code, created_at <span class="hljs-keyword">DESC</span>);
+
+<span class="hljs-comment">-- Partition by month in production (not required for MVP)</span>
+</div></code></pre>
+<hr>
+<h2 id="seed-data">Seed Data</h2>
+<h3 id="super-admin-user">Super Admin User</h3>
+<pre class="hljs"><code><div><span class="hljs-keyword">INSERT INTO</span> users (id, tenant_id, email, password_hash, full_name, role)
+<span class="hljs-keyword">VALUES</span> (
+    gen_random_uuid(),
+    <span class="hljs-keyword">NULL</span>,
+    <span class="hljs-string">&#x27;admin@aegis-aml.com&#x27;</span>,
+    <span class="hljs-string">&#x27;$2b$12$&lt;bcrypt hash of &quot;AegisAdmin2026!&quot;&gt;&#x27;</span>,
+    <span class="hljs-string">&#x27;Aegis Super Admin&#x27;</span>,
+    <span class="hljs-string">&#x27;SUPER_ADMIN&#x27;</span>
+);
+</div></code></pre>
+<h3 id="demo-tenant-pre-approved-for-demo-sessions">Demo Tenant (Pre-approved for demo sessions)</h3>
+<pre class="hljs"><code><div><span class="hljs-keyword">INSERT INTO</span> tenants (
+    id, name, slug, company_type, status, api_key_hash, api_key_prefix, tenant_id_public,
+    approved_at, created_at
+) <span class="hljs-keyword">VALUES</span> (
+    gen_random_uuid(),
+    <span class="hljs-string">&#x27;DemoFintech Pvt Ltd&#x27;</span>,
+    <span class="hljs-string">&#x27;demofintech&#x27;</span>,
+    <span class="hljs-string">&#x27;FINTECH&#x27;</span>,
+    <span class="hljs-string">&#x27;ACTIVE&#x27;</span>,
+    <span class="hljs-string">&#x27;&lt;bcrypt of demo-key&gt;&#x27;</span>,
+    <span class="hljs-string">&#x27;sk-ae-demo&#x27;</span>,
+    <span class="hljs-string">&#x27;TEN-DEMO&#x27;</span>,
+    NOW(),
+    NOW()
+);
+
+<span class="hljs-keyword">INSERT INTO</span> ingestion_schemas (tenant_id, name, template_key, field_map, pii_fields, is_active)
+<span class="hljs-keyword">VALUES</span> (
+    (<span class="hljs-keyword">SELECT</span> id <span class="hljs-keyword">FROM</span> tenants <span class="hljs-keyword">WHERE</span> slug <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;demofintech&#x27;</span>),
+    <span class="hljs-string">&#x27;Standard Fintech Transaction Alert&#x27;</span>,
+    <span class="hljs-string">&#x27;STANDARD_FINTECH&#x27;</span>,
+    <span class="hljs-string">&#x27;{
+        &quot;customer_name&quot;: &quot;customer.full_name&quot;,
+        &quot;customer_id&quot;: &quot;customer.id&quot;,
+        &quot;account_id&quot;: &quot;account.number&quot;,
+        &quot;transaction_id&quot;: &quot;txn.ref_id&quot;,
+        &quot;transaction_amount&quot;: &quot;txn.amount&quot;,
+        &quot;transaction_currency&quot;: &quot;txn.currency&quot;,
+        &quot;transaction_type&quot;: &quot;txn.type&quot;,
+        &quot;transaction_direction&quot;: &quot;txn.direction&quot;,
+        &quot;transaction_timestamp&quot;: &quot;txn.timestamp&quot;,
+        &quot;counterparty_account&quot;: &quot;counterparty.account&quot;,
+        &quot;counterparty_name&quot;: &quot;counterparty.name&quot;,
+        &quot;counterparty_institution&quot;: &quot;counterparty.bank&quot;,
+        &quot;ip_address&quot;: &quot;metadata.ip&quot;,
+        &quot;device_id&quot;: &quot;metadata.device_id&quot;,
+        &quot;risk_score&quot;: &quot;risk.score&quot;,
+        &quot;alert_reason&quot;: &quot;risk.reason&quot;
+    }&#x27;</span>,
+    <span class="hljs-string">&#x27;[&quot;customer_name&quot;,&quot;customer_id&quot;,&quot;account_id&quot;,&quot;counterparty_account&quot;,&quot;counterparty_name&quot;,&quot;ip_address&quot;,&quot;device_id&quot;]&#x27;</span>,
+    <span class="hljs-literal">TRUE</span>
+);
+
+<span class="hljs-keyword">INSERT INTO</span> webhook_configs (tenant_id, use_internal_sink, is_active)
+<span class="hljs-keyword">VALUES</span> (
+    (<span class="hljs-keyword">SELECT</span> id <span class="hljs-keyword">FROM</span> tenants <span class="hljs-keyword">WHERE</span> slug <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;demofintech&#x27;</span>),
+    <span class="hljs-literal">TRUE</span>,
+    <span class="hljs-literal">TRUE</span>
+);
+
+<span class="hljs-keyword">INSERT INTO</span> llm_configs (tenant_id, provider, model_name, sar_template_style)
+<span class="hljs-keyword">VALUES</span> (
+    (<span class="hljs-keyword">SELECT</span> id <span class="hljs-keyword">FROM</span> tenants <span class="hljs-keyword">WHERE</span> slug <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;demofintech&#x27;</span>),
+    <span class="hljs-string">&#x27;GROQ&#x27;</span>,
+    <span class="hljs-string">&#x27;llama-3.3-70b-versatile&#x27;</span>,
+    <span class="hljs-string">&#x27;BOTH&#x27;</span>
+);
+</div></code></pre>
+<h3 id="preset-schema-templates-hardcoded-in-backend">Preset Schema Templates (Hardcoded in Backend)</h3>
+<p>Stored as Python constants in <code>app/data/schema_presets.py</code> (not in DB — loaded at startup):</p>
+<pre class="hljs"><code><div>SCHEMA_PRESETS = {
+    <span class="hljs-string">&quot;STANDARD_FINTECH&quot;</span>: {
+        <span class="hljs-string">&quot;name&quot;</span>: <span class="hljs-string">&quot;Standard Fintech Transaction Alert&quot;</span>,
+        <span class="hljs-string">&quot;field_map&quot;</span>: {
+            <span class="hljs-string">&quot;customer_name&quot;</span>: <span class="hljs-string">&quot;customer.full_name&quot;</span>,
+            <span class="hljs-string">&quot;customer_id&quot;</span>: <span class="hljs-string">&quot;customer.id&quot;</span>,
+            <span class="hljs-string">&quot;account_id&quot;</span>: <span class="hljs-string">&quot;account.number&quot;</span>,
+            ...
+        },
+        <span class="hljs-string">&quot;pii_fields&quot;</span>: [<span class="hljs-string">&quot;customer_name&quot;</span>, <span class="hljs-string">&quot;customer_id&quot;</span>, <span class="hljs-string">&quot;account_id&quot;</span>, ...]
+    },
+    <span class="hljs-string">&quot;SEBI_BROKER&quot;</span>: {
+        <span class="hljs-string">&quot;name&quot;</span>: <span class="hljs-string">&quot;SEBI Stock Broker Trading Alert&quot;</span>,
+        <span class="hljs-string">&quot;field_map&quot;</span>: {
+            <span class="hljs-string">&quot;customer_name&quot;</span>: <span class="hljs-string">&quot;client.name&quot;</span>,
+            <span class="hljs-string">&quot;customer_id&quot;</span>: <span class="hljs-string">&quot;client.pan&quot;</span>,      <span class="hljs-comment"># PAN number for SEBI</span>
+            <span class="hljs-string">&quot;account_id&quot;</span>: <span class="hljs-string">&quot;demat.account_id&quot;</span>,
+            <span class="hljs-string">&quot;transaction_amount&quot;</span>: <span class="hljs-string">&quot;trade.value&quot;</span>,
+            ...
+        },
+        <span class="hljs-string">&quot;pii_fields&quot;</span>: [<span class="hljs-string">&quot;customer_name&quot;</span>, <span class="hljs-string">&quot;customer_id&quot;</span>, <span class="hljs-string">&quot;account_id&quot;</span>, ...]
+    },
+    <span class="hljs-string">&quot;PAYMENT_GW&quot;</span>: {
+        <span class="hljs-string">&quot;name&quot;</span>: <span class="hljs-string">&quot;Payment Gateway Alert&quot;</span>,
+        <span class="hljs-string">&quot;field_map&quot;</span>: {
+            <span class="hljs-string">&quot;customer_name&quot;</span>: <span class="hljs-string">&quot;payer.name&quot;</span>,
+            <span class="hljs-string">&quot;customer_id&quot;</span>: <span class="hljs-string">&quot;payer.vpa&quot;</span>,       <span class="hljs-comment"># UPI VPA</span>
+            <span class="hljs-string">&quot;account_id&quot;</span>: <span class="hljs-string">&quot;payer.account&quot;</span>,
+            ...
+        },
+        <span class="hljs-string">&quot;pii_fields&quot;</span>: [<span class="hljs-string">&quot;customer_name&quot;</span>, <span class="hljs-string">&quot;customer_id&quot;</span>, <span class="hljs-string">&quot;account_id&quot;</span>, ...]
+    }
+}
+</div></code></pre>
+<hr>
+<h2 id="migration-strategy">Migration Strategy</h2>
+<p>Using Alembic with the following approach:</p>
+<ol>
+<li><code>alembic init alembic</code> in project root</li>
+<li>Each table is a separate migration file for clean rollbacks</li>
+<li>Migration order follows FK dependency order (tenants → users → schemas → alerts → ...)</li>
+<li>Seed data applied via a separate <code>seed.py</code> script, not a migration</li>
+</ol>
+
+</body>
+</html>
