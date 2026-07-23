@@ -54,7 +54,7 @@ export function Billing() {
           </>
         ) : (
           <>
-            <Stat index={0} icon={<Receipt size={15} />} color="#ec4899" value={formatINR(total)} label="Overall billing — this cycle" sub="sum of all clients" />
+            <Stat index={0} icon={<Receipt size={15} />} color="#ec4899" value={`₹${total}`} label="Overall billing — this cycle" sub="sum of all clients" />
             <Stat index={1} icon={<Users size={15} />} color="#6366f1" value={String(data.client_count)} label="Active clients" sub={`${data.billable_client_count} billable · ${data.comped_client_count} free`} />
             <Stat index={2} icon={<Gift size={15} />} color="#10b981" value={formatNumber(data.total_sars_this_cycle)} label="SARs this cycle" sub={`first ${data.free_sars} free · then ${formatINR(data.price_per_sar_inr)}/SAR`} />
           </>
