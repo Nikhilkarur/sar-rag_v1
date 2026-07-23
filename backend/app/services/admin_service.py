@@ -5,10 +5,17 @@ from app.models.webhook import WebhookConfig
 from app.models.llm_config import LLMConfig
 from app.models.audit import AuditLog
 from app.models.user import User
+from app.models.schema import IngestionSchema
+from app.data.schema_presets import SCHEMA_PRESETS
 from app.schemas.tenant import TenantApproveRequest, TenantApproveResponse, TenantRejectRequest
 from app.utils.deps import parse_uuid_or_404
 from app.utils.security import generate_api_key, hash_api_key, encrypt_json
 import secrets
+
+# Default ingestion schema a tenant starts with at approval, so ingest works out of the box
+# (without this, the first transaction is rejected with "No active schema found" until the
+# tenant manually picks a preset). The tenant can switch presets in Settings → Ingestion Schema.
+_DEFAULT_SCHEMA_KEY = "STANDARD_FINTECH"
 
 def generate_tenant_id_public(db: Session) -> str:
     # Count-based ids collide after rejections/deletions (count shrinks while
@@ -61,7 +68,20 @@ def approve_tenant(tenant_id: str, current_user: User, db: Session) -> TenantApp
         model_name="llama-3.3-70b-versatile"
     )
     db.add(llm)
-    
+
+    # Provision a default ACTIVE ingestion schema so the tenant can ingest transactions
+    # immediately after approval — no hidden manual step before the pipeline works.
+    preset = SCHEMA_PRESETS.get(_DEFAULT_SCHEMA_KEY)
+    if preset:
+        db.add(IngestionSchema(
+            tenant_id=tenant.id,
+            name=preset["name"],
+            template_key=_DEFAULT_SCHEMA_KEY,
+            is_active=True,
+            field_map=preset["field_map"],
+            pii_fields=preset["pii_fields"],
+        ))
+
     # Audit Logs
     audit1 = AuditLog(tenant_id=tenant.id, user_id=current_user.id, action="TENANT_APPROVED", entity_type="tenant", entity_id=tenant.id)
     audit2 = AuditLog(tenant_id=tenant.id, user_id=current_user.id, action="API_KEY_GENERATED", entity_type="tenant", entity_id=tenant.id)
