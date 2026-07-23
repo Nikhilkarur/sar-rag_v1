@@ -13,6 +13,7 @@ import { Usage } from '../pages/portal/Usage'
 import { Credentials } from '../pages/portal/settings/Credentials'
 import { Webhook } from '../pages/portal/settings/Webhook'
 import { Schema } from '../pages/portal/settings/Schema'
+import { Policy } from '../pages/portal/settings/Policy'
 import { LLMConfig } from '../pages/portal/settings/LLMConfig'
 import { Billing } from '../pages/portal/settings/Billing'
 import { Overview } from '../pages/admin/Overview'
@@ -100,6 +101,7 @@ export function AppRouter() {
         <Route path="/settings/credentials" element={<Credentials />} />
         <Route path="/settings/webhook" element={<Webhook />} />
         <Route path="/settings/schema" element={<Schema />} />
+        <Route path="/settings/policy" element={<Policy />} />
         <Route path="/settings/llm" element={<LLMConfig />} />
         <Route path="/settings/billing" element={<Billing />} />
       </Route>

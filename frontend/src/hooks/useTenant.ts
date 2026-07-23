@@ -22,6 +22,10 @@ export function useSchemas() {
   return useQuery({ queryKey: ['schemas'], queryFn: tenantApi.getSchemas })
 }
 
+export function usePolicyInfo() {
+  return useQuery({ queryKey: ['policy-info'], queryFn: tenantApi.getPolicyInfo })
+}
+
 export function useLLMConfig() {
   return useQuery({ queryKey: ['llm-config'], queryFn: tenantApi.getLLMConfig })
 }

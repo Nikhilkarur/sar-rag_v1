@@ -41,6 +41,41 @@ export async function getWebhookEvents(): Promise<WebhookEvent[]> {
   return data
 }
 
+export interface PolicyInfo {
+  client_id: string
+  policy_present: boolean
+  policy_path: string | null
+  chunks_indexed: number | null
+}
+
+export async function getPolicyInfo(): Promise<PolicyInfo> {
+  const { data } = await client.get('/documents/')
+  return data
+}
+
+export interface PolicyUploadResult {
+  status: string
+  client_id: string
+  stored_path: string
+  original_filename: string
+  chunks_indexed: number
+}
+
+export async function uploadPolicy(file: File): Promise<PolicyUploadResult> {
+  const form = new FormData()
+  form.append('file', file)
+  // axios 1.x fills in the multipart boundary when Content-Type is multipart/form-data
+  const { data } = await client.post('/documents/upload', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+  return data
+}
+
+export async function deletePolicy(): Promise<{ status: string; deleted_client: string }> {
+  const { data } = await client.delete('/documents/')
+  return data
+}
+
 export async function getSchemas(): Promise<SchemaPreset[]> {
   const { data } = await client.get('/tenant/schemas')
   return data
