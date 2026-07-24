@@ -8,6 +8,7 @@ Cells are wrapped in Paragraph so long text wraps instead of clipping.
 """
 from io import BytesIO
 from typing import Any, Dict, List
+from xml.sax.saxutils import escape as _xml_escape
 
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
@@ -16,6 +17,13 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import (SimpleDocTemplate, Paragraph, Spacer, Table,
                                 TableStyle, HRFlowable)
 from reportlab.lib import colors
+
+
+def _esc(value: Any) -> str:
+    """XML-escape dynamic (LLM/user-derived) text before it enters a reportlab Paragraph.
+    Paragraph parses its content as markup, so a bare '&', '<' or '>' in an LLM narrative
+    (e.g. 'PMLA & Rules', 'amount < 10,00,000') would raise and abort the PDF render."""
+    return _xml_escape("" if value is None else str(value))
 
 
 def _normalize_indicators(structured: Dict[str, Any]) -> List[Dict[str, str]]:
@@ -50,7 +58,7 @@ def render_sar_pdf(sar_id: str, alert, draft, goaml: Dict[str, Any],
     story = [
         Paragraph("SUSPICIOUS TRANSACTION REPORT (STR)",
                   ParagraphStyle("T", parent=s["Title"], fontSize=18, textColor=colors.HexColor("#0B2E4F"))),
-        Paragraph(f"{report.get('rentity_name') or 'Aegis tenant'} &nbsp;|&nbsp; goAML filing", s["Normal"]),
+        Paragraph(f"{_esc(report.get('rentity_name') or 'Aegis tenant')} &nbsp;|&nbsp; goAML filing", s["Normal"]),
         HRFlowable(width="100%", thickness=1, color=colors.HexColor("#14507F"), spaceBefore=6, spaceAfter=8),
     ]
     meta = Table([
@@ -72,7 +80,7 @@ def render_sar_pdf(sar_id: str, alert, draft, goaml: Dict[str, Any],
     story.append(Paragraph("1. Ground of Suspicion (Narrative)", H))
     for para in narrative.split("\n"):
         if para.strip():
-            story.append(Paragraph(para.strip(), body)); story.append(Spacer(1, 4))
+            story.append(Paragraph(_esc(para.strip()), body)); story.append(Spacer(1, 4))
 
     indicators = _normalize_indicators(structured)
     if indicators:
@@ -80,8 +88,8 @@ def render_sar_pdf(sar_id: str, alert, draft, goaml: Dict[str, Any],
         # cells wrapped in Paragraph -> text wraps instead of clipping
         rows = [[Paragraph("Indicator", cellh), Paragraph("Regulation", cellh), Paragraph("Description", cellh)]]
         for ind in indicators:
-            rows.append([Paragraph(ind["indicator"], cell), Paragraph(ind["regulation"], cell),
-                         Paragraph(ind["description"], cell)])
+            rows.append([Paragraph(_esc(ind["indicator"]), cell), Paragraph(_esc(ind["regulation"]), cell),
+                         Paragraph(_esc(ind["description"]), cell)])
         t = Table(rows, colWidths=[42 * mm, 38 * mm, 90 * mm])
         t.setStyle(TableStyle([
             ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#0B2E4F")),
@@ -93,7 +101,7 @@ def render_sar_pdf(sar_id: str, alert, draft, goaml: Dict[str, Any],
     action = structured.get("recommended_action") if isinstance(structured, dict) else None
     if action:
         story.append(Paragraph("3. Recommended Action", H))
-        story.append(Paragraph(str(action), body))
+        story.append(Paragraph(_esc(action), body))
 
     story.append(Paragraph("4. Transaction (goAML bi-party)", H))
     frm = tx.get("t_from_my_client", {}); to = tx.get("t_to", {})
@@ -113,7 +121,7 @@ def render_sar_pdf(sar_id: str, alert, draft, goaml: Dict[str, Any],
 
     story.append(Spacer(1, 12))
     story.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#D6DEE6")))
-    story.append(Paragraph(f"Filed to FIU-IND via goAML by {officer_name}.",
+    story.append(Paragraph(f"Filed to FIU-IND via goAML by {_esc(officer_name)}.",
                            ParagraphStyle("F", parent=s["Normal"], fontSize=8, textColor=colors.grey)))
 
     SimpleDocTemplate(buffer, pagesize=A4, leftMargin=18 * mm, rightMargin=18 * mm,

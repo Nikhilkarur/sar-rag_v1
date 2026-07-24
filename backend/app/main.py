@@ -44,13 +44,15 @@ app.include_router(documents.router)
 
 @app.on_event("startup")
 def _warm_embeddings():
-    # Load the embedding model at boot — BEFORE any DB-backed request triggers torch.
-    # On this env, loading torch AFTER a DB connection segfaults; warming it here (in a
-    # safe order, before request handling) avoids the crash on the first live alert.
+    # The embedding model loads lazily on first use (see services/embeddings.py, which also
+    # sets the OMP/torch env guards at import). An earlier build eagerly warmed it here to
+    # sidestep a torch/DB init-order segfault on this env; that no longer reproduces, so warmup
+    # is left off to keep startup fast. Kept as a single hook so eager warmup can be re-enabled
+    # in one place if a deployment ever needs it.
     try:
         pass
     except Exception:
-        pass  # RAG degrades gracefully if the model can't load; don't block startup
+        pass  # never block startup on optional warmup
 
 
 @app.get("/health")
