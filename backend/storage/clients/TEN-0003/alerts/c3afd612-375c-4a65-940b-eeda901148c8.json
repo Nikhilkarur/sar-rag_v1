@@ -1,0 +1,68 @@
+{
+  "raw_payload": {
+    "customer": {
+      "full_name": "Rohan Mehta",
+      "id": "CUST-884213"
+    },
+    "account": {
+      "number": "5012-7788-2231"
+    },
+    "txn": {
+      "ref_id": "TXN-20260725-819261",
+      "amount": 200000.0,
+      "currency": "INR",
+      "type": "CRYPTO_PURCHASE",
+      "direction": "OUTBOUND",
+      "timestamp": "2026-07-25T16:36:02.819764Z"
+    },
+    "counterparty": {
+      "account": "CDX-88421",
+      "name": "CoinDesk Exchange",
+      "bank": "Axis Bank"
+    },
+    "metadata": {
+      "ip": "203.0.113.112",
+      "device_id": "dev-6f35634b"
+    },
+    "risk": {
+      "score": 60,
+      "reason": "High-risk transaction type: CRYPTO_PURCHASE"
+    }
+  },
+  "normalized_payload": {
+    "device_id": "dev-6f35634b",
+    "account_id": "5012-7788-2231",
+    "ip_address": "203.0.113.112",
+    "risk_score": 60,
+    "customer_id": "CUST-884213",
+    "alert_reason": "High-risk transaction type: CRYPTO_PURCHASE",
+    "customer_name": "Rohan Mehta",
+    "transaction_id": "TXN-20260725-819261",
+    "transaction_type": "CRYPTO_PURCHASE",
+    "counterparty_name": "CoinDesk Exchange",
+    "transaction_amount": 200000.0,
+    "counterparty_account": "CDX-88421",
+    "transaction_currency": "INR",
+    "transaction_direction": "OUTBOUND",
+    "transaction_timestamp": "2026-07-25T16:36:02.819764Z",
+    "counterparty_institution": "Axis Bank"
+  },
+  "masked_payload": {
+    "device_id": "DEV_b32e3daa",
+    "account_id": "ACC_c9a98c9b",
+    "ip_address": "IP_9dd6d50f",
+    "risk_score": 60,
+    "customer_id": "CID_bd91fae9",
+    "alert_reason": "High-risk transaction type: CRYPTO_PURCHASE",
+    "customer_name": "USR_eb623c25",
+    "transaction_id": "TXN-20260725-819261",
+    "transaction_type": "CRYPTO_PURCHASE",
+    "counterparty_name": "USR_ecb3af76",
+    "transaction_amount": 200000.0,
+    "counterparty_account": "ACC_6e5c40e3",
+    "transaction_currency": "INR",
+    "transaction_direction": "OUTBOUND",
+    "transaction_timestamp": "2026-07-25T16:36:02.819764Z",
+    "counterparty_institution": "Axis Bank"
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "raw_payload": {
+    "customer": {
+      "full_name": "Kavya Nair",
+      "id": "CUST-550021"
+    },
+    "account": {
+      "number": "7810-4455-9012"
+    },
+    "txn": {
+      "ref_id": "TXN-20260724-837254",
+      "amount": 25000.0,
+      "currency": "INR",
+      "type": "TRANSFER",
+      "direction": "OUTBOUND",
+      "timestamp": "2026-07-24T14:55:18.464741Z"
+    },
+    "counterparty": {
+      "account": "5566778899",
+      "name": "Ravi Kumar",
+      "bank": "ICICI Bank"
+    },
+    "metadata": {
+      "ip": "203.0.113.40",
+      "device_id": "dev-ee002cb2"
+    },
+    "risk": {
+      "score": 60,
+      "reason": "Dormant account suddenly active"
+    }
+  },
+  "normalized_payload": {
+    "device_id": "dev-ee002cb2",
+    "account_id": "7810-4455-9012",
+    "ip_address": "203.0.113.40",
+    "risk_score": 60,
+    "customer_id": "CUST-550021",
+    "alert_reason": "Dormant account suddenly active",
+    "customer_name": "Kavya Nair",
+    "transaction_id": "TXN-20260724-837254",
+    "transaction_type": "TRANSFER",
+    "counterparty_name": "Ravi Kumar",
+    "transaction_amount": 25000.0,
+    "counterparty_account": "5566778899",
+    "transaction_currency": "INR",
+    "transaction_direction": "OUTBOUND",
+    "transaction_timestamp": "2026-07-24T14:55:18.464741Z",
+    "counterparty_institution": "ICICI Bank"
+  },
+  "masked_payload": {
+    "device_id": "DEV_0f309dd2",
+    "account_id": "ACC_a427ed66",
+    "ip_address": "IP_8e84592a",
+    "risk_score": 60,
+    "customer_id": "CID_05c65659",
+    "alert_reason": "Dormant account suddenly active",
+    "customer_name": "USR_007ca6d4",
+    "transaction_id": "TXN-20260724-837254",
+    "transaction_type": "TRANSFER",
+    "counterparty_name": "USR_a7ca11a0",
+    "transaction_amount": 25000.0,
+    "counterparty_account": "ACC_8a9db432",
+    "transaction_currency": "INR",
+    "transaction_direction": "OUTBOUND",
+    "transaction_timestamp": "2026-07-24T14:55:18.464741Z",
+    "counterparty_institution": "ICICI Bank"
+  }
+}
