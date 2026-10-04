@@ -1,3 +1,6 @@
+import threading
+from datetime import datetime, timedelta, timezone
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
@@ -53,6 +56,30 @@ def _warm_embeddings():
         pass
     except Exception:
         pass  # never block startup on optional warmup
+
+
+@app.on_event("startup")
+def _sweep_stuck_processing_alerts():
+    # SAR generation runs in-process, so alerts a previous worker left in PROCESSING
+    # (it died mid-generation) would never finish. Fail those already past the grace
+    # period now, and the rest of the pre-boot ones once they pass it too: nothing
+    # ingested after this boot is touched. Runs off-thread so a slow or unreachable
+    # DB never blocks startup.
+    boot = datetime.now(timezone.utc)
+    grace = timedelta(minutes=settings.STUCK_PROCESSING_TIMEOUT_MINUTES)
+
+    def sweep(started_before):
+        try:
+            count = ingest.fail_stuck_processing_alerts(started_before)
+            if count:
+                print(f"Marked {count} alert(s) stuck in PROCESSING as PROCESSING_FAILED")
+        except Exception as e:
+            print(f"Stuck-alert sweep failed: {e}")
+
+    threading.Thread(target=sweep, args=(boot - grace,), daemon=True).start()
+    later = threading.Timer(grace.total_seconds(), sweep, args=(boot,))
+    later.daemon = True
+    later.start()
 
 
 @app.get("/health")

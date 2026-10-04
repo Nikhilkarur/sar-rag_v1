@@ -109,6 +109,12 @@ def authenticate_api_key(
     )
 
     tenant = db.query(Tenant).filter(Tenant.tenant_id_public == x_tenant_id).first()
+    # Hand the pooled connection back before the slow bcrypt check (the row is
+    # fully loaded; detach it so ending the transaction doesn't expire it). Held
+    # through bcrypt and the dependency chain, a burst of ingests drained the pool.
+    if tenant is not None:
+        db.expunge(tenant)
+    db.rollback()
 
     # Equalize timing: every failure path pays exactly one bcrypt round, so
     # response latency cannot be used to enumerate valid tenant IDs.

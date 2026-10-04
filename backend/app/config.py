@@ -21,7 +21,11 @@ class Settings(BaseSettings):
     DB_POOL_RECYCLE: int = 1800    # recycle connections older than 30 min
 
     # Rate limiting
-    RATE_LIMIT_INGEST_PER_MINUTE: int = 120
+    RATE_LIMIT_INGEST_PER_MINUTE: int = 120  # per tenant, counted after API-key auth
+    # Pre-auth cap per client IP (IPv6: per /64) that sheds floods before the bcrypt key
+    # check. Keep it above the tenant quota so a bank posting from one egress IP hits its
+    # own quota first.
+    RATE_LIMIT_INGEST_PER_IP_PER_MINUTE: int = 300
 
     # Ingestion hardening
     MAX_INGEST_PAYLOAD_BYTES: int = 5 * 1024 * 1024  # 5 MB hard cap
@@ -36,6 +40,13 @@ class Settings(BaseSettings):
     # PROCESSING_FAILED. A missed SAR is a regulatory gap, so we don't give up on the first error.
     SAR_GENERATION_MAX_ATTEMPTS: int = 3
     SAR_GENERATION_RETRY_BACKOFF_SECONDS: float = 2.0
+    # SAR generations running at once for API ingests (the rest queue in PROCESSING). Each
+    # holds a DB connection for the whole LLM call, so keep this well below
+    # DB_POOL_SIZE + DB_MAX_OVERFLOW or an ingest burst starves requests of connections.
+    SAR_GENERATION_CONCURRENCY: int = 4
+    # On startup, alerts a previous worker left in PROCESSING are marked PROCESSING_FAILED
+    # once they are this old (longer than a worst-case generation with all retries).
+    STUCK_PROCESSING_TIMEOUT_MINUTES: int = 15
 
     # SAR workflow: when False (current), a generated SAR waits for a human compliance officer
     # to review and approve it in the Aegis dashboard BEFORE it is finalized + delivered to the
