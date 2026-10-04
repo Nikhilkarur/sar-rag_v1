@@ -1,8 +1,9 @@
 import threading
 from datetime import datetime, timedelta, timezone
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from app.config import settings
 
 from app.middleware.logging import APILoggingMiddleware
@@ -27,6 +28,18 @@ app = FastAPI(
     redoc_url=None if _IS_PROD else "/redoc",
     openapi_url=None if _IS_PROD else "/openapi.json",
 )
+
+
+@app.exception_handler(UnicodeEncodeError)
+async def _lone_surrogate_is_a_bad_request(request: Request, exc: UnicodeEncodeError):
+    # JSON allows "\ud800" escapes that no UTF-8 text can hold; psycopg2 raises when such a
+    # string reaches the DB (draft edits, reject reasons, webhook URLs...). That's the
+    # client's input, not a server fault. Any other encode error is still a 500.
+    if exc.reason != "surrogates not allowed":
+        raise exc
+    return JSONResponse(status_code=422,
+                        content={"detail": "Request contains an unpaired UTF-16 surrogate (a lone \\ud800-\\udfff escape)"})
+
 
 app.add_middleware(APILoggingMiddleware)
 app.add_middleware(

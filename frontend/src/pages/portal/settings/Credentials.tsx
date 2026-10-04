@@ -84,7 +84,7 @@ export function Credentials() {
             ) : (
               <APIKeyReveal
                 maskedDisplay={`${creds?.api_key_prefix ?? 'sk-ae-a1b2'}••••••••••••••••••••••••••••••••`}
-                fetchKey={async () => { const res = await revealApiKey(); return res.api_key; }}
+                fetchKey={async (password) => { const res = await revealApiKey(password); return res.api_key; }}
                 label="key"
               />
             )}

@@ -11,8 +11,8 @@ export async function getCredentials(): Promise<{ api_key_prefix: string; tenant
   return data
 }
 
-export async function revealApiKey(): Promise<{ api_key: string }> {
-  const { data } = await client.get('/tenant/credentials/reveal')
+export async function revealApiKey(password: string): Promise<{ api_key: string }> {
+  const { data } = await client.post('/tenant/credentials/reveal', { password })
   return data
 }
 

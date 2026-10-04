@@ -302,7 +302,7 @@ def test_refresh_rejects_access_tokens_and_sessionless_tokens(client):
 @pytest.mark.parametrize("method,path", [
     ("GET", "/api/v1/tenant/profile"),
     ("GET", "/api/v1/tenant/credentials"),
-    ("GET", "/api/v1/tenant/credentials/reveal"),
+    ("POST", "/api/v1/tenant/credentials/reveal"),
     ("POST", "/api/v1/tenant/credentials/rotate"),
     ("GET", "/api/v1/tenant/webhook"),
     ("GET", "/api/v1/tenant/llm-config"),
@@ -372,12 +372,49 @@ def test_approve_returns_the_id_ingest_accepts(client, super_admin, db):
     assert _approve(client, super_admin, tenant_uuid).status_code == 400
 
 
+def test_reveal_requires_the_account_password(client, super_admin, db):
+    from app.models.audit import AuditLog
+
+    signup, tenant_uuid = _pending_tenant(client)
+    token = signup["access_token"]
+    api_key = _approve(client, super_admin, tenant_uuid).json()["api_key"]
+    url = "/api/v1/tenant/credentials/reveal"
+
+    # The old GET (no password) is gone; a missing password is a 422, a wrong one a 403
+    assert client.get(url, headers=_auth(token)).status_code == 405
+    assert client.post(url, headers=_auth(token), json={}).status_code == 422
+    r = client.post(url, headers=_auth(token), json={"password": "wrong-password"})
+    assert r.status_code == 403, r.text
+    assert "api_key" not in r.json()
+
+    r = client.post(url, headers=_auth(token), json={"password": PASSWORD})
+    assert r.status_code == 200, r.text
+    assert r.json() == {"api_key": api_key}
+
+    actions = [a for (a,) in db.query(AuditLog.action).filter(AuditLog.tenant_id == tenant_uuid)
+               .order_by(AuditLog.created_at)]
+    assert actions[-2:] == ["API_KEY_REVEAL_DENIED", "API_KEY_REVEALED"]
+
+
 @pytest.mark.parametrize("reason", ["", "   ", "no"])
 def test_reject_requires_a_reason(client, super_admin, reason):
     _, tenant_uuid = _pending_tenant(client)
     r = client.post(f"/api/v1/admin/tenants/{tenant_uuid}/reject", json={"reason": reason},
                     headers=_auth(super_admin.token))
     assert r.status_code == 422
+
+
+def test_lone_surrogate_in_a_db_bound_field_is_422_not_500(client, super_admin):
+    _, tenant_uuid = _pending_tenant(client)
+    r = client.post(f"/api/v1/admin/tenants/{tenant_uuid}/reject",
+                    content='{"reason": "Bad \\ud800 reason"}',
+                    headers={**_auth(super_admin.token), "Content-Type": "application/json"})
+    assert r.status_code == 422, r.text
+    assert "surrogate" in r.json()["detail"]
+    # The session was rolled back: the applicant is still pending and can be rejected cleanly
+    r = client.post(f"/api/v1/admin/tenants/{tenant_uuid}/reject", json={"reason": "Incomplete KYC"},
+                    headers=_auth(super_admin.token))
+    assert r.status_code == 200, r.text
 
 
 def test_reject_stores_trimmed_reason(client, super_admin):

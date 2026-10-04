@@ -16,7 +16,7 @@ from app.services import tenant_service
 from app.utils.deps import get_tenant_admin, get_current_active_tenant_user, get_compliance_user, parse_uuid_or_404
 from app.utils.security import (
     validate_webhook_url, encrypt_json, decrypt_json,
-    generate_api_key, hash_api_key,
+    generate_api_key, hash_api_key, verify_password,
 )
 from app.models.user import User
 from app.models.tenant import Tenant
@@ -29,7 +29,7 @@ from app.models.delivery import WebhookDelivery
 from app.models.audit import AuditLog
 from app.models.compliance import ComplianceMatch
 from app.data.schema_presets import SCHEMA_PRESETS
-from app.schemas.tenant import TenantResponse
+from app.schemas.tenant import TenantResponse, RevealKeyRequest
 from app.services.sar_delivery import INTERNAL_SINK_DESTINATION, delivery_status, redeliver_sar
 
 router = APIRouter(prefix="/api/v1/tenant", tags=["Tenant"])
@@ -49,9 +49,16 @@ def get_credentials(db: Session = Depends(get_db), current_user: User = Depends(
         "api_key_last_rotated": tenant.api_key_last_rotated.isoformat() if tenant.api_key_last_rotated else None,
     }
 
-@router.get("/credentials/reveal")
-def reveal_api_key(db: Session = Depends(get_db), current_user: User = Depends(get_tenant_admin)):
+@router.post("/credentials/reveal")
+def reveal_api_key(data: RevealKeyRequest, db: Session = Depends(get_db),
+                   current_user: User = Depends(get_tenant_admin)):
     tenant = db.query(Tenant).filter(Tenant.id == current_user.tenant_id).first()
+    if not verify_password(data.password, current_user.password_hash):
+        db.add(AuditLog(tenant_id=tenant.id, user_id=current_user.id, action="API_KEY_REVEAL_DENIED",
+                        entity_type="tenant", entity_id=tenant.id))
+        db.commit()
+        # 403, not 401: the session itself is fine, and a 401 would trigger the SPA's token refresh
+        raise HTTPException(status_code=403, detail="Incorrect password")
     if not tenant.api_key_encrypted:
         raise HTTPException(
             status_code=409,

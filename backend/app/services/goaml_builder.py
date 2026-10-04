@@ -12,6 +12,7 @@ structured after the FIU-IND goAML STR <report> element. NOTE (be honest in any
 pitch): the XML follows the goAML report structure but is NOT yet validated against
 the official goAML XSD, so it is a submission-ready *draft*, not a certified filing.
 """
+import re
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
 from typing import Any, Dict, List, Optional
@@ -99,13 +100,24 @@ def build_goaml_str(alert, draft, rule_names: List[str], tenant,
     }
 
 
+# Characters XML 1.0 cannot carry at all (NUL, most C0 controls, lone surrogates,
+# U+FFFE/FFFF). Ingested payload text can contain them; left in, the whole filing fails to
+# serialize and the webhook goes out without goaml_xml.
+_XML_INVALID = re.compile("[^\u0009\u000A\u000D\u0020-\uD7FF\uE000-\uFFFD\U00010000-\U0010FFFF]")
+
+
+def _xml_text(value: Any) -> str:
+    # U+FFFD keeps the damage visible to the reviewer instead of silently joining words
+    return _XML_INVALID.sub("\uFFFD", "" if value is None else str(value))
+
+
 def _append_xml(parent: ET.Element, key: str, value: Any) -> None:
     """Recursively serialize a report value into goAML XML under `parent`."""
     # report_indicators is a list of code strings -> <report_indicators><indicator>..</indicator>
     if key == "report_indicators" and isinstance(value, list):
         holder = ET.SubElement(parent, "report_indicators")
         for code in value:
-            ET.SubElement(holder, "indicator").text = str(code)
+            ET.SubElement(holder, "indicator").text = _xml_text(code)
         return
     if isinstance(value, dict):
         node = ET.SubElement(parent, key)
@@ -115,7 +127,7 @@ def _append_xml(parent: ET.Element, key: str, value: Any) -> None:
         for item in value:  # repeat the element for each list member
             _append_xml(parent, key, item)
     else:
-        ET.SubElement(parent, key).text = "" if value is None else str(value)
+        ET.SubElement(parent, key).text = _xml_text(value)
 
 
 def build_goaml_xml(report: Dict[str, Any]) -> str:

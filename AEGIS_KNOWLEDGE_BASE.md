@@ -775,7 +775,7 @@ and it is the authority.
 | Method | Path | Purpose |
 |---|---|---|
 | GET | `/profile` | Tenant profile |
-| GET | `/credentials` · `/credentials/reveal` | Credential info / reveal full API key |
+| GET / POST | `/credentials` · `/credentials/reveal` | Credential info / reveal full API key (POST, re-enter the account password; wrong password → 403) |
 | POST | `/credentials/rotate` | Rotate API key (password-confirmed) |
 | GET·PUT | `/webhook` | Get / update webhook config (destination only; the secret is unchanged) |
 | POST | `/webhook/secret/rotate` | New HMAC signing secret — full value returned once (audited) |
@@ -923,14 +923,14 @@ gitignored `backend/.env`.
 | `MAX_POLICY_PAGES` / `MAX_POLICY_TEXT_CHARS` | 500 / 1,000,000 | policy PDF content caps (413 over either) |
 | `PII_ENCRYPTION_KEY` | derived from `SECRET_KEY` if empty | **set explicitly in prod** |
 | `CORS_ORIGINS` | 5173, 5174, 3000 | Aegis UI + mock-bank UIs |
-| `PUBLIC_BASE_URL` | `http://localhost:8000` | builds the SAR `pdf_url` in webhooks |
+| `PUBLIC_BASE_URL` | `http://localhost:8000` (`.env.example` for Docker: `http://localhost:5173`, the nginx origin) | builds the SAR `pdf_url` in webhooks |
 
 **Seeded credentials** (from the seed scripts / project memory):
 - **Super admin:** `admin@aegis-aml.com`
 - **Demo tenant `TEN-0001`** (FINTECH, `STANDARD_FINTECH` schema): login
   `admin@testfintech.in` / `TestFintech2026!`; tenant UUID
   `a334155d-0733-43e3-bb93-dd8b98ad4414` (its Chroma collection is keyed by this UUID).
-  Recover the API key via `GET /api/v1/tenant/credentials/reveal` or
+  Recover the API key via `POST /api/v1/tenant/credentials/reveal` (body `{"password"}`) or
   `decrypt_json(tenant.api_key_encrypted)`.
 
 **Note — Load-order gotcha (do not break this):** the torch/bge model must load **before** any DB
@@ -1231,7 +1231,7 @@ Extracted from the routers, services, and Pydantic schemas — **not** from the 
 // POST /api/v1/admin/tenants/{id}/approve
 // → { "tenant_id":"TEN-0001","status":"ACTIVE","api_key":"sk-ae-…" }   // plaintext key, ONCE
 
-// GET  /api/v1/tenant/credentials/reveal  → { "api_key":"sk-ae-…" }
+// POST /api/v1/tenant/credentials/reveal  { "password":"…" } → { "api_key":"sk-ae-…" }   // 403 on a wrong password
 // POST /api/v1/tenant/credentials/rotate  → { "new_api_key":"sk-ae-…","api_key_prefix":"sk-ae-…" }
 ```
 

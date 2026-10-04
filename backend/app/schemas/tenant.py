@@ -27,6 +27,10 @@ class TenantApproveResponse(BaseModel):
     status: str
     api_key: str # THIS IS THE ONLY TIME IT IS RETURNED IN PLAINTEXT
 
+class RevealKeyRequest(BaseModel):
+    # The caller's own account password: a stolen session token alone can't read the key
+    password: Annotated[str, StringConstraints(min_length=1, max_length=1024)]
+
 class TenantRejectRequest(BaseModel):
     # Shown to the applicant on their status page: an empty/blank reason is a 422
     reason: Annotated[str, StringConstraints(strip_whitespace=True, min_length=3, max_length=2000)]

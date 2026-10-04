@@ -23,8 +23,9 @@ export async function previewRehydrated(id: string): Promise<string> {
   return data.rehydrated_text
 }
 
-export async function approveAlert(id: string, overrides?: any): Promise<void> {
-  await client.post(`/alerts/queue/${id}/approve`, overrides || {})
+export async function approveAlert(id: string, overrides?: any): Promise<{ status: string; approved_at?: string }> {
+  const { data } = await client.post(`/alerts/queue/${id}/approve`, overrides || {})
+  return data
 }
 
 export async function rejectAlert(id: string, reason: string): Promise<void> {

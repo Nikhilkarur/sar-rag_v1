@@ -7,7 +7,7 @@ import { Modal } from './Modal'
 
 interface APIKeyRevealProps {
   maskedDisplay: string
-  fetchKey: () => Promise<string>
+  fetchKey: (password: string) => Promise<string>
   label?: string
 }
 
@@ -44,18 +44,28 @@ export function APIKeyReveal({ maskedDisplay, fetchKey, label = 'key' }: APIKeyR
   }
 
   const handleConfirm = async () => {
-    if (password.length < 4) {
+    if (!password) {
       setPasswordError('Enter your account password to reveal the key.')
       return
     }
     setLoading(true)
     try {
-      const key = await fetchKey()
+      const key = await fetchKey(password)
       setRevealed(key)
       setConfirmOpen(false)
       setPassword('')
       setPasswordError('')
       startCountdown()
+    } catch (err) {
+      const e = err as { response?: { status?: number; data?: { detail?: unknown } } }
+      const detail = e.response?.data?.detail
+      setPasswordError(
+        e.response?.status === 403
+          ? 'Incorrect password.'
+          : typeof detail === 'string'
+            ? detail
+            : 'Could not reveal the key. Please try again.',
+      )
     } finally {
       setLoading(false)
     }
