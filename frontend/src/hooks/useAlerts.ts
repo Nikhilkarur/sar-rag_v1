@@ -44,6 +44,8 @@ export function useApproveAlert(alertId: string) {
       qc.invalidateQueries({ queryKey: ['usage'] })
       qc.invalidateQueries({ queryKey: ['approved-sars'] })
     },
+    // e.g. 409 when another tab/officer already approved or rejected it: show the real status
+    onError: () => qc.invalidateQueries({ queryKey: ['alerts'] }),
   })
 }
 

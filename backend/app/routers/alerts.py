@@ -13,11 +13,10 @@ from app.services.pii_masker import mask_payload, rehydrate_text
 from app.services.compliance_analyzer import analyze
 from app.services.risk_scoring import compute_composite_risk, warrants_sar
 from app.services.goaml_builder import build_goaml_str
-from app.services.sar_delivery import finalize_and_deliver
+from app.services.sar_delivery import finalize_and_deliver, format_approved_at
 from app.routers.ingest import process_alert_background
 from app.config import settings
 from app.models.tenant import Tenant
-from app.utils.security import decrypt_json, validate_webhook_url
 from datetime import datetime
 from typing import Any
 import secrets
@@ -89,9 +88,14 @@ def list_alerts(include_synthetic: bool = False, db: Session = Depends(get_db), 
     rules_map = _rules_by_alert(db, [a.id for a in alerts])
     return [_summary(a, rules_map.get(a.id, [])) for a in alerts]
 
-def _get_owned_alert(alert_id: str, db: Session, user: User) -> Alert:
+def _get_owned_alert(alert_id: str, db: Session, user: User, for_update: bool = False) -> Alert:
     valid_id = parse_uuid_or_404(alert_id, "Alert")
-    a = db.query(Alert).filter(Alert.id == valid_id, Alert.tenant_id == user.tenant_id).first()
+    q = db.query(Alert).filter(Alert.id == valid_id, Alert.tenant_id == user.tenant_id)
+    if for_update:
+        # SELECT ... FOR UPDATE: concurrent state changes of one alert serialize on its row
+        # lock until the holder commits; each then re-reads the committed status.
+        q = q.with_for_update().populate_existing()
+    a = q.first()
     if not a:
         raise HTTPException(status_code=404, detail="Alert not found")
     return a
@@ -180,37 +184,22 @@ def preview_rehydrated(alert_id: str, db: Session = Depends(get_db), current_use
         text = rehydrate_text(text, pii_map.token_map)
     return {"rehydrated_text": text}
 
-def _deliver_webhook(callback_url: str, secret_encrypted, payload: dict):
-    """POST the approved SAR to the bank's webhook URL, HMAC-signed. A delivery
-    failure must NOT fail the approval, so everything is wrapped."""
-    import json as _json
-    import hmac
-    import hashlib
-    import httpx
-    try:
-        # Re-validate at SEND time (DNS rebinding): a URL that was public at
-        # registration may now resolve to an internal/metadata address, and this
-        # payload carries real rehydrated PII. No-op-safe in development.
-        validate_webhook_url(callback_url)
-        body = _json.dumps(payload).encode("utf-8")
-        headers = {"Content-Type": "application/json", "X-Aegis-Event": "sar.approved"}
-        if secret_encrypted:
-            try:
-                secret = decrypt_json(secret_encrypted)
-                headers["X-Aegis-Signature"] = "sha256=" + hmac.new(
-                    str(secret).encode(), body, hashlib.sha256).hexdigest()
-            except Exception:
-                pass
-        httpx.post(callback_url, content=body, headers=headers, timeout=8.0)
-    except Exception:
-        pass  # network/receiver failure is non-fatal for the demo
-
+def _ensure_not_processing(a: Alert) -> None:
+    # The ingest background task commits the SAR draft while the alert is still PROCESSING and
+    # only then sets its final status (PROCESSING_COMPLETED, or APPROVED + delivery when
+    # AUTO_APPROVE_SARS is on) without re-checking it. A decision taken in that window would be
+    # overwritten, or the SAR delivered twice, so the officer acts once processing has finished.
+    if a.status in ("PENDING_INGESTION", "PROCESSING"):
+        raise HTTPException(status_code=409, detail="Alert is still being processed — try again shortly")
 
 @router.post("/queue/{alert_id}/approve")
 def approve_alert(alert_id: str, payload: Any = Body(default=None), db: Session = Depends(get_db), current_user: User = Depends(get_compliance_user)):
-    a = _get_owned_alert(alert_id, db, current_user)
+    # Row lock held until commit: of several near-simultaneous approves (double clicks, two
+    # officers) only the first finalizes + delivers; the rest see APPROVED and get 409.
+    a = _get_owned_alert(alert_id, db, current_user, for_update=True)
     if a.status in ("APPROVED", "REJECTED"):
         raise HTTPException(status_code=409, detail=f"Alert already {a.status.lower()}")
+    _ensure_not_processing(a)
     # Approving requires a SAR to approve. Without this, a below-threshold
     # (COMPLETED_CLEAN) or still-PROCESSING alert could be marked APPROVED with no
     # draft — finalize_and_deliver would no-op and leave an "approved" SAR that was
@@ -223,13 +212,14 @@ def approve_alert(alert_id: str, payload: Any = Body(default=None), db: Session 
 
     db.commit()
     db.refresh(a)
-    return {"status": "ok", "approved_at": a.reviewed_at.isoformat() if a.reviewed_at else None}
+    return {"status": "ok", "approved_at": format_approved_at(a.reviewed_at) if a.reviewed_at else None}
 
 @router.post("/queue/{alert_id}/reject")
 def reject_alert(alert_id: str, payload: dict = Body(default={}), db: Session = Depends(get_db), current_user: User = Depends(get_compliance_user)):
-    a = _get_owned_alert(alert_id, db, current_user)
+    a = _get_owned_alert(alert_id, db, current_user, for_update=True)  # vs. a concurrent approve
     if a.status in ("APPROVED", "REJECTED"):
         raise HTTPException(status_code=409, detail=f"Alert already {a.status.lower()}")
+    _ensure_not_processing(a)
     a.status = 'REJECTED'
     a.reviewed_by = current_user.id
     a.reviewed_at = __import__('sqlalchemy').func.now()

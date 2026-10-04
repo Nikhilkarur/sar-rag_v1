@@ -775,11 +775,13 @@ and it is the authority.
 | Method | Path | Purpose |
 |---|---|---|
 | GET | `/profile` | Tenant profile |
-| GET | `/credentials` · `/credentials/reveal` | Credential info / reveal full API key |
+| GET / POST | `/credentials` · `/credentials/reveal` | Credential info / reveal full API key (POST, re-enter the account password; wrong password → 403) |
 | POST | `/credentials/rotate` | Rotate API key (password-confirmed) |
-| GET·PUT | `/webhook` | Get / update webhook config (new secret on update) |
+| GET·PUT | `/webhook` | Get / update webhook config (destination only; the secret is unchanged) |
+| POST | `/webhook/secret/rotate` | New HMAC signing secret — full value returned once (audited) |
 | POST | `/webhook/test` | Send a mock SAR to the destination |
-| GET | `/webhook/events` | Recent internal-sink events |
+| GET | `/webhook/events` | Last 10 deliveries with their recorded outcome (`status`, `http_status`, `destination`, `attempts`, `error`) |
+| POST | `/webhook/events/{id}/redeliver` | Re-send a SAR whose delivery FAILED/STALLED (audited) |
 | GET | `/schemas` · POST `/schemas/select-preset` | List / switch ingestion schema |
 | GET·PUT | `/llm-config` | Get / update LLM settings |
 | GET | `/usage` | Tenant usage stats |
@@ -918,16 +920,17 @@ gitignored `backend/.env`.
 | `RAG_TOP_K_CHUNKS` | 8 | |
 | `RATE_LIMIT_INGEST_PER_MINUTE` | 120 | |
 | `MAX_INGEST_PAYLOAD_BYTES` / `MAX_UPLOAD_FILE_SIZE_MB` | 5 MB / 50 MB | |
+| `MAX_POLICY_PAGES` / `MAX_POLICY_TEXT_CHARS` | 500 / 1,000,000 | policy PDF content caps (413 over either) |
 | `PII_ENCRYPTION_KEY` | derived from `SECRET_KEY` if empty | **set explicitly in prod** |
 | `CORS_ORIGINS` | 5173, 5174, 3000 | Aegis UI + mock-bank UIs |
-| `PUBLIC_BASE_URL` | `http://localhost:8000` | builds the SAR `pdf_url` in webhooks |
+| `PUBLIC_BASE_URL` | `http://localhost:8000` (`.env.example` for Docker: `http://localhost:5173`, the nginx origin) | builds the SAR `pdf_url` in webhooks |
 
 **Seeded credentials** (from the seed scripts / project memory):
 - **Super admin:** `admin@aegis-aml.com`
 - **Demo tenant `TEN-0001`** (FINTECH, `STANDARD_FINTECH` schema): login
   `admin@testfintech.in` / `TestFintech2026!`; tenant UUID
   `a334155d-0733-43e3-bb93-dd8b98ad4414` (its Chroma collection is keyed by this UUID).
-  Recover the API key via `GET /api/v1/tenant/credentials/reveal` or
+  Recover the API key via `POST /api/v1/tenant/credentials/reveal` (body `{"password"}`) or
   `decrypt_json(tenant.api_key_encrypted)`.
 
 **Note — Load-order gotcha (do not break this):** the torch/bge model must load **before** any DB
@@ -1219,22 +1222,26 @@ Extracted from the routers, services, and Pydantic schemas — **not** from the 
 
 ```jsonc
 // POST /api/v1/documents/upload  (multipart 'file')
-// → { "status":"ok","client_id":"TEN-0001","stored_path":"…/policy.pdf",
+// → { "status":"ok","client_id":"TEN-0001","stored_filename":"policy.pdf",
 //     "original_filename":"policy.pdf","chunks_indexed":28 }
-// GET  /api/v1/documents/  → { "client_id","policy_present":true,"policy_path","chunks_indexed":28 }
+//   422 unreadable/encrypted PDF or no extractable text; 413 over the size/page/text caps
+//   409 while another upload/delete for the client runs (previous policy + index kept on any failure)
+// GET  /api/v1/documents/  → { "client_id","policy_present":true,"policy_filename","chunks_indexed":28 }
 
 // POST /api/v1/admin/tenants/{id}/approve
 // → { "tenant_id":"TEN-0001","status":"ACTIVE","api_key":"sk-ae-…" }   // plaintext key, ONCE
 
-// GET  /api/v1/tenant/credentials/reveal  → { "api_key":"sk-ae-…" }
+// POST /api/v1/tenant/credentials/reveal  { "password":"…" } → { "api_key":"sk-ae-…" }   // 403 on a wrong password
 // POST /api/v1/tenant/credentials/rotate  → { "new_api_key":"sk-ae-…","api_key_prefix":"sk-ae-…" }
 ```
 
 The outbound **webhook** Aegis POSTs to the bank on approval:
 
 ```jsonc
-// POST <tenant callback_url>   header X-Aegis-Signature: sha256=<hmac>
-{ "event":"sar.approved","sar_id":"uuid","alert_id":"uuid","approved_at":"…","approved_by":"…",
+// POST <tenant callback_url>   headers X-Aegis-Event: sar.approved, X-Aegis-Signature: sha256=<hmac>
+// Simulator (synthetic) alerts: event/X-Aegis-Event "sar.approved.test" and "test": true — never file these.
+// Retried up to 3x with backoff on network errors/5xx/408/429; each attempt is signed with the current secret.
+{ "event":"sar.approved","test":false,"sar_id":"uuid","alert_id":"uuid","approved_at":"…","approved_by":"…",
   "goaml_str": { "report": { "report_code":"STR","report_indicators":["STRUCTURING_BELOW_THRESHOLD", …],
                              "reason":"… (real PII narrative)","transaction": { … } } },
   "pdf_url":"http://localhost:8000/files/sar/<sar_id>.pdf",
@@ -1278,8 +1285,21 @@ PK = primary key, FK = foreign key, U = unique.
 | role | varchar(30) | SUPER_ADMIN / TENANT_ADMIN / COMPLIANCE_OFFICER |
 | is_active | bool | default true |
 | last_login_at | ts | |
-| refresh_token_hash · refresh_token_exp | varchar/ts | rotation tracking |
+| refresh_token_hash · refresh_token_exp | varchar/ts | legacy, unused (superseded by `refresh_sessions`) |
 | created_at · updated_at | ts | |
+
+Emails are stored lowercase and matched on `lower(email)` (index `ix_users_email_lower`).
+
+**`refresh_sessions`** ([user.py](backend/app/models/user.py)) — one row per login (tab/device)
+
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid PK | the refresh JWT's `sid` claim |
+| user_id | uuid FK→users | `ON DELETE CASCADE` |
+| token_hash | varchar(255) | bcrypt of the session's CURRENT refresh token (rotated on every refresh) |
+| expires_at | ts | |
+| revoked_at · revoked_reason | ts/varchar(30) | `LOGOUT` or `TOKEN_REUSE` (an already-rotated token was replayed) |
+| created_at · last_used_at | ts | |
 
 **`ingestion_schemas`** ([schema.py](backend/app/models/schema.py))
 

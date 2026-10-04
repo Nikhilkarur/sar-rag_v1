@@ -205,7 +205,7 @@ def groq_usage(db: Session = Depends(get_db), current_user: User = Depends(get_s
 @router.get("/billing")
 def platform_billing(db: Session = Depends(get_db), current_user: User = Depends(get_super_admin)):
     """Platform billing: each active/suspended client's bill this cycle + the overall total
-    (sum of clients). Comped clients (e.g. TEN-0005, our free test tenant on free-tier keys)
+    (sum of clients). Comped clients (COMPED_TENANT_IDS, e.g. our free test tenant on free-tier keys)
     bill Rs.0. Uses the same rules as the tenant-facing /tenant/billing, so the numbers reconcile."""
     from app.routers.tenant import FREE_SARS, PRICE_PER_SAR_INR, FREE_ACCESS_TENANTS
     from app.services.model_router import resolve_plan

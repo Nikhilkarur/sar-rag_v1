@@ -5,7 +5,6 @@ import {
   Building2,
   ChevronLeft,
   ChevronRight,
-  ExternalLink,
   LayoutDashboard,
   LogOut,
   Receipt,
@@ -116,19 +115,8 @@ export function AdminSidebar() {
             )}
           </NavLink>
         ))}
-
-        <div style={{ height: 1, background: 'var(--border-subtle)', margin: '12px 8px' }} />
-        <a
-          href="/dashboard"
-          target="_blank"
-          rel="noreferrer"
-          className="nav-item"
-          title={collapsed ? 'View Client Portal' : undefined}
-          style={collapsed ? { justifyContent: 'center', padding: 0 } : undefined}
-        >
-          <ExternalLink size={16} />
-          {!collapsed && <span>View Client Portal</span>}
-        </a>
+        {/* No "View Client Portal" link: super admins have no tenant (the portal guard sends
+            them back to /admin), and a new tab starts without this tab's sessionStorage login. */}
       </nav>
 
       <div style={{ padding: '0 8px 8px', flexShrink: 0 }}>

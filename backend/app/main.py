@@ -1,5 +1,9 @@
-from fastapi import FastAPI
+import threading
+from datetime import datetime, timedelta, timezone
+
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from app.config import settings
 
 from app.middleware.logging import APILoggingMiddleware
@@ -24,6 +28,18 @@ app = FastAPI(
     redoc_url=None if _IS_PROD else "/redoc",
     openapi_url=None if _IS_PROD else "/openapi.json",
 )
+
+
+@app.exception_handler(UnicodeEncodeError)
+async def _lone_surrogate_is_a_bad_request(request: Request, exc: UnicodeEncodeError):
+    # JSON allows "\ud800" escapes that no UTF-8 text can hold; psycopg2 raises when such a
+    # string reaches the DB (draft edits, reject reasons, webhook URLs...). That's the
+    # client's input, not a server fault. Any other encode error is still a 500.
+    if exc.reason != "surrogates not allowed":
+        raise exc
+    return JSONResponse(status_code=422,
+                        content={"detail": "Request contains an unpaired UTF-16 surrogate (a lone \\ud800-\\udfff escape)"})
+
 
 app.add_middleware(APILoggingMiddleware)
 app.add_middleware(
@@ -53,6 +69,30 @@ def _warm_embeddings():
         pass
     except Exception:
         pass  # never block startup on optional warmup
+
+
+@app.on_event("startup")
+def _sweep_stuck_processing_alerts():
+    # SAR generation runs in-process, so alerts a previous worker left in PROCESSING
+    # (it died mid-generation) would never finish. Fail those already past the grace
+    # period now, and the rest of the pre-boot ones once they pass it too: nothing
+    # ingested after this boot is touched. Runs off-thread so a slow or unreachable
+    # DB never blocks startup.
+    boot = datetime.now(timezone.utc)
+    grace = timedelta(minutes=settings.STUCK_PROCESSING_TIMEOUT_MINUTES)
+
+    def sweep(started_before):
+        try:
+            count = ingest.fail_stuck_processing_alerts(started_before)
+            if count:
+                print(f"Marked {count} alert(s) stuck in PROCESSING as PROCESSING_FAILED")
+        except Exception as e:
+            print(f"Stuck-alert sweep failed: {e}")
+
+    threading.Thread(target=sweep, args=(boot - grace,), daemon=True).start()
+    later = threading.Timer(grace.total_seconds(), sweep, args=(boot,))
+    later.daemon = True
+    later.start()
 
 
 @app.get("/health")

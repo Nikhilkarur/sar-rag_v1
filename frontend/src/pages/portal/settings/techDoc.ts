@@ -9,7 +9,18 @@
  * Keep it accurate — this is what a customer integrates against. ASCII only (no curly quotes).
  */
 
-const API_BASE = 'https://api.aegis-aml.com'
+/** Origin of THIS deployment's API: VITE_API_URL when it is absolute (API on its own host),
+    else the dashboard's origin (same-origin /api proxy, as in the Docker setup). */
+function resolveApiBase(): string {
+  const configured = (import.meta.env.VITE_API_URL as string | undefined) ?? ''
+  if (/^https?:\/\//i.test(configured)) {
+    // VITE_API_URL ends in /api/v1; the paths below add it back
+    return configured.replace(/\/+$/, '').replace(/\/api\/v1$/, '')
+  }
+  return window.location.origin
+}
+
+const API_BASE = resolveApiBase()
 
 type Field = { path: string; example: string; pii: boolean; desc: string }
 type Group = { group: string; blurb: string; fields: Field[] }
@@ -31,7 +42,7 @@ const REQUEST_SPEC: Group[] = [
   {
     group: 'txn', blurb: 'The transaction that fired your alert.',
     fields: [
-      { path: 'txn.ref_id', example: 'TXN-2026-061099182', pii: false, desc: 'Unique transaction reference. Echoed back and used to correlate the report.' },
+      { path: 'txn.ref_id', example: 'TXN-2026-061099182', pii: false, desc: 'Unique transaction reference. Echoed back and used to correlate the report. If omitted, Aegis assigns AUTO-<uuid>.' },
       { path: 'txn.amount', example: '990000.00', pii: false, desc: 'Transaction amount as a decimal number.' },
       { path: 'txn.currency', example: 'INR', pii: false, desc: 'ISO 4217 currency code.' },
       { path: 'txn.type', example: 'NEFT_TRANSFER', pii: false, desc: 'Instrument / rail, e.g. NEFT_TRANSFER, IMPS, UPI, INTERNATIONAL_WIRE.' },
@@ -99,6 +110,7 @@ const WEBHOOK = [
   '',
   '{',
   '  "event": "sar.approved",',
+  '  "test": false,              // true (event "sar.approved.test") for simulator test alerts: never file these',
   '  "sar_id": "...", "alert_id": "...",',
   '  "transaction_ref": "TXN-2026-061099182",',
   '  "narrative_text": "<the policy-cited STR narrative>",',
@@ -229,6 +241,7 @@ export function buildTechDocHtml(tenantId: string): string {
       <tr><td>409</td><td>Duplicate submission (idempotency key already processed). Includes the original alert id.</td></tr>
       <tr><td>411</td><td>Missing <code>Content-Length</code> (body was streamed/chunked).</td></tr>
       <tr><td>413</td><td>Payload too large.</td></tr>
+      <tr><td>422</td><td>A field cannot be stored: <code>txn.amount</code> not a finite number or over 16 integer digits, <code>txn.ref_id</code> / <code>txn.currency</code> / <code>txn.type</code> longer than 255 / 10 / 50 characters, <code>txn.timestamp</code> not ISO 8601 or outside years 1900&ndash;2100 (UTC), a NaN/Infinity number, or a string with an unpaired UTF-16 surrogate escape (<code>\\ud800</code>&ndash;<code>\\udfff</code>). <code>detail</code> names the field.</td></tr>
       <tr><td>429</td><td>Rate limited &mdash; honor <code>Retry-After</code>.</td></tr>
     </table>
   </section>

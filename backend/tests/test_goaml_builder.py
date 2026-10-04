@@ -76,3 +76,15 @@ class TestBuildGoamlXml:
         root = ET.fromstring(build_goaml_xml(self._report()))
         name = root.find("transaction/t_from_my_client/from_person/name")
         assert name is not None and name.text == "Rohan Mehta"
+
+
+def test_xml_survives_characters_xml_cannot_carry():
+    # A NUL/control char in an ingested (encrypted-at-rest) PII field used to make the
+    # whole filing fail to serialize, so the webhook went out with goaml_xml = null
+    alert, draft, tenant = _fixtures()
+    alert.normalized_payload["customer_name"] = "Rohan\x00Mehta\x07"
+    alert.normalized_payload["counterparty_name"] = "राजेश कुमार 😀"
+    xml = build_goaml_xml(build_goaml_str(alert, draft, [], tenant, "Officer", "2026-07-05"))
+    root = ET.fromstring(xml.encode("utf-8"))
+    assert root.find(".//from_person/name").text == "Rohan�Mehta�"
+    assert "राजेश कुमार 😀" in xml

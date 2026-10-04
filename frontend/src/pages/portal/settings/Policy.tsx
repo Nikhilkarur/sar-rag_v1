@@ -33,8 +33,12 @@ export function Policy() {
       qc.invalidateQueries({ queryKey: ['policy-info'] })
       toast('success', 'Policy indexed',
         `${result.original_filename} — ${result.chunks_indexed} chunks embedded into your knowledge base.`)
-    } catch {
-      toast('error', 'Upload failed', 'The policy could not be indexed. Check the file and try again.')
+    } catch (err) {
+      // Show the backend's reason (unreadable / no extractable text / too large) when it
+      // gives one; the previously indexed policy is kept in all of those cases.
+      const detail = (err as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail
+      toast('error', 'Upload failed',
+        typeof detail === 'string' ? detail : 'The policy could not be indexed. Check the file and try again.')
     } finally {
       setUploading(false)
       if (inputRef.current) inputRef.current.value = ''

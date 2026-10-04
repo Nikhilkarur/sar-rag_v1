@@ -420,14 +420,32 @@ export function SARWorkspace() {
   const startApproval = () => {
     setApprovePhase('processing')
     setStepProgress(0)
+    const started = Date.now()
+    // Sequential step animation: a check lands every 700ms. The last step and the success
+    // screen wait for the server: a failed approval (e.g. 409, already approved in another
+    // tab) must not be shown as delivered.
+    const timers = [setTimeout(() => setStepProgress(1), 700), setTimeout(() => setStepProgress(2), 1400)]
     approveMutation.mutate(user?.fullName ?? 'Compliance Officer', {
-      onSuccess: () => setApprovedAt(new Date().toISOString()),
+      onSuccess: (res) => {
+        setApprovedAt(res?.approved_at ?? new Date().toISOString())
+        const wait = Math.max(0, 2100 - (Date.now() - started))
+        setTimeout(() => setStepProgress(3), wait)
+        setTimeout(() => setApprovePhase('success'), wait + 400)
+      },
+      onError: (err) => {
+        timers.forEach(clearTimeout)
+        setApproveOpen(false)
+        setApprovePhase('confirm')
+        setStepProgress(0)
+        const e = err as { response?: { status?: number; data?: { detail?: unknown } } }
+        const detail = e.response?.data?.detail
+        toast(
+          'error',
+          e.response?.status === 409 ? 'SAR not approved' : 'Approval failed',
+          typeof detail === 'string' ? detail : 'The SAR could not be approved. Please try again.',
+        )
+      },
     })
-    // Sequential step animation: a check lands every 700ms
-    setTimeout(() => setStepProgress(1), 700)
-    setTimeout(() => setStepProgress(2), 1400)
-    setTimeout(() => setStepProgress(3), 2100)
-    setTimeout(() => setApprovePhase('success'), 2500)
   }
 
   useEffect(() => {

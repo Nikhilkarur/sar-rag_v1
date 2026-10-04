@@ -7,22 +7,24 @@ The PDF carries a customer-PII regulatory filing, so it is (a) never persisted t
 and (b) NOT open: a caller must present a valid tenant JWT and may only fetch SARs belonging to
 their own tenant (a super-admin may fetch any). The bank does not depend on this endpoint — the
 PDF bytes are pushed to it in the approval webhook (pdf_base64); it stores + serves its own copy.
+Only an APPROVED SAR is served: a pending or rejected draft is not a filing.
 """
 from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.models.alert import Alert
 from app.models.sar import SARDraft
 from app.models.user import User
 from app.services.sar_delivery import build_draft_pdf_bytes
-from app.utils.deps import parse_uuid_or_404, get_compliance_user
+from app.utils.deps import parse_uuid_or_404, get_compliance_user_or_super_admin
 
 router = APIRouter(prefix="/files", tags=["Files"])
 
 
 @router.get("/sar/{sar_id}.pdf")
 def get_sar_pdf(sar_id: str, db: Session = Depends(get_db),
-                user: User = Depends(get_compliance_user)):
+                user: User = Depends(get_compliance_user_or_super_admin)):
     # A non-UUID sar_id would hit a Postgres UUID cast error (500); normalize to 404.
     parse_uuid_or_404(sar_id, "SAR PDF")
     draft = db.query(SARDraft).filter(SARDraft.id == sar_id).first()
@@ -30,6 +32,11 @@ def get_sar_pdf(sar_id: str, db: Session = Depends(get_db),
         raise HTTPException(status_code=404, detail="SAR PDF not found")
     # Tenant isolation: don't reveal (even by 403 vs 404) another tenant's SAR.
     if user.role != "SUPER_ADMIN" and draft.tenant_id != user.tenant_id:
+        raise HTTPException(status_code=404, detail="SAR PDF not found")
+    # A draft that is still pending review (or was rejected) would print as an approved
+    # filing. Same 404, after the tenant check, so neither existence nor status leaks.
+    alert = db.query(Alert.status).filter(Alert.id == draft.alert_id).first()
+    if not alert or alert.status != "APPROVED":
         raise HTTPException(status_code=404, detail="SAR PDF not found")
     pdf_bytes = build_draft_pdf_bytes(db, draft)
     if not pdf_bytes:

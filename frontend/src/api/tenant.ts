@@ -11,8 +11,8 @@ export async function getCredentials(): Promise<{ api_key_prefix: string; tenant
   return data
 }
 
-export async function revealApiKey(): Promise<{ api_key: string }> {
-  const { data } = await client.get('/tenant/credentials/reveal')
+export async function revealApiKey(password: string): Promise<{ api_key: string }> {
+  const { data } = await client.post('/tenant/credentials/reveal', { password })
   return data
 }
 
@@ -31,6 +31,18 @@ export async function updateWebhookConfig(payload: { use_internal_sink: boolean;
   return data
 }
 
+/** Issues a new HMAC signing secret. The full value is only ever returned here — show it once. */
+export async function rotateWebhookSecret(): Promise<{ secret: string; secret_prefix: string }> {
+  const { data } = await client.post('/tenant/webhook/secret/rotate')
+  return data
+}
+
+/** Re-sends the SAR of an approval event whose delivery failed or stalled. */
+export async function redeliverWebhookEvent(eventId: string): Promise<{ status: string; delivery_id: string; destination: string }> {
+  const { data } = await client.post(`/tenant/webhook/events/${eventId}/redeliver`)
+  return data
+}
+
 export async function sendTestWebhook(): Promise<{ status: string; latency_ms: number; message?: string }> {
   const { data } = await client.post('/tenant/webhook/test')
   return data
@@ -44,7 +56,7 @@ export async function getWebhookEvents(): Promise<WebhookEvent[]> {
 export interface PolicyInfo {
   client_id: string
   policy_present: boolean
-  policy_path: string | null
+  policy_filename: string | null
   chunks_indexed: number | null
 }
 
@@ -56,7 +68,7 @@ export async function getPolicyInfo(): Promise<PolicyInfo> {
 export interface PolicyUploadResult {
   status: string
   client_id: string
-  stored_path: string
+  stored_filename: string
   original_filename: string
   chunks_indexed: number
 }

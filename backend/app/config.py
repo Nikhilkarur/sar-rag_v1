@@ -21,7 +21,11 @@ class Settings(BaseSettings):
     DB_POOL_RECYCLE: int = 1800    # recycle connections older than 30 min
 
     # Rate limiting
-    RATE_LIMIT_INGEST_PER_MINUTE: int = 120
+    RATE_LIMIT_INGEST_PER_MINUTE: int = 120  # per tenant, counted after API-key auth
+    # Pre-auth cap per client IP (IPv6: per /64) that sheds floods before the bcrypt key
+    # check. Keep it above the tenant quota so a bank posting from one egress IP hits its
+    # own quota first.
+    RATE_LIMIT_INGEST_PER_IP_PER_MINUTE: int = 300
 
     # Ingestion hardening
     MAX_INGEST_PAYLOAD_BYTES: int = 5 * 1024 * 1024  # 5 MB hard cap
@@ -36,6 +40,13 @@ class Settings(BaseSettings):
     # PROCESSING_FAILED. A missed SAR is a regulatory gap, so we don't give up on the first error.
     SAR_GENERATION_MAX_ATTEMPTS: int = 3
     SAR_GENERATION_RETRY_BACKOFF_SECONDS: float = 2.0
+    # SAR generations running at once for API ingests (the rest queue in PROCESSING). Each
+    # holds a DB connection for the whole LLM call, so keep this well below
+    # DB_POOL_SIZE + DB_MAX_OVERFLOW or an ingest burst starves requests of connections.
+    SAR_GENERATION_CONCURRENCY: int = 4
+    # On startup, alerts a previous worker left in PROCESSING are marked PROCESSING_FAILED
+    # once they are this old (longer than a worst-case generation with all retries).
+    STUCK_PROCESSING_TIMEOUT_MINUTES: int = 15
 
     # SAR workflow: when False (current), a generated SAR waits for a human compliance officer
     # to review and approve it in the Aegis dashboard BEFORE it is finalized + delivered to the
@@ -74,15 +85,29 @@ class Settings(BaseSettings):
     CHROMA_PERSIST_DIR: str = "./chroma_data"
     RAG_TOP_K_CHUNKS: int = 8
     MAX_UPLOAD_FILE_SIZE_MB: int = 50
+    # Caps on the policy PDF's CONTENT (not just its bytes): parsing, tokenizing and
+    # embedding cost scales with pages/text, and an oversize policy would pin a CPU for
+    # minutes. Uploads over either cap are rejected with 413.
+    MAX_POLICY_PAGES: int = 500
+    MAX_POLICY_TEXT_CHARS: int = 1_000_000
 
     # Public base URL of this API (used to build the SAR pdf_url in webhooks).
     PUBLIC_BASE_URL: str = "http://localhost:8000"
+
+    # Comped tenants: comma-separated PUBLIC tenant ids (e.g. "TEN-0005") that are billed
+    # Rs.0 and pinned to the free drafting plan. Empty = nobody. Public ids are handed out
+    # sequentially at approval, so this must be set per deployment, never hard-coded.
+    COMPED_TENANT_IDS: str = ""
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     # Values that MUST be overridden before this is a real deployment. Used by the
     # production fail-closed check below.
     _DEFAULT_SECRET_KEY = "your-super-secret-jwt-key-min-32-chars"
+
+    @property
+    def comped_tenant_ids(self) -> frozenset[str]:
+        return frozenset(t.strip().upper() for t in self.COMPED_TENANT_IDS.split(",") if t.strip())
 
     def production_config_errors(self) -> list[str]:
         """Fatal misconfigurations for a production boot. Empty list = OK.
@@ -99,6 +124,17 @@ class Settings(BaseSettings):
                     "PII_ENCRYPTION_KEY must be set in production — without it the "
                     "at-rest PII key is derived from SECRET_KEY and offers no real protection."
                 )
+            else:
+                # A malformed key would otherwise boot fine and only fail on the first
+                # encrypt (ingest, approval, key reveal) with a 500.
+                from cryptography.fernet import Fernet
+                try:
+                    Fernet(self.PII_ENCRYPTION_KEY.encode("utf-8"))
+                except Exception:
+                    errors.append(
+                        "PII_ENCRYPTION_KEY is not a valid Fernet key (32 url-safe base64-encoded "
+                        "bytes); generate one with cryptography.fernet.Fernet.generate_key()."
+                    )
             if self.SECRET_KEY == self._DEFAULT_SECRET_KEY:
                 errors.append("SECRET_KEY must be overridden from its built-in default in production.")
         return errors

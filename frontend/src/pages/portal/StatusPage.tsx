@@ -1,5 +1,8 @@
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { Check, Mail, X } from 'lucide-react'
+import { getMe } from '../../api/auth'
 import { useAuthStore } from '../../store/auth'
 import { AegisShield } from '../../components/AegisLogo'
 import { Button } from '../../components/ui/Button'
@@ -53,10 +56,25 @@ function TimelineNode({
 }
 
 export function StatusPage() {
-  const { user, clearAuth } = useAuthStore()
+  const { user, clearAuth, updateUser } = useAuthStore()
   const navigate = useNavigate()
   const status = user?.tenant?.status
   const rejected = status === 'REJECTED'
+
+  // The stored user is a snapshot from sign-in, and approval happens elsewhere (an Aegis
+  // admin). Re-fetch it so the page reflects the decision without signing out and back in;
+  // once the tenant is ACTIVE the /status route forwards to the dashboard.
+  // Keyed (and checked) by user id so a previous sign-in's cached copy is never applied.
+  const { data: freshUser } = useQuery({
+    queryKey: ['me', user?.id],
+    queryFn: getMe,
+    enabled: !!user,
+    refetchInterval: rejected ? false : 20_000,
+    refetchOnWindowFocus: true,
+  })
+  useEffect(() => {
+    if (freshUser && freshUser.id === user?.id) updateUser(freshUser)
+  }, [freshUser, user?.id, updateUser])
 
   return (
     <div

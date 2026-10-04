@@ -373,9 +373,9 @@ def generate_sar(alert_id: str, db: Session, retrieved_chunks: list = None) -> S
     ]
 
     # Plan-based model/provider selection (single source of truth). Today every tenant resolves
-    # to the FREE tier (Groq -> Gemini); TEN-0005 is pinned free. The tenant's own configured
-    # model_name still wins for the free/Groq path (back-compat); the router supplies the
-    # provider failover chain and the default model.
+    # to the FREE tier (Groq -> Gemini); comped tenants (COMPED_TENANT_IDS) are pinned free. The
+    # tenant's own configured model_name still wins for the free/Groq path (back-compat); the
+    # router supplies the provider failover chain and the default model.
     from app.services.model_router import resolve_drafting
     tenant = db.query(Tenant).filter(Tenant.id == alert.tenant_id).first()
     draft_cfg = resolve_drafting(tenant)
