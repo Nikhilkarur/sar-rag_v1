@@ -15,14 +15,14 @@ from app.database import get_db
 from app.models.sar import SARDraft
 from app.models.user import User
 from app.services.sar_delivery import build_draft_pdf_bytes
-from app.utils.deps import parse_uuid_or_404, get_compliance_user
+from app.utils.deps import parse_uuid_or_404, get_compliance_user_or_super_admin
 
 router = APIRouter(prefix="/files", tags=["Files"])
 
 
 @router.get("/sar/{sar_id}.pdf")
 def get_sar_pdf(sar_id: str, db: Session = Depends(get_db),
-                user: User = Depends(get_compliance_user)):
+                user: User = Depends(get_compliance_user_or_super_admin)):
     # A non-UUID sar_id would hit a Postgres UUID cast error (500); normalize to 404.
     parse_uuid_or_404(sar_id, "SAR PDF")
     draft = db.query(SARDraft).filter(SARDraft.id == sar_id).first()

@@ -9,7 +9,18 @@
  * Keep it accurate — this is what a customer integrates against. ASCII only (no curly quotes).
  */
 
-const API_BASE = 'https://api.aegis-aml.com'
+/** Origin of THIS deployment's API: VITE_API_URL when it is absolute (API on its own host),
+    else the dashboard's origin (same-origin /api proxy, as in the Docker setup). */
+function resolveApiBase(): string {
+  const configured = (import.meta.env.VITE_API_URL as string | undefined) ?? ''
+  if (/^https?:\/\//i.test(configured)) {
+    // VITE_API_URL ends in /api/v1; the paths below add it back
+    return configured.replace(/\/+$/, '').replace(/\/api\/v1$/, '')
+  }
+  return window.location.origin
+}
+
+const API_BASE = resolveApiBase()
 
 type Field = { path: string; example: string; pii: boolean; desc: string }
 type Group = { group: string; blurb: string; fields: Field[] }

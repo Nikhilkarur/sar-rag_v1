@@ -3,9 +3,9 @@ verify_stack.py - Phase 5.5 acceptance battery.
 
 Hits the live backend and asserts the auth/API contract end to end:
 health, admin + tenant login, /auth/me, refresh ROTATION (old token must
-die, new must work), and every auth edge case that used to risk a 500
-(bad password, unknown email, malformed/expired tokens, garbage UUIDs,
-wrong API keys, replayed payloads).
+die, and replaying it revokes that session but not other logins), and
+every auth edge case that used to risk a 500 (bad password, unknown email,
+malformed/expired tokens, garbage UUIDs, wrong API keys, replayed payloads).
 
     python scripts/verify_stack.py
 """
@@ -96,8 +96,14 @@ def main() -> int:
     new_refresh = r.json().get("refresh_token", "") if r.status_code == 200 else ""
     r = c.post(f"{API}/auth/refresh", json={"refresh_token": refresh})
     check("OLD refresh token re-use -> 401 (rotation enforced)", r.status_code == 401, str(r.status_code))
-    r = c.post(f"{API}/auth/refresh", json={"refresh_token": new_refresh})
-    check("NEW refresh token works -> 200", r.status_code == 200, str(r.status_code))
+    # Reuse detection: that replay revoked the whole session, so even its NEW token is dead
+    # now, while a separate login (another tab/device) keeps refreshing
+    r_new = c.post(f"{API}/auth/refresh", json={"refresh_token": new_refresh})
+    r = c.post(f"{API}/auth/login", json=TENANT_ADMIN)
+    other = r.json().get("refresh_token", "") if r.status_code == 200 else ""
+    r_other = c.post(f"{API}/auth/refresh", json={"refresh_token": other})
+    check("replay revokes its session (NEW token -> 401), other logins still refresh -> 200",
+          r_new.status_code == 401 and r_other.status_code == 200, f"{r_new.status_code} / {r_other.status_code}")
 
     print("\n-- Auth edge cases (must be 4xx, never 500) --")
     r = c.post(f"{API}/auth/login", json={"email": TENANT_ADMIN["email"], "password": "wrong-password"})

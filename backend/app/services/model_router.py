@@ -1,9 +1,10 @@
 """Single source of truth for WHICH drafting model / provider / API key a tenant's SARs are
 generated with — keyed by the tenant's PLAN.
 
-Reality today (2026-07): the platform is FREE-only. Every tenant — including **TEN-0005
-(Meridian Bank), our live demo tenant, which has free access ONLY** — drafts on the free tier:
-Groq (llama-3.3-70b) with a Gemini failover, using the keys already in `.env`.
+Reality today (2026-07): the platform is FREE-only. Every tenant — including the comped
+tenants in `COMPED_TENANT_IDS` (e.g. our live demo tenant), which have free access ONLY —
+drafts on the free tier: Groq (llama-3.3-70b) with a Gemini failover, using the keys already
+in `.env`.
 
 The PRO tier below is deliberate SCAFFOLDING, not a live path:
   * its provider/model are wired, but `ANTHROPIC_API_KEY` is an empty PLACEHOLDER in config,
@@ -35,18 +36,19 @@ PLAN_TIER = {
 }
 
 # ── Explicit per-tenant plan pins (placeholder map) ───────────────────
-# Tenants pinned to a specific plan by public id. TEN-0005 (Meridian) is FREE ACCESS ONLY —
-# pinned here so it can never be routed to a paid model or billed, whatever we do with plans.
+# Tenants pinned to a specific plan by public id. Comped tenants (COMPED_TENANT_IDS, set per
+# deployment — public ids are sequential, so never hard-code one) are FREE ACCESS ONLY —
+# pinned here so they can never be routed to a paid model or billed, whatever we do with plans.
 # Future paying clients would either get a pin here or (later) a real `tenants.plan` column.
 TENANT_PLAN_OVERRIDES = {
-    "TEN-0005": "free",
+    **{tid: "free" for tid in settings.comped_tenant_ids},
     # "TEN-0006": "premium",   # <- example: a future paying client on the PRO tier
 }
 
 
 def resolve_plan(tenant) -> str:
     """The plan id for a tenant. Resolution order:
-      1. explicit pin in TENANT_PLAN_OVERRIDES (TEN-0005 -> free),
+      1. explicit pin in TENANT_PLAN_OVERRIDES (comped tenants -> free),
       2. (future) a real `tenants.plan` column — TODO below,
       3. default: "free" (the whole platform today).
     """

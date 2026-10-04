@@ -20,6 +20,12 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
 def refresh(data: RefreshRequest, db: Session = Depends(get_db)):
     return auth_service.refresh_tokens(data.refresh_token, db)
 
+@router.post("/logout")
+def logout(data: RefreshRequest, db: Session = Depends(get_db)):
+    # Takes the refresh token (not the access token) so an expired access token
+    # can still end its session; revokes only this login's session.
+    return auth_service.logout(data.refresh_token, db)
+
 @router.get("/me")
 def get_me(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     return auth_service.serialize_user(user, db)

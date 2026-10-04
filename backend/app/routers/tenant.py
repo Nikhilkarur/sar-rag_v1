@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, case
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.database import get_db
 from app.services import tenant_service
 from app.utils.deps import get_tenant_admin, get_current_active_tenant_user, get_compliance_user
@@ -462,8 +463,9 @@ STANDARD_MODEL = "Standard"
 PREMIUM_MODEL = "Premium"
 
 # Comped tenants — billed Rs.0 regardless of usage (our own test/partner banks). Keyed by
-# the public tenant id. TEN-0005 (Meridian) is the live integration/demo tenant.
-FREE_ACCESS_TENANTS = {"TEN-0005"}
+# the public tenant id and configured per deployment (COMPED_TENANT_IDS): public ids are
+# sequential, so a hard-coded id would comp whichever customer happens to receive it.
+FREE_ACCESS_TENANTS = settings.comped_tenant_ids
 FREE_ACCESS_LABEL = "Your bank has special free access — all SARs are free."
 
 # Committed-volume plans have a price DERIVED from the standard per-SAR rate — a plan just
@@ -534,7 +536,7 @@ def get_billing(db: Session = Depends(get_db), current_user: User = Depends(get_
     billable_sars = max(0, sars_cycle - FREE_SARS)
     amount_due = billable_sars * PRICE_PER_SAR_INR  # metered at the standard rate
 
-    # Comped tenants (e.g. TEN-0005 / Meridian) never owe anything, regardless of usage.
+    # Comped tenants (COMPED_TENANT_IDS) never owe anything, regardless of usage.
     tenant = db.query(Tenant).filter(Tenant.id == tid).first()
     special_free_access = bool(tenant and tenant.tenant_id_public in FREE_ACCESS_TENANTS)
     if special_free_access:
