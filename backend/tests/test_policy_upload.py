@@ -66,6 +66,13 @@ def _encrypted_pdf() -> bytes:
     return doc.tobytes(encryption=fitz.PDF_ENCRYPT_AES_256, user_pw="u", owner_pw="o")
 
 
+def _truncated_page_tree_pdf() -> bytes:
+    # Catalog + page tree survive, the page objects it points to are cut off: MuPDF
+    # opens this, then page_count raises a bare RuntimeError ("Invalid number of pages")
+    data = _policy_pdf()
+    return data[:data.index(b"4 0 obj")]
+
+
 class _NoTenantRowSession:
     """Stands in for the DB session: no Tenant row, so client id = tenant UUID."""
     def query(self, *a, **k):
@@ -152,9 +159,11 @@ def test_good_upload_indexes_and_hides_server_paths(env):
     (os.urandom(2048), 422, "readable"),                  # random bytes named .pdf
     (b"", 422, "readable"),                               # empty file
     (b"%PDF-1.4\n" + os.urandom(2048), 422, "readable"),  # PDF header, garbage body
+    (_truncated_page_tree_pdf(), 422, "readable"),
     (_encrypted_pdf(), 422, "password"),
     (_blank_pdf(), 422, "no extractable text"),
-], ids=["random-bytes", "empty", "pdf-header-garbage", "encrypted", "blank"])
+], ids=["random-bytes", "empty", "pdf-header-garbage", "truncated-page-tree", "encrypted",
+        "blank"])
 def test_bad_upload_keeps_previous_policy_and_index(env, payload, status, needle):
     good = _policy_pdf()
     first = _upload(env, good)
@@ -176,6 +185,24 @@ def test_bad_first_upload_stores_nothing(env):
     assert r.status_code == 422
     assert _state(env) == (0, None, [])
     assert env.client.get(INFO).json()["policy_present"] is False
+
+
+def test_every_truncation_is_a_client_error(tmp_path):
+    """Whatever byte a policy is cut off at, parsing either works or raises
+    UnreadablePdfError (-> 422); a raw MuPDF/RuntimeError would escape as a 500."""
+    data = _policy_pdf()
+    path = str(tmp_path / "cut.pdf")
+    unreadable = 0
+    # every byte through the header/catalog/page tree/first pages, then a sample (MuPDF
+    # tries to repair each prefix, so sweeping all ~17 KB byte by byte takes over a minute)
+    for n in [*range(1024), *range(1024, len(data), 61)]:
+        with open(path, "wb") as f:
+            f.write(data[:n])
+        try:
+            dis.parse_pdf(path, max_pages=500, max_chars=10 ** 6)
+        except dis.UnreadablePdfError:
+            unreadable += 1
+    assert unreadable > 0
 
 
 def test_page_cap(env, monkeypatch):

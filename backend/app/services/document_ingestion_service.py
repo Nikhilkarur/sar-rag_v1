@@ -68,15 +68,19 @@ def parse_pdf(path: str, max_pages: Optional[int] = None, max_chars: Optional[in
     except Exception as e:  # FileDataError / EmptyFileError: garbage or truncated bytes
         raise UnreadablePdfError("Not a readable PDF file") from e
     try:
-        if doc.needs_pass:
+        try:  # a cut-off page tree opens fine and only fails here ("Invalid number of pages")
+            encrypted, page_count = doc.needs_pass, doc.page_count
+        except Exception as e:
+            raise UnreadablePdfError("Not a readable PDF file") from e
+        if encrypted:
             raise UnreadablePdfError("PDF is password-protected; upload an unencrypted copy")
-        if max_pages is not None and doc.page_count > max_pages:
+        if max_pages is not None and page_count > max_pages:
             raise PolicyTooLargeError(
-                f"PDF has {doc.page_count} pages; the maximum is {max_pages}")
+                f"PDF has {page_count} pages; the maximum is {max_pages}")
         lines = []
         size_counts: dict = {}
         total_chars = 0
-        for pno in range(doc.page_count):
+        for pno in range(page_count):
             try:
                 data = doc[pno].get_text("dict")
             except Exception as e:
