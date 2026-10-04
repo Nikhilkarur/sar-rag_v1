@@ -1,6 +1,6 @@
 fastapi==0.111.0
 uvicorn[standard]==0.29.0
-sqlalchemy
+sqlalchemy>=2.0,<2.1  # 2.1 changed the default postgresql:// driver to psycopg3
 alembic==1.13.1
 psycopg2-binary
 pydantic
@@ -13,5 +13,10 @@ httpx==0.27.0
 groq==0.9.0
 reportlab==4.1.0
 python-dotenv==1.0.1
+
+# RAG stack (imported by app/services/*; previously installed by hand)
+chromadb>=0.5,<2
+sentence-transformers>=3.0,<7
+pymupdf>=1.24,<1.29  # app imports the legacy `fitz` name, slated for removal
 
 faker  # dev/testing: synthetic payloads for scripts/simulator_client.py
