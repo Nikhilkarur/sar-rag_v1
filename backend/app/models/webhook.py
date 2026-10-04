@@ -42,6 +42,8 @@ class WebhookSinkEvent(Base):
     hmac_valid: Mapped[Optional[bool]] = mapped_column(Boolean)
     
     source_ip: Mapped[Optional[str]] = mapped_column(String(50))
-    delivery_id: Mapped[Optional[str]] = mapped_column(UUID(as_uuid=True), ForeignKey("webhook_deliveries.id"))
+    # The delivery this event records (its real outcome: status, HTTP code, destination,
+    # attempts). SET NULL: deleting a SAR's deliveries must not be blocked by the audit trail.
+    delivery_id: Mapped[Optional[str]] = mapped_column(UUID(as_uuid=True), ForeignKey("webhook_deliveries.id", ondelete="SET NULL"))
     
     received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=text("now()"))

@@ -27,4 +27,6 @@ frontend changes with `npx tsc --noEmit`. Only live tenant is **TEN-0005 (Meridi
    borderline, clearly-suspicious, each typology) and observe how the SAR generation behaves — is it
    grounded/correct or hallucinating? Non-suspicious (<75) txns bypass RAG+LLM entirely (deterministic
    `COMPLETED_CLEAN`), so focus on whether the suspicious-path narratives stay faithful to the retrieved
-   policy + rule evidence. Use the portal simulator or `POST /api/v1/ingest/` (see `MOCKBANK_INTEGRATION.md`).
+   policy + rule evidence. Use the simulator — the portal's "Submit test alert" button exists only in the
+   Vite dev server (`npm run dev`); against the Docker build call `POST /api/v1/alerts/simulator/submit-test-alert`
+   with an officer/admin JWT — or `POST /api/v1/ingest/` (see `MOCKBANK_INTEGRATION.md`).

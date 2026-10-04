@@ -110,6 +110,7 @@ const WEBHOOK = [
   '',
   '{',
   '  "event": "sar.approved",',
+  '  "test": false,              // true (event "sar.approved.test") for simulator test alerts: never file these',
   '  "sar_id": "...", "alert_id": "...",',
   '  "transaction_ref": "TXN-2026-061099182",',
   '  "narrative_text": "<the policy-cited STR narrative>",',

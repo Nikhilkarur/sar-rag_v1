@@ -11,7 +11,13 @@
 > - Ingestion is `POST /api/v1/ingest/` returning `200` — not `POST /api/v1/alerts/ingest` → `202`.
 > - The review queue lives under `/api/v1/alerts/queue...` (not `/api/v1/queue...`).
 > - The simulator is `POST /api/v1/alerts/simulator/submit-test-alert`.
-> - There is no standalone `/api/v1/webhooks/sink/...` router; sink events are read via `GET /api/v1/tenant/webhook/events`.
+> - There is no standalone `/api/v1/webhooks/sink/...` router (Domain 6 below was never built) and no
+>   `internal_sink_url`; sink events are read via `GET /api/v1/tenant/webhook/events`.
+> - `PUT /api/v1/tenant/webhook` does NOT generate a secret; `POST /api/v1/tenant/webhook/secret/rotate`
+>   returns `{secret, secret_prefix}` (full secret, once). `GET /webhook/events` returns a list of
+>   `{id, event, received_at, hmac_valid, status (DELIVERED|FAILED|PENDING|RETRYING|STALLED|UNKNOWN),
+>   http_status, destination, attempts, error, payload}`; `POST /webhook/events/{id}/redeliver` re-sends
+>   a FAILED/STALLED SAR. Simulator alerts are delivered as `sar.approved.test` with `"test": true`.
 > - Live handlers return FastAPI's `{detail: ...}` error shape (same HTTP codes), not the `{error:{code,message}}` envelope shown below.
 
 ---
@@ -501,7 +507,6 @@ Generates a new API key, invalidating the old one.
 {
   "callback_url": "https://payfast.in/aegis/callback",
   "use_internal_sink": false,
-  "internal_sink_url": "https://api.aegis-aml.com/api/v1/webhooks/sink/TEN-0001",
   "secret_prefix": "wh-sec-a1b2",
   "last_tested_at": "2026-06-10T07:00:00Z",
   "last_test_status": "SUCCESS"
@@ -532,7 +537,8 @@ Generates a new API key, invalidating the old one.
 }
 ```
 
-**Note:** Every time webhook config is updated, a new secret is generated and returned once.
+**Note (superseded):** updating the config does not change the secret — rotate it with
+`POST /api/v1/tenant/webhook/secret/rotate`, which returns the full secret once.
 
 ---
 
@@ -941,6 +947,9 @@ Officer approves the SAR. Triggers re-hydration, PDF generation, and webhook del
 ---
 
 ## Domain 6: Webhook Sink (Built-in Test Receiver)
+
+> **Not implemented.** The built-in sink is in-process: deliveries are recorded and listed by
+> `GET /api/v1/tenant/webhook/events`. The two routes below do not exist.
 
 ### `POST /api/v1/webhooks/sink/{tenant_id_public}`
 

@@ -777,9 +777,11 @@ and it is the authority.
 | GET | `/profile` | Tenant profile |
 | GET | `/credentials` · `/credentials/reveal` | Credential info / reveal full API key |
 | POST | `/credentials/rotate` | Rotate API key (password-confirmed) |
-| GET·PUT | `/webhook` | Get / update webhook config (new secret on update) |
+| GET·PUT | `/webhook` | Get / update webhook config (destination only; the secret is unchanged) |
+| POST | `/webhook/secret/rotate` | New HMAC signing secret — full value returned once (audited) |
 | POST | `/webhook/test` | Send a mock SAR to the destination |
-| GET | `/webhook/events` | Recent internal-sink events |
+| GET | `/webhook/events` | Last 10 deliveries with their recorded outcome (`status`, `http_status`, `destination`, `attempts`, `error`) |
+| POST | `/webhook/events/{id}/redeliver` | Re-send a SAR whose delivery FAILED/STALLED (audited) |
 | GET | `/schemas` · POST `/schemas/select-preset` | List / switch ingestion schema |
 | GET·PUT | `/llm-config` | Get / update LLM settings |
 | GET | `/usage` | Tenant usage stats |
@@ -1236,8 +1238,10 @@ Extracted from the routers, services, and Pydantic schemas — **not** from the 
 The outbound **webhook** Aegis POSTs to the bank on approval:
 
 ```jsonc
-// POST <tenant callback_url>   header X-Aegis-Signature: sha256=<hmac>
-{ "event":"sar.approved","sar_id":"uuid","alert_id":"uuid","approved_at":"…","approved_by":"…",
+// POST <tenant callback_url>   headers X-Aegis-Event: sar.approved, X-Aegis-Signature: sha256=<hmac>
+// Simulator (synthetic) alerts: event/X-Aegis-Event "sar.approved.test" and "test": true — never file these.
+// Retried up to 3x with backoff on network errors/5xx/408/429; each attempt is signed with the current secret.
+{ "event":"sar.approved","test":false,"sar_id":"uuid","alert_id":"uuid","approved_at":"…","approved_by":"…",
   "goaml_str": { "report": { "report_code":"STR","report_indicators":["STRUCTURING_BELOW_THRESHOLD", …],
                              "reason":"… (real PII narrative)","transaction": { … } } },
   "pdf_url":"http://localhost:8000/files/sar/<sar_id>.pdf",

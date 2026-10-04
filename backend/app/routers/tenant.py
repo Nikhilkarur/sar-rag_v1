@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import get_db
 from app.services import tenant_service
-from app.utils.deps import get_tenant_admin, get_current_active_tenant_user, get_compliance_user
+from app.utils.deps import get_tenant_admin, get_current_active_tenant_user, get_compliance_user, parse_uuid_or_404
 from app.utils.security import (
     validate_webhook_url, encrypt_json, decrypt_json,
     generate_api_key, hash_api_key,
@@ -25,10 +25,12 @@ from app.models.sar import SARDraft
 from app.models.llm_config import LLMConfig
 from app.models.schema import IngestionSchema
 from app.models.webhook import WebhookConfig, WebhookSinkEvent
+from app.models.delivery import WebhookDelivery
 from app.models.audit import AuditLog
 from app.models.compliance import ComplianceMatch
 from app.data.schema_presets import SCHEMA_PRESETS
 from app.schemas.tenant import TenantResponse
+from app.services.sar_delivery import INTERNAL_SINK_DESTINATION, delivery_status, redeliver_sar
 
 router = APIRouter(prefix="/api/v1/tenant", tags=["Tenant"])
 
@@ -76,10 +78,11 @@ def rotate_api_key(db: Session = Depends(get_db), current_user: User = Depends(g
 # ── Webhook ──────────────────────────────────────────────────────────
 
 def _webhook_dict(w: WebhookConfig, tenant: Tenant) -> dict:
+    # No internal_sink_url: the built-in sink is in-process (deliveries are stored and read via
+    # /webhook/events), so there is no URL a client could call.
     return {
         "callback_url": w.callback_url,
         "use_internal_sink": w.use_internal_sink,
-        "internal_sink_url": f"/api/v1/webhooks/sink/{tenant.tenant_id_public}",
         "secret_prefix": w.secret_prefix,
         "last_tested_at": w.last_tested_at.isoformat() if w.last_tested_at else None,
         "last_test_status": w.last_test_status,
@@ -129,16 +132,34 @@ def update_webhook(payload: dict, db: Session = Depends(get_db), current_user: U
     db.refresh(webhook)
     return _webhook_dict(webhook, tenant)
 
-def _ensure_webhook_secret(webhook: WebhookConfig) -> str:
-    """Secrets created before encrypted storage are unrecoverable (bcrypt) —
-    rotate transparently so signing works."""
-    if webhook.secret_encrypted:
-        return decrypt_json(webhook.secret_encrypted)
+def _new_webhook_secret(webhook: WebhookConfig) -> str:
+    """Generate + store a signing secret the same way tenant creation does (admin_service):
+    bcrypt hash, Fernet-encrypted copy (needed to sign) and a display prefix."""
     secret = pysecrets.token_hex(32)
     webhook.secret_encrypted = encrypt_json(secret)
     webhook.secret_prefix = secret[:12]
     webhook.secret_hash = hash_api_key(secret)
     return secret
+
+def _ensure_webhook_secret(webhook: WebhookConfig) -> str:
+    """Secrets created before encrypted storage are unrecoverable (bcrypt) —
+    rotate transparently so signing works."""
+    if webhook.secret_encrypted:
+        return decrypt_json(webhook.secret_encrypted)
+    return _new_webhook_secret(webhook)
+
+@router.post("/webhook/secret/rotate")
+def rotate_webhook_secret(db: Session = Depends(get_db), current_user: User = Depends(get_tenant_admin)):
+    """Issue a new HMAC signing secret so the bank can verify X-Aegis-Signature. The full
+    value is returned only in this response; afterwards only its prefix is shown."""
+    webhook, _ = _get_webhook(db, current_user)
+    secret = _new_webhook_secret(webhook)
+    webhook.updated_at = func.now()
+    db.add(AuditLog(tenant_id=current_user.tenant_id, user_id=current_user.id,
+                    action="WEBHOOK_SECRET_ROTATED", entity_type="webhook_config",
+                    entity_id=webhook.id))
+    db.commit()
+    return {"secret": secret, "secret_prefix": webhook.secret_prefix}
 
 @router.post("/webhook/test")
 def test_webhook(db: Session = Depends(get_db), current_user: User = Depends(get_tenant_admin)):
@@ -192,25 +213,89 @@ def test_webhook(db: Session = Depends(get_db), current_user: User = Depends(get
     db.commit()
     return {"status": status, "latency_ms": latency_ms, "message": message}
 
+def _event_name(e: WebhookSinkEvent) -> str:
+    # From the stored X-Aegis-Event header: the test ping's body also says "sar.approved".
+    return str((e.headers or {}).get("X-Aegis-Event") or "")
+
+def _webhook_event_dict(e: WebhookSinkEvent, d: WebhookDelivery | None) -> dict:
+    """The outcome recorded when the event was delivered — never derived from the current
+    config. Test pings to the built-in sink have no delivery row (the event is the delivery);
+    approval events from before delivery tracking have no recorded outcome."""
+    if d is not None:
+        status, http_status, destination = delivery_status(d), d.http_status_code, d.destination_url
+        attempts, error = d.attempt_number, d.error_message
+        if status == "STALLED":
+            error = "Delivery was interrupted before its final attempt (server restart?); outcome unknown"
+    elif _event_name(e) == "webhook.test":
+        status, http_status, destination, attempts, error = "DELIVERED", None, INTERNAL_SINK_DESTINATION, 1, None
+    else:
+        status, http_status, destination, attempts, error = "UNKNOWN", None, None, None, None
+    return {
+        "id": str(e.id),
+        "event": _event_name(e),
+        "received_at": e.received_at.isoformat(),
+        "hmac_valid": bool(e.hmac_valid),
+        "status": status,
+        "http_status": http_status,
+        "destination": destination,
+        "attempts": attempts,
+        "error": error,
+        "payload": e.payload,
+    }
+
 @router.get("/webhook/events")
 def webhook_events(db: Session = Depends(get_db), current_user: User = Depends(get_tenant_admin)):
-    webhook, tenant = _get_webhook(db, current_user)
-    events = db.query(WebhookSinkEvent).filter(
+    _get_webhook(db, current_user)
+    rows = db.query(WebhookSinkEvent, WebhookDelivery).outerjoin(
+        WebhookDelivery, WebhookSinkEvent.delivery_id == WebhookDelivery.id
+    ).filter(
         WebhookSinkEvent.tenant_id == current_user.tenant_id
     ).order_by(WebhookSinkEvent.received_at.desc()).limit(10).all()
-    return [
-        {
-            "id": str(e.id),
-            "received_at": e.received_at.isoformat(),
-            "hmac_valid": bool(e.hmac_valid),
-            "status": "DELIVERED",
-            "http_status": 200,
-            "destination": webhook.callback_url if not webhook.use_internal_sink and webhook.callback_url
-                           else f"/api/v1/webhooks/sink/{tenant.tenant_id_public}",
-            "payload": e.payload,
-        }
-        for e in events
-    ]
+    return [_webhook_event_dict(e, d) for e, d in rows]
+
+# A SAR whose latest delivery ended in one of these can be sent again (UNKNOWN: approved before
+# deliveries were recorded). DELIVERED or still in flight (PENDING/RETRYING) cannot.
+_REDELIVERABLE = ("FAILED", "STALLED", "UNKNOWN")
+
+@router.post("/webhook/events/{event_id}/redeliver")
+def redeliver_webhook_event(event_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_tenant_admin)):
+    """Re-send the SAR of an approval event whose delivery failed or stalled, to the
+    destination configured now, signed with the current secret."""
+    webhook, _ = _get_webhook(db, current_user)
+    e = db.query(WebhookSinkEvent).filter(
+        WebhookSinkEvent.id == parse_uuid_or_404(event_id, "Webhook event"),
+        WebhookSinkEvent.tenant_id == current_user.tenant_id,
+    ).first()
+    if not e:
+        raise HTTPException(status_code=404, detail="Webhook event not found")
+    payload = e.payload or {}
+    if not _event_name(e).startswith("sar.approved") or not payload.get("sar_id"):
+        raise HTTPException(status_code=409, detail="Only SAR approval events can be re-delivered")
+    # Row lock on the SAR: concurrent re-delivers of it serialize, and the later ones see the
+    # delivery the first one created (in flight or delivered) and get 409.
+    draft = db.query(SARDraft).filter(
+        SARDraft.id == parse_uuid_or_404(str(payload["sar_id"]), "SAR"),
+        SARDraft.tenant_id == current_user.tenant_id,
+    ).with_for_update().first()
+    if not draft:
+        raise HTTPException(status_code=404, detail="SAR not found")
+    latest = db.query(WebhookDelivery).filter(WebhookDelivery.sar_draft_id == draft.id).order_by(
+        WebhookDelivery.created_at.desc(), WebhookDelivery.attempted_at.desc()).first()
+    latest_status = delivery_status(latest) if latest else "UNKNOWN"
+    if latest_status not in _REDELIVERABLE:
+        raise HTTPException(status_code=409, detail=f"This SAR's delivery is already {latest_status.lower()}")
+    if not webhook.is_active:
+        raise HTTPException(status_code=409, detail="Webhook delivery is disabled for this tenant")
+    try:
+        delivery = redeliver_sar(db, draft, webhook)
+    except ValueError as err:
+        raise HTTPException(status_code=409, detail=str(err))
+    db.add(AuditLog(tenant_id=current_user.tenant_id, user_id=current_user.id,
+                    action="WEBHOOK_REDELIVERED", entity_type="sar_draft", entity_id=draft.id,
+                    details={"event_id": str(e.id), "delivery_id": str(delivery.id),
+                             "previous_status": latest_status, "destination": delivery.destination_url}))
+    db.commit()
+    return {"status": delivery.status, "delivery_id": str(delivery.id), "destination": delivery.destination_url}
 
 # ── Ingestion schemas ────────────────────────────────────────────────
 

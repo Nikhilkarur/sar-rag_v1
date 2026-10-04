@@ -99,18 +99,24 @@ export interface AlertDetail extends AlertSummary {
 
 export interface WebhookEvent {
   id: string
+  /** X-Aegis-Event it was sent with: sar.approved, sar.approved.test (simulator) or webhook.test */
+  event: string
   received_at: string
   hmac_valid: boolean
-  status: 'DELIVERED' | 'FAILED'
+  /** Recorded delivery outcome. STALLED = retries cut short by a restart (outcome unknown);
+   *  UNKNOWN = approval logged before delivery tracking existed. */
+  status: 'DELIVERED' | 'FAILED' | 'PENDING' | 'RETRYING' | 'STALLED' | 'UNKNOWN'
   http_status: number | null
-  destination: string
+  /** Where it was actually sent at the time ('internal-sink' for the built-in receiver). */
+  destination: string | null
+  attempts: number | null
+  error: string | null
   payload: Record<string, unknown>
 }
 
 export interface WebhookConfig {
   callback_url: string | null
   use_internal_sink: boolean
-  internal_sink_url: string
   secret_prefix: string | null
   last_tested_at: string | null
   last_test_status: 'SUCCESS' | 'FAILED' | null
