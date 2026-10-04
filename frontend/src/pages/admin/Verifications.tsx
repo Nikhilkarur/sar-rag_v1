@@ -14,8 +14,12 @@ import type { VerificationItem } from '../../types'
 interface ApprovedCreds {
   name: string
   api_key: string
-  tenant_id: string
+  /** Public id (TEN-XXXX) — the X-Tenant-ID header value, not the internal UUID */
+  tenant_id_public: string
 }
+
+/** Same rule as the API (trimmed, 3+ chars): the reason is shown to the applicant. */
+const MIN_REJECT_REASON = 3
 
 export function Verifications() {
   const { data: items, isLoading } = useQuery({
@@ -51,7 +55,8 @@ export function Verifications() {
       const result = await approveTenant(approveTarget.id)
       const target = approveTarget
       setApproveTarget(null)
-      setCreds({ name: target.name, api_key: result.api_key, tenant_id: result.tenant_id })
+      // The approve response's tenant_id is the public id the tenant integrates with
+      setCreds({ name: target.name, api_key: result.api_key, tenant_id_public: result.tenant_id })
       dismissRow(target.id, () => {
         qc.invalidateQueries({ queryKey: ['verifications'] })
         qc.invalidateQueries({ queryKey: ['customers'] })
@@ -62,10 +67,10 @@ export function Verifications() {
   }
 
   const handleReject = async () => {
-    if (!rejectTarget || !rejectReason.trim()) return
+    if (!rejectTarget || rejectReason.trim().length < MIN_REJECT_REASON) return
     setBusy(true)
     try {
-      await rejectTenant(rejectTarget.id, rejectReason)
+      await rejectTenant(rejectTarget.id, rejectReason.trim())
       const target = rejectTarget
       setRejectTarget(null)
       setRejectReason('')
@@ -255,7 +260,7 @@ export function Verifications() {
             <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div>
                 <div className="label-upper" style={{ marginBottom: 8 }}>
-                  Tenant ID
+                  Tenant ID (X-Tenant-ID header)
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span
@@ -268,9 +273,9 @@ export function Verifications() {
                       fontSize: 13,
                     }}
                   >
-                    {creds.tenant_id}
+                    {creds.tenant_id_public}
                   </span>
-                  <CopyButton value={creds.tenant_id} />
+                  <CopyButton value={creds.tenant_id_public} />
                 </div>
               </div>
               <div>
@@ -325,7 +330,7 @@ export function Verifications() {
                   icon={<Copy size={13} />}
                   onClick={() => {
                     navigator.clipboard.writeText(
-                      `Tenant ID: ${creds.tenant_id}\nAPI Key: ${creds.api_key}`,
+                      `Tenant ID: ${creds.tenant_id_public}\nAPI Key: ${creds.api_key}`,
                     )
                     toast('success', 'Credentials copied')
                   }}
@@ -354,7 +359,7 @@ export function Verifications() {
               variant="danger"
               onClick={handleReject}
               loading={busy}
-              disabled={!rejectReason.trim()}
+              disabled={rejectReason.trim().length < MIN_REJECT_REASON}
             >
               Confirm Rejection
             </Button>

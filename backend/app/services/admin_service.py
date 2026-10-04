@@ -1,3 +1,5 @@
+from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from app.models.tenant import Tenant
@@ -18,16 +20,20 @@ import secrets
 _DEFAULT_SCHEMA_KEY = "STANDARD_FINTECH"
 
 def generate_tenant_id_public(db: Session) -> str:
-    # Count-based ids collide after rejections/deletions (count shrinks while
-    # the high ids remain taken) — walk forward until a free id is found.
-    n = db.query(Tenant).count() + 1
-    while db.query(Tenant).filter(Tenant.tenant_id_public == f"TEN-{n:04d}").first():
-        n += 1
-    return f"TEN-{n:04d}"
+    # nextval() is atomic, so concurrent approvals can never be handed the same id (the old
+    # count-then-check raced into a UniqueViolation -> 500), and the id of a deleted tenant
+    # is never reissued. Ids assigned outside the sequence (seed.py's TEN-0001) are skipped.
+    while True:
+        n = db.execute(text("SELECT nextval('tenant_public_id_seq')")).scalar_one()
+        candidate = f"TEN-{n:04d}"
+        if not db.query(Tenant.id).filter(Tenant.tenant_id_public == candidate).first():
+            return candidate
 
 def approve_tenant(tenant_id: str, current_user: User, db: Session) -> TenantApproveResponse:
     valid_id = parse_uuid_or_404(tenant_id, "Tenant")
-    tenant = db.query(Tenant).filter(Tenant.id == valid_id).first()
+    # Row lock: a double-submitted approval waits here and then sees ACTIVE (400) instead
+    # of minting a second API key and duplicate configs.
+    tenant = db.query(Tenant).filter(Tenant.id == valid_id).with_for_update().first()
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
         
@@ -88,17 +94,26 @@ def approve_tenant(tenant_id: str, current_user: User, db: Session) -> TenantApp
     db.add(audit1)
     db.add(audit2)
     
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        # Last-resort guard (e.g. an id written outside the sequence at the same moment):
+        # nothing was committed, so the admin can simply retry. Never a 500.
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Tenant was modified concurrently; please retry")
     
     return TenantApproveResponse(
-        tenant_id=str(tenant.id),
+        # Public id: what the tenant sends as X-Tenant-Id (the UUID would be rejected)
+        tenant_id=tenant.tenant_id_public,
+        id=tenant.id,
         status=tenant.status,
         api_key=plaintext_key
     )
 
 def reject_tenant(tenant_id: str, request: TenantRejectRequest, current_user: User, db: Session):
     valid_id = parse_uuid_or_404(tenant_id, "Tenant")
-    tenant = db.query(Tenant).filter(Tenant.id == valid_id).first()
+    # Row lock: an approve and a reject racing on the same tenant cannot both win
+    tenant = db.query(Tenant).filter(Tenant.id == valid_id).with_for_update().first()
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
         
