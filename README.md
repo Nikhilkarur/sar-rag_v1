@@ -12,6 +12,42 @@ The companion **Mock Bank** repo (`mock-bank`) simulates a real bank (Meridian B
 
 ---
 
+## Quick start with Docker (recommended)
+
+The only thing you need installed is [Docker](https://docs.docker.com/get-docker/), with Compose v2. One command starts Postgres, the API and the dashboard.
+
+```bash
+git clone https://github.com/Nikhilkarur/sar-rag_v1.git
+cd sar-rag_v1
+
+cp .env.example .env
+# Edit .env and set at least: POSTGRES_PASSWORD, SECRET_KEY (openssl rand -hex 32), GROQ_API_KEY
+
+docker compose up --build -d
+docker compose logs -f backend    # wait for "Application startup complete"
+```
+
+| What | URL |
+|---|---|
+| Dashboard | http://localhost:5173 |
+| API / health | http://localhost:8000/health |
+| API docs (dev only) | http://localhost:8000/docs |
+
+On first start the backend applies the database migrations and seeds a super-admin and the demo tenant `TEN-0001`. The demo tenant's API key is printed **once** in `docker compose logs backend`. The logins are listed under [Demo accounts](#demo-accounts) below.
+
+**Notes**
+- The first build takes a few minutes because it installs PyTorch (CPU-only) for the local embedding model. The embedding model (~130 MB) downloads the first time a policy is ingested and is cached in a volume.
+- Data persists in named Docker volumes (`pgdata`, `chroma_data`, `client_storage`, `hf_cache`). `docker compose down` keeps them. `docker compose down -v` **deletes everything**.
+- Ports are bound to `127.0.0.1` by default, so the stack is reachable only from your machine. To expose it, set `BIND_ADDRESS=0.0.0.0` in `.env` and put a TLS-terminating reverse proxy in front.
+- Postgres is not published to the host. To use `psql` or pgAdmin, uncomment the `ports` block under `db` in `docker-compose.yml`.
+- For production: set `ENVIRONMENT=production`, a strong `SECRET_KEY`, a `PII_ENCRYPTION_KEY` (the app refuses to start without one), `SEED_ON_START=false`, and change the seeded passwords.
+- **Mock Bank with Docker:** the Mock Bank reaches the API at `http://localhost:8000` as usual. When you set its webhook URL in the Aegis portal, use `http://host.docker.internal:<port>/...` instead of `localhost`, because inside the container `localhost` is the container itself.
+- Useful commands: `docker compose ps`, `docker compose logs -f backend`, `docker compose exec backend python seed.py`, `docker compose up --build -d` (after pulling new code).
+
+The manual (non-Docker) setup follows below.
+
+---
+
 ## Prerequisites
 
 - **Python 3.11+**

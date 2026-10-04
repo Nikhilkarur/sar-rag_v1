@@ -109,7 +109,10 @@ export async function listApprovedSars(): Promise<ApprovedSAR[]> {
 /** Fetch a SAR PDF as a blob. The file is served at /files/sar/<id>.pdf (root, not
     under /api/v1) and is now tenant-authenticated, so we hit it through the same axios
     client (absolute URL bypasses baseURL; the interceptor still attaches the JWT). */
-const FILES_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1').replace(/\/api\/v1\/?$/, '')
+// Resolve against the page origin so a relative VITE_API_URL (e.g. "/api/v1" behind the
+// Docker nginx proxy) still yields an absolute URL that axios won't prefix with baseURL.
+const FILES_BASE = new URL(import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1', window.location.origin)
+  .href.replace(/\/api\/v1\/?$/, '')
 export async function downloadSarPdf(sarId: string): Promise<Blob> {
   const { data } = await client.get(`${FILES_BASE}/files/sar/${sarId}.pdf`, { responseType: 'blob' })
   return data
