@@ -78,11 +78,20 @@ class Settings(BaseSettings):
     # Public base URL of this API (used to build the SAR pdf_url in webhooks).
     PUBLIC_BASE_URL: str = "http://localhost:8000"
 
+    # Comped tenants: comma-separated PUBLIC tenant ids (e.g. "TEN-0005") that are billed
+    # Rs.0 and pinned to the free drafting plan. Empty = nobody. Public ids are handed out
+    # sequentially at approval, so this must be set per deployment, never hard-coded.
+    COMPED_TENANT_IDS: str = ""
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     # Values that MUST be overridden before this is a real deployment. Used by the
     # production fail-closed check below.
     _DEFAULT_SECRET_KEY = "your-super-secret-jwt-key-min-32-chars"
+
+    @property
+    def comped_tenant_ids(self) -> frozenset[str]:
+        return frozenset(t.strip().upper() for t in self.COMPED_TENANT_IDS.split(",") if t.strip())
 
     def production_config_errors(self) -> list[str]:
         """Fatal misconfigurations for a production boot. Empty list = OK.
@@ -99,6 +108,17 @@ class Settings(BaseSettings):
                     "PII_ENCRYPTION_KEY must be set in production — without it the "
                     "at-rest PII key is derived from SECRET_KEY and offers no real protection."
                 )
+            else:
+                # A malformed key would otherwise boot fine and only fail on the first
+                # encrypt (ingest, approval, key reveal) with a 500.
+                from cryptography.fernet import Fernet
+                try:
+                    Fernet(self.PII_ENCRYPTION_KEY.encode("utf-8"))
+                except Exception:
+                    errors.append(
+                        "PII_ENCRYPTION_KEY is not a valid Fernet key (32 url-safe base64-encoded "
+                        "bytes); generate one with cryptography.fernet.Fernet.generate_key()."
+                    )
             if self.SECRET_KEY == self._DEFAULT_SECRET_KEY:
                 errors.append("SECRET_KEY must be overridden from its built-in default in production.")
         return errors
