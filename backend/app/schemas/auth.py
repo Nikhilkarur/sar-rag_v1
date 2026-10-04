@@ -1,5 +1,11 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Optional
+
+def _normalize_email(value):
+    # Emails are case-insensitive account identifiers. EmailStr only lowercases the
+    # domain, so without this "Admin@x.in" and "admin@x.in" are two different accounts
+    # (case-sensitive login, duplicate signups). Stored and compared lowercase.
+    return value.strip().lower() if isinstance(value, str) else value
 
 class Token(BaseModel):
     access_token: str
@@ -25,9 +31,19 @@ class UserSignup(BaseModel):
 
     model_config = {"populate_by_name": True}
 
+    @field_validator("email", mode="before")
+    @classmethod
+    def normalize_email(cls, value):
+        return _normalize_email(value)
+
 class UserLogin(BaseModel):
     email: EmailStr
     password: str = Field(min_length=1, max_length=128)
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def normalize_email(cls, value):
+        return _normalize_email(value)
 
 class RefreshRequest(BaseModel):
     refresh_token: str

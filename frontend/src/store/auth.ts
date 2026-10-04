@@ -13,6 +13,24 @@ interface AuthState {
   logout: () => void
 }
 
+// Same base URL as api/client.ts (which imports this store, so it can't be imported here)
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
+
+/** Best-effort server-side revoke of this tab's refresh session, so a signed-out tab's
+    refresh token is dead even if it was copied (other sign-ins stay active). Fire-and-forget
+    with keepalive: it must not block sign-out and must survive the hard redirect to /login
+    that can follow. */
+function revokeServerSession() {
+  const refreshToken = sessionStorage.getItem('aegis_refresh_token')
+  if (!refreshToken) return
+  fetch(`${API_BASE_URL}/auth/logout`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refresh_token: refreshToken }),
+    keepalive: true,
+  }).catch(() => {})
+}
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
@@ -25,10 +43,12 @@ export const useAuthStore = create<AuthState>()(
       },
       updateUser: (user) => set({ user }),
       clearAuth: () => {
+        revokeServerSession()
         sessionStorage.removeItem('aegis_refresh_token')
         set({ user: null, accessToken: null, isAuthenticated: false })
       },
       logout: () => {
+        revokeServerSession()
         sessionStorage.removeItem('aegis_refresh_token')
         set({ user: null, accessToken: null, isAuthenticated: false })
       },
