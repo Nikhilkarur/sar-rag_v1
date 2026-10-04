@@ -12,3 +12,7 @@ outputs/
 backend_error.log
 *.log
 .git
+# Uploaded tenant files belong in the client_storage volume, never in the image:
+# anything baked in here would be copied into a fresh volume and inherited by
+# whichever new tenant later receives the same TEN-xxxx id.
+storage/

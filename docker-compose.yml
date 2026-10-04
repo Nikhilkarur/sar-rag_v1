@@ -46,6 +46,9 @@ services:
       SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env}
       CHROMA_PERSIST_DIR: /data/chroma_data
       HF_HOME: /data/hf_cache
+      # Trust X-Forwarded-For only from nginx (frontend's fixed IP below), so the real
+      # client IP is logged/rate-limited for dashboard traffic but can't be spoofed via :8000.
+      FORWARDED_ALLOW_IPS: 172.31.250.10
     volumes:
       - chroma_data:/data/chroma_data     # vector store
       - hf_cache:/data/hf_cache           # embedding model download cache
@@ -64,6 +67,20 @@ services:
       - backend
     ports:
       - "${BIND_ADDRESS:-127.0.0.1}:${FRONTEND_PORT:-5173}:8080"
+    networks:
+      default:
+        ipv4_address: 172.31.250.10   # must match backend FORWARDED_ALLOW_IPS
+
+# Fixed subnet so nginx can have a known IP (uvicorn trusts proxies by exact IP only).
+# Dynamic addresses come from the upper half, so they never collide with the fixed one.
+# If 172.31.250.0/24 clashes with your network, change subnet, ip_range, ipv4_address and
+# FORWARDED_ALLOW_IPS together.
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.31.250.0/24
+          ip_range: 172.31.250.128/25
 
 volumes:
   pgdata:
