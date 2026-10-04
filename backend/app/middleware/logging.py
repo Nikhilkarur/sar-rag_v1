@@ -1,5 +1,6 @@
 import time
 from fastapi import Request
+from starlette.concurrency import run_in_threadpool
 from starlette.middleware.base import BaseHTTPMiddleware
 from sqlalchemy.orm import Session
 from app.database import SessionLocal
@@ -35,41 +36,47 @@ class APILoggingMiddleware(BaseHTTPMiddleware):
         # Try extract from Headers for API calls
         x_tenant_id = request.headers.get("X-Tenant-ID")
         
-        db: Session = SessionLocal()
-        try:
-            # If we have user_id, get tenant_id from user
-            if user_id:
-                from app.models.user import User
-                user = db.query(User).filter(User.id == user_id).first()
-                if user:
-                    tenant_id = user.tenant_id
-                else:
-                    # Token signed for a since-deleted user: keep the log row
-                    # (FK would reject the orphan id and drop the audit entry)
-                    user_id = None
-            # If we have X-Tenant-ID, get tenant_id from public id
-            elif x_tenant_id:
-                from app.models.tenant import Tenant
-                tenant = db.query(Tenant).filter(Tenant.tenant_id_public == x_tenant_id).first()
-                if tenant:
-                    tenant_id = tenant.id
+        # Blocking DB work: run it in the threadpool. On the event loop it froze the
+        # whole worker for up to pool_timeout whenever the connection pool ran dry.
+        def write_log():
+            nonlocal user_id, tenant_id
+            db: Session = SessionLocal()
+            try:
+                # If we have user_id, get tenant_id from user
+                if user_id:
+                    from app.models.user import User
+                    user = db.query(User).filter(User.id == user_id).first()
+                    if user:
+                        tenant_id = user.tenant_id
+                    else:
+                        # Token signed for a since-deleted user: keep the log row
+                        # (FK would reject the orphan id and drop the audit entry)
+                        user_id = None
+                # If we have X-Tenant-ID, get tenant_id from public id
+                elif x_tenant_id:
+                    from app.models.tenant import Tenant
+                    tenant = db.query(Tenant).filter(Tenant.tenant_id_public == x_tenant_id).first()
+                    if tenant:
+                        tenant_id = tenant.id
 
-            log_entry = APILog(
-                tenant_id=tenant_id,
-                user_id=user_id,
-                method=request.method,
-                endpoint=request.url.path,
-                status_code=response.status_code,
-                request_ip=request.client.host if request.client else None,
-                user_agent=request.headers.get("user-agent"),
-                latency_ms=process_time_ms
-            )
-            db.add(log_entry)
-            db.commit()
-        except Exception as e:
-            # Don't let logging failures break the API response
-            print(f"Failed to write API log: {e}")
-        finally:
-            db.close()
-            
+                log_entry = APILog(
+                    tenant_id=tenant_id,
+                    user_id=user_id,
+                    method=request.method,
+                    endpoint=request.url.path,
+                    status_code=response.status_code,
+                    request_ip=request.client.host if request.client else None,
+                    user_agent=request.headers.get("user-agent"),
+                    latency_ms=process_time_ms
+                )
+                db.add(log_entry)
+                db.commit()
+            except Exception as e:
+                # Don't let logging failures break the API response
+                print(f"Failed to write API log: {e}")
+            finally:
+                db.close()
+
+        await run_in_threadpool(write_log)
+
         return response
