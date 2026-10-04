@@ -2,8 +2,9 @@
 # Container entrypoint for the Aegis API.
 #   1. Refuse an insecure production configuration BEFORE touching the database.
 #   2. Apply Alembic migrations (idempotent).
-#   3. Optionally run seed.py (idempotent; never regenerates an existing API key).
-#   4. Hand off to the CMD (uvicorn by default).
+#   3. Remove stale sample files an earlier image baked into the storage volume.
+#   4. Optionally run seed.py (idempotent; never regenerates an existing API key).
+#   5. Hand off to the CMD (uvicorn by default).
 set -e
 
 # app/main.py has the same guard, but it only runs once uvicorn imports the app,
@@ -34,6 +35,32 @@ if [ "${RUN_MIGRATIONS:-true}" = "true" ]; then
   echo "[entrypoint] Applying database migrations..."
   python -m alembic upgrade head
 fi
+
+# One-off cleanup: the first Docker image baked the repo's storage/clients/TEN-0003 and
+# TEN-0005 sample files into fresh client_storage volumes, where a new tenant receiving that id
+# would inherit another organisation's policy. Remove them only while NO tenant with that id
+# exists (so nothing there can be real tenant data). Best-effort; never blocks startup.
+python - <<'PY' || true
+import os, shutil
+from app.database import SessionLocal
+from app.models.tenant import Tenant
+from app.services.client_storage import CLIENTS_ROOT
+db = SessionLocal()
+try:
+    for cid in ("TEN-0003", "TEN-0005"):
+        d = os.path.join(CLIENTS_ROOT, cid)
+        if os.path.isdir(d) and not db.query(Tenant).filter(Tenant.tenant_id_public == cid).first():
+            try:
+                shutil.rmtree(d)
+                print(f"[entrypoint] Removed stale sample files baked in by an earlier image: {d}")
+            except OSError as e:
+                print(f"[entrypoint] WARNING: could not remove stale sample files in {d} ({e}); "
+                      "delete that folder from the client_storage volume manually.")
+except Exception as e:
+    print(f"[entrypoint] Skipped stale-storage cleanup: {e}")
+finally:
+    db.close()
+PY
 
 if [ "${SEED_ON_START:-false}" = "true" ]; then
   echo "[entrypoint] Seeding database (idempotent)..."

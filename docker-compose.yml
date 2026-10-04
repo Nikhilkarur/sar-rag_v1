@@ -48,7 +48,10 @@ services:
       HF_HOME: /data/hf_cache
       # Trust X-Forwarded-For only from nginx (frontend's fixed IP below), so the real
       # client IP is logged/rate-limited for dashboard traffic but can't be spoofed via :8000.
-      FORWARDED_ALLOW_IPS: 172.31.250.10
+      FORWARDED_ALLOW_IPS: ${AEGIS_PROXY_IP:-10.177.42.10}
+    networks:
+      - default   # db (and anything else) lives here
+      - proxy     # nginx reaches the backend here
     volumes:
       - chroma_data:/data/chroma_data     # vector store
       - hf_cache:/data/hf_cache           # embedding model download cache
@@ -68,19 +71,24 @@ services:
     ports:
       - "${BIND_ADDRESS:-127.0.0.1}:${FRONTEND_PORT:-5173}:8080"
     networks:
-      default:
-        ipv4_address: 172.31.250.10   # must match backend FORWARDED_ALLOW_IPS
+      proxy:
+        ipv4_address: ${AEGIS_PROXY_IP:-10.177.42.10}   # = backend FORWARDED_ALLOW_IPS
+    # Never forward bare names like "backend" to the host's DNS while the backend container
+    # is down (a LAN/ISP resolver could answer and receive proxied credentials).
+    dns_opt:
+      - ndots:1
 
-# Fixed subnet so nginx can have a known IP (uvicorn trusts proxies by exact IP only).
-# Dynamic addresses come from the upper half, so they never collide with the fixed one.
-# If 172.31.250.0/24 clashes with your network, change subnet, ip_range, ipv4_address and
-# FORWARDED_ALLOW_IPS together.
 networks:
-  default:
+  # nginx <-> backend only, on a fixed subnet so nginx gets a known IP (uvicorn trusts proxies
+  # by exact IP only). A separate network rather than pinning "default", so upgrades never have
+  # to recreate the network the database is on. Dynamic addresses come from AEGIS_IP_RANGE and
+  # never collide with AEGIS_PROXY_IP. The default sits outside Docker's own address pools;
+  # override all three in .env if it clashes with your LAN/VPN or you run a second copy.
+  proxy:
     ipam:
       config:
-        - subnet: 172.31.250.0/24
-          ip_range: 172.31.250.128/25
+        - subnet: ${AEGIS_SUBNET:-10.177.42.0/24}
+          ip_range: ${AEGIS_IP_RANGE:-10.177.42.128/25}
 
 volumes:
   pgdata:

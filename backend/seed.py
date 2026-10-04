@@ -23,6 +23,7 @@ import sys
 from sqlalchemy import text
 from sqlalchemy.exc import OperationalError, ProgrammingError
 
+from app.config import settings
 from app.database import SessionLocal
 from app.models.tenant import Tenant
 from app.models.user import User
@@ -48,7 +49,22 @@ TENANT_SLUG = "test-fintech"
 TENANT_PUBLIC_ID = "TEN-0001"
 
 
+def _shown(env_var: str, password: str) -> str:
+    """Only echo the public built-in demo password; never print a real one into logs."""
+    return "(set via environment)" if os.environ.get(env_var) else password
+
+
 def seed() -> int:
+    if not ADMIN_PASSWORD or not TENANT_ADMIN_PASSWORD:
+        print("REFUSED: AEGIS_ADMIN_PASSWORD / AEGIS_TENANT_ADMIN_PASSWORD is set but empty.")
+        return 2
+    if settings.ENVIRONMENT == "production":
+        missing = [v for v in ("AEGIS_ADMIN_PASSWORD", "AEGIS_TENANT_ADMIN_PASSWORD")
+                   if not os.environ.get(v)]
+        if missing:
+            print("REFUSED: ENVIRONMENT=production and " + ", ".join(missing) + " not set - "
+                  "the built-in demo passwords are public.")
+            return 2
     db = SessionLocal()
     plaintext_key = None
     try:
@@ -165,8 +181,8 @@ def seed() -> int:
         print("\n" + "=" * 64)
         print("LOGIN CREDENTIALS")
         print("=" * 64)
-        print(f"  Super Admin : {ADMIN_EMAIL} / {ADMIN_PASSWORD}")
-        print(f"  Tenant Admin: {TENANT_ADMIN_EMAIL} / {TENANT_ADMIN_PASSWORD}")
+        print(f"  Super Admin : {ADMIN_EMAIL} / {_shown('AEGIS_ADMIN_PASSWORD', ADMIN_PASSWORD)}")
+        print(f"  Tenant Admin: {TENANT_ADMIN_EMAIL} / {_shown('AEGIS_TENANT_ADMIN_PASSWORD', TENANT_ADMIN_PASSWORD)}")
         print(f"  Tenant ID   : {tenant.tenant_id_public}")
         if plaintext_key:
             print("\n  API KEY (shown ONCE - copy now, or reveal/rotate from the portal):")
