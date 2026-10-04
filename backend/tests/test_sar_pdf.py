@@ -91,6 +91,19 @@ class TestStatusAndApprover:
         assert meta["creationDate"].startswith("D:20261004101012")
 
 
+class TestDockerImageFonts:
+    def test_font_dir_is_created_before_the_fonts_are_added(self):
+        # ADD --chmod=644 into a missing directory creates it 644 (no x): the non-root app user
+        # then cannot read the fonts and every PDF silently falls back to Helvetica.
+        path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "Dockerfile")
+        if not os.path.exists(path):
+            pytest.skip("Dockerfile not available")
+        lines = open(path).read().splitlines()
+        mkdir = next(i for i, l in enumerate(lines) if l.startswith("RUN mkdir -p /usr/share/fonts/truetype/noto"))
+        adds = [i for i, l in enumerate(lines) if l.startswith("ADD ") and "Noto" in lines[i + 1]]
+        assert len(adds) == 6 and mkdir < min(adds)
+
+
 class TestLayout:
     def test_indicators_cell_wraps_instead_of_clipping(self):
         pdf = _render(*_fixtures())
@@ -110,6 +123,7 @@ class TestUnicode:
     def test_rich_wraps_each_script_run_in_its_font(self, monkeypatch):
         monkeypatch.setattr(sar_pdf, "_fonts", lambda: {"deva": ("DevaR", "DevaB"), "arab": ("ArabR", "ArabB")})
         monkeypatch.setattr(sar_pdf, "_shape_arabic", lambda t: t)
+        monkeypatch.setattr(sar_pdf, "_shape_devanagari", lambda t, font: t)
         out = sar_pdf._rich(f"{HINDI} / 9988 & {ARABIC} @ NBD")
         assert out == (f'<font name="DevaR">{HINDI} </font>/ 9988 &amp; '
                        f'<font name="ArabR">{ARABIC} </font>@ NBD')
@@ -127,10 +141,53 @@ class TestUnicode:
         fonts = _fonts_in(pdf)
         assert {"NotoSans-Regular", "NotoSansDevanagari-Regular", "NotoSansArabic-Regular"} <= fonts
         text = _text(pdf)
-        assert HINDI in text and "प्रिया नायर" in text
+        # words without conjuncts extract as typed (shaped conjunct glyphs extract as private-use)
+        assert "राजेश कुमार" in text and "नायर" in text
         assert "■" not in text
         # Arabic is shaped into joined presentation forms
         assert any(0xFE70 <= ord(c) <= 0xFEFF for c in text)
+
+    @pytest.mark.skipif(not _have_noto() or sar_pdf.uharfbuzz is None, reason="needs Noto fonts + uharfbuzz")
+    def test_devanagari_is_shaped(self):
+        font = sar_pdf._fonts()["deva"][0]
+        shaped = sar_pdf._shape_devanagari("किशोर", font)
+        # the vowel sign i is drawn first (before क), as written — not 'कशिोर'
+        assert shaped[1:] == "कशोर" and shaped[0] != "क"
+        # reph and conjuncts are formed: no visible virama left
+        for word in ("शर्मा", "प्रिया", "क्रिटिक"):
+            assert "\u094D" not in sar_pdf._shape_devanagari(word, font), word
+        # glyphs without a codepoint are drawn through U+E000 + glyph id
+        face = sar_pdf.pdfmetrics.getFont(font).face
+        pua = [c for c in sar_pdf._shape_devanagari("प्रिया", font) if 0xE000 <= ord(c) <= 0xF8FF]
+        assert pua and all(face.charToGlyph[ord(c)] == ord(c) - 0xE000 for c in pua)
+
+    @pytest.mark.skipif(not _have_noto() or sar_pdf.uharfbuzz is None, reason="needs Noto fonts + uharfbuzz")
+    def test_shaped_render_does_not_depend_on_what_was_rendered_before(self):
+        # the downloaded re-render (another process, other SARs rendered first) must still be
+        # byte-identical to the delivered copy
+        first = _render(*_fixtures(customer=HINDI, counterparty=ARABIC))
+        _render(*_fixtures(customer="क्षत्रिय ज्ञानेश्वर द्विवेदी श्रीनिवास", counterparty=ARABIC))
+        assert _render(*_fixtures(customer=HINDI, counterparty=ARABIC)) == first
+
+    def test_without_shaper_vowel_sign_i_is_moved_before_its_consonant(self, monkeypatch):
+        monkeypatch.setattr(sar_pdf, "uharfbuzz", None)
+        assert sar_pdf._shape_devanagari("किशोर", "unused") == "िकशोर"
+        assert sar_pdf._reorder_i_matra("प्रिया") == "िप्रया"  # whole conjunct cluster
+        assert sar_pdf._reorder_i_matra("क्रिटिक") == "िक्रिटक"
+        assert sar_pdf._reorder_i_matra("ज़ि") == "िज़"  # nukta stays with its consonant
+        assert sar_pdf._reorder_i_matra(HINDI) == HINDI
+
+    @pytest.mark.skipif(sar_pdf._bidi_display is None, reason="python-bidi not installed")
+    def test_brackets_in_right_to_left_runs_are_mirrored(self):
+        mirrored = sar_pdf._bidi_mirrored
+        # an RTL pair is displayed with its glyphs swapped back: '(ش.م.ع)' not ')ع.م.ش('
+        assert mirrored("مصرف (ش.م.ع)") == "(ع.م.ش) فرصم"
+        # LTR pairs are left alone, even around or inside RTL text
+        assert mirrored("x (مصرف) y") == "x (فرصم) y"
+        assert mirrored("مصرف (abc) دبي") == "فرصم (abc) يبد"
+        # an RTL pair nested in an LTR one (a naive bracket matcher pairs these wrongly)
+        assert mirrored("Bank (abc مصرف (ش.م.ع) def) x") == "Bank (abc (ع.م.ش) فرصم def) x"
+        assert mirrored("(مصرف [دبي] الوطني) ok") == "(ينطولا [يبد] فرصم) ok"
 
     @pytest.mark.skipif(sar_pdf.arabic_reshaper is None, reason="arabic-reshaper / python-bidi not installed")
     def test_arabic_is_reordered_for_display(self):

@@ -18,6 +18,9 @@ RUN pip install --index-url https://download.pytorch.org/whl/cpu torch
 # Unicode fonts for the SAR PDF (customer names in Devanagari/Arabic; Helvetica renders them as
 # black boxes). Pinned to a notofonts commit and checksum-verified; fetched directly rather than
 # via apt's fonts-noto. World-readable: ADD from a URL defaults to 0600 and we run as `aegis`.
+# The directory must exist first: ADD would create it with the --chmod file mode (644, no x),
+# which `aegis` cannot traverse, and every PDF would silently fall back to Helvetica.
+RUN mkdir -p /usr/share/fonts/truetype/noto
 ARG NOTO_FONTS=https://raw.githubusercontent.com/notofonts/notofonts.github.io/e3ff34c3178cb4012124c9e6390b9a3535ff2c3f/fonts
 ADD --chmod=644 --checksum=sha256:478c558ea716033cd60c03438f628dfa75694dcf6b5f6d505a2f05fd2b4f3823 \
     ${NOTO_FONTS}/NotoSans/hinted/ttf/NotoSans-Regular.ttf /usr/share/fonts/truetype/noto/

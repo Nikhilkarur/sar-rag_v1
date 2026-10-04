@@ -14,6 +14,7 @@ groq==0.9.0
 reportlab==4.1.0
 arabic-reshaper==3.0.1  # SAR PDF: join Arabic letters (reportlab does no shaping)
 python-bidi==0.6.11     # SAR PDF: right-to-left reordering for Arabic text
+uharfbuzz==0.56.2       # SAR PDF: Devanagari shaping (conjuncts, reph, pre-base vowel signs)
 python-dotenv==1.0.1
 
 # RAG stack (imported by app/services/*; previously installed by hand)
