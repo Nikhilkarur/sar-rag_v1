@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 from typing import List, Optional
 
 from app.services import embeddings
-from app.services.chroma_client import get_tenant_collection
+from app.services.chroma_client import get_tenant_collection, replace_tenant_collection
 
 CHUNK_TARGET = 350      # token target for a chunk body (leaves room for context line under 512)
 CHUNK_OVERLAP = 60      # token overlap between consecutive chunks
@@ -27,6 +27,18 @@ MAX_CHUNK_HARD = 480    # never emit a chunk whose body exceeds this many tokens
 # Numbered headings like "4.1 Structuring", "5. Suspicious...", or short ALL-CAPS lines
 _NUM_HEADING = re.compile(r"^\s*\d+(\.\d+)*\.?\s+\S")
 _SENTENCE_SPLIT = re.compile(r"(?<=[.;:])\s+(?=[A-Z(])")
+
+
+class PolicyDocumentError(ValueError):
+    """The uploaded file can't be turned into a policy index (a client error, not a crash)."""
+
+
+class UnreadablePdfError(PolicyDocumentError):
+    """Corrupt / not a PDF / password-protected."""
+
+
+class PolicyTooLargeError(PolicyDocumentError):
+    """Over the page or extracted-text cap."""
 
 
 @dataclass
@@ -44,29 +56,54 @@ class Chunk:
 
 
 # --- 1. parse ---------------------------------------------------------------
-def parse_pdf(path: str):
-    """Return (lines, body_font_size). Each line: {text, size, page, bold}."""
+def parse_pdf(path: str, max_pages: Optional[int] = None, max_chars: Optional[int] = None):
+    """Return (lines, body_font_size). Each line: {text, size, page, bold}.
+
+    Raises UnreadablePdfError for a corrupt/encrypted file and PolicyTooLargeError when
+    the document exceeds max_pages or its text exceeds max_chars (checked as we go, so
+    an oversize file is rejected without parsing all of it)."""
     import fitz
-    doc = fitz.open(path)
-    lines = []
-    size_counts: dict = {}
-    for pno in range(doc.page_count):
-        page = doc[pno]
-        data = page.get_text("dict")
-        for block in data.get("blocks", []):
-            for line in block.get("lines", []):
-                spans = line.get("spans", [])
-                txt = "".join(s.get("text", "") for s in spans).strip()
-                if not txt:
-                    continue
-                max_size = max((s.get("size", 0) for s in spans), default=0)
-                bold = any("bold" in (s.get("font", "").lower()) for s in spans)
-                lines.append({"text": txt, "size": round(max_size, 1),
-                              "page": pno + 1, "bold": bold})
-                # tally rounded sizes weighted by text length to find body size
-                key = round(max_size)
-                size_counts[key] = size_counts.get(key, 0) + len(txt)
-    doc.close()
+    try:
+        doc = fitz.open(path, filetype="pdf")
+    except Exception as e:  # FileDataError / EmptyFileError: garbage or truncated bytes
+        raise UnreadablePdfError("Not a readable PDF file") from e
+    try:
+        try:  # a cut-off page tree opens fine and only fails here ("Invalid number of pages")
+            encrypted, page_count = doc.needs_pass, doc.page_count
+        except Exception as e:
+            raise UnreadablePdfError("Not a readable PDF file") from e
+        if encrypted:
+            raise UnreadablePdfError("PDF is password-protected; upload an unencrypted copy")
+        if max_pages is not None and page_count > max_pages:
+            raise PolicyTooLargeError(
+                f"PDF has {page_count} pages; the maximum is {max_pages}")
+        lines = []
+        size_counts: dict = {}
+        total_chars = 0
+        for pno in range(page_count):
+            try:
+                data = doc[pno].get_text("dict")
+            except Exception as e:
+                raise UnreadablePdfError(f"Not a readable PDF file (page {pno + 1})") from e
+            for block in data.get("blocks", []):
+                for line in block.get("lines", []):
+                    spans = line.get("spans", [])
+                    txt = "".join(s.get("text", "") for s in spans).strip()
+                    if not txt:
+                        continue
+                    total_chars += len(txt)
+                    if max_chars is not None and total_chars > max_chars:
+                        raise PolicyTooLargeError(
+                            f"PDF text exceeds the maximum of {max_chars:,} characters")
+                    max_size = max((s.get("size", 0) for s in spans), default=0)
+                    bold = any("bold" in (s.get("font", "").lower()) for s in spans)
+                    lines.append({"text": txt, "size": round(max_size, 1),
+                                  "page": pno + 1, "bold": bold})
+                    # tally rounded sizes weighted by text length to find body size
+                    key = round(max_size)
+                    size_counts[key] = size_counts.get(key, 0) + len(txt)
+    finally:
+        doc.close()
     body_size = max(size_counts, key=size_counts.get) if size_counts else 10
     return lines, body_size
 
@@ -151,12 +188,16 @@ def _enforce_max_len(sentences: List[str]) -> List[str]:
         if embeddings.count_tokens(s) <= MAX_CHUNK_HARD:
             out.append(s)
             continue
-        words, cur = s.split(), []
-        for w in words:
+        # Running per-word total instead of re-tokenizing the growing piece after every
+        # word (which made one long run-on "sentence" cost minutes). Same split for bge's
+        # WordPiece tokenizer, where a text's token count is the sum of its words'.
+        cur, cur_tokens = [], 0
+        for w in s.split():
             cur.append(w)
-            if embeddings.count_tokens(" ".join(cur)) >= CHUNK_TARGET:
+            cur_tokens += embeddings.count_tokens(w)
+            if cur_tokens >= CHUNK_TARGET:
                 out.append(" ".join(cur))
-                cur = []
+                cur, cur_tokens = [], 0
         if cur:
             out.append(" ".join(cur))
     return out
@@ -190,8 +231,9 @@ def chunk_section(section: Section) -> List[str]:
 
 
 # --- 4 + 5. build + index ---------------------------------------------------
-def build_chunks(path: str, doc_title: str, filename: str, doc_id: str) -> List[Chunk]:
-    lines, body_size = parse_pdf(path)
+def build_chunks(path: str, doc_title: str, filename: str, doc_id: str,
+                 max_pages: Optional[int] = None, max_chars: Optional[int] = None) -> List[Chunk]:
+    lines, body_size = parse_pdf(path, max_pages=max_pages, max_chars=max_chars)
     sections = split_sections(lines, body_size)
     out: List[Chunk] = []
     idx = 0
@@ -214,13 +256,30 @@ def build_chunks(path: str, doc_title: str, filename: str, doc_id: str) -> List[
     return out
 
 
+def _records(chunks: List[Chunk]):
+    docs = [c.document for c in chunks]
+    metas = [c.metadata for c in chunks]
+    ids = [f"{c.metadata['doc_id']}_{c.metadata['chunk_index']}" for c in chunks]
+    return docs, metas, ids
+
+
 def index_document(tenant_id: str, chunks: List[Chunk]) -> int:
     if not chunks:
         return 0
     collection = get_tenant_collection(tenant_id)
-    docs = [c.document for c in chunks]
-    metas = [c.metadata for c in chunks]
-    ids = [f"{c.metadata['doc_id']}_{c.metadata['chunk_index']}" for c in chunks]
+    docs, metas, ids = _records(chunks)
     vectors = embeddings.embed_documents(docs)
     collection.add(documents=docs, embeddings=vectors, metadatas=metas, ids=ids)
     return len(chunks)
+
+
+def replace_index(tenant_id: str, chunks: List[Chunk]) -> int:
+    """Make `chunks` the tenant's entire index. Everything that can fail (embedding,
+    writing the vectors) happens before the live collection is touched, so on error the
+    previous index keeps serving."""
+    if not chunks:
+        raise ValueError("refusing to replace a tenant index with no chunks")
+    docs, metas, ids = _records(chunks)
+    vectors = embeddings.embed_documents(docs)
+    return replace_tenant_collection(tenant_id, ids=ids, documents=docs,
+                                     embeddings=vectors, metadatas=metas)

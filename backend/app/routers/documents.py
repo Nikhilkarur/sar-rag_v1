@@ -10,9 +10,14 @@ A tenant uploads their AML policy PDF here. We:
   POST   /api/v1/documents/upload   (multipart 'file')  -> store + index
   GET    /api/v1/documents/                              -> info on this client's policy
   DELETE /api/v1/documents/                              -> remove policy file + chunks
+
+A re-upload replaces the policy only once the new file has been parsed, chunked and
+embedded; a corrupt, encrypted, blank or oversize PDF is rejected (422/413) and the
+previous policy + index stay as they were.
 """
 import os
-import shutil
+import tempfile
+import threading
 
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 from sqlalchemy.orm import Session
@@ -28,6 +33,24 @@ from app.services import client_storage
 
 router = APIRouter(prefix="/api/v1/documents", tags=["Documents"])
 
+POLICY_FILENAME = "policy.pdf"
+_COPY_BLOCK = 1024 * 1024
+
+# One policy upload/delete at a time per tenant (in-process), so two overlapping
+# re-uploads can't interleave their index swaps.
+_tenant_locks: dict = {}
+_tenant_locks_guard = threading.Lock()
+
+
+def _tenant_lock(tid: str) -> threading.Lock:
+    with _tenant_locks_guard:
+        return _tenant_locks.setdefault(tid, threading.Lock())
+
+
+def _busy() -> HTTPException:
+    return HTTPException(status_code=409,
+                         detail="A policy upload for this client is already in progress")
+
 
 def _client_id(db: Session, user: User) -> str:
     # A SUPER_ADMIN has no tenant_id; without a tenant we'd write to clients/None/ and a
@@ -40,30 +63,66 @@ def _client_id(db: Session, user: User) -> str:
 
 
 @router.post("/upload")
-async def upload_policy(file: UploadFile = File(...), db: Session = Depends(get_db),
-                        current_user: User = Depends(get_compliance_user)):
+def upload_policy(file: UploadFile = File(...), db: Session = Depends(get_db),
+                  current_user: User = Depends(get_compliance_user)):
+    # Plain `def` on purpose: FastAPI runs it in the threadpool. Parsing, tokenizing and
+    # embedding a policy is seconds-to-minutes of CPU; as `async def` it ran on the event
+    # loop and froze every other request (incl. /health) until it finished.
     if not (file.filename or "").lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are supported")
 
-    data = await file.read()
-    if len(data) > settings.MAX_UPLOAD_FILE_SIZE_MB * 1024 * 1024:
-        raise HTTPException(status_code=413, detail="File exceeds the maximum allowed size")
-
     cid = _client_id(db, current_user)
     tid = str(current_user.tenant_id)               # Chroma is keyed by the tenant UUID
-    dest = client_storage.policy_path(cid)          # storage/clients/<cid>/policy.pdf
-    with open(dest, "wb") as f:                     # 1. store the RAW pdf
-        f.write(data)
+    db.close()                                      # don't pin a pooled connection while indexing
 
-    # 2. re-index this client's policy into Chroma (reset first so re-upload replaces)
-    from app.services.chroma_client import reset_tenant_collection
-    reset_tenant_collection(tid)
-    chunks = dis.build_chunks(dest, doc_title=f"{cid} AML Policy",
-                              filename="policy.pdf", doc_id="policy.pdf")
-    n = dis.index_document(tid, chunks)
+    lock = _tenant_lock(tid)
+    if not lock.acquire(blocking=False):
+        raise _busy()
+    try:
+        n = _store_and_index(file, cid, tid)
+    finally:
+        lock.release()
 
-    return {"status": "ok", "client_id": cid, "stored_path": dest,
+    return {"status": "ok", "client_id": cid, "stored_filename": POLICY_FILENAME,
             "original_filename": os.path.basename(file.filename), "chunks_indexed": n}
+
+
+def _store_and_index(file: UploadFile, cid: str, tid: str) -> int:
+    """Validate + parse + chunk + embed the upload from a temp file, and only then
+    replace the tenant's index and stored policy.pdf. Any failure leaves both as they were."""
+    dest = client_storage.policy_path(cid)          # storage/clients/<cid>/policy.pdf
+    max_bytes = settings.MAX_UPLOAD_FILE_SIZE_MB * 1024 * 1024
+    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(dest), prefix=".policy-", suffix=".pdf.part")
+    try:
+        with os.fdopen(fd, "wb") as out:            # 1. spool the upload next to policy.pdf
+            size = 0
+            while block := file.file.read(_COPY_BLOCK):
+                size += len(block)
+                if size > max_bytes:
+                    raise HTTPException(status_code=413, detail="File exceeds the maximum allowed size")
+                out.write(block)
+
+        try:                                        # 2. parse + chunk (capped)
+            chunks = dis.build_chunks(tmp, doc_title=f"{cid} AML Policy",
+                                      filename=POLICY_FILENAME, doc_id=POLICY_FILENAME,
+                                      max_pages=settings.MAX_POLICY_PAGES,
+                                      max_chars=settings.MAX_POLICY_TEXT_CHARS)
+        except dis.PolicyTooLargeError as e:
+            raise HTTPException(status_code=413, detail=str(e))
+        except dis.UnreadablePdfError as e:
+            raise HTTPException(status_code=422, detail=str(e))
+        if not chunks:
+            raise HTTPException(status_code=422,
+                                detail="PDF contains no extractable text (scanned? run OCR first)")
+
+        n = dis.replace_index(tid, chunks)          # 3. embed, then swap the index
+        os.replace(tmp, dest)                       # 4. swap the stored file
+        return n
+    finally:
+        try:
+            os.remove(tmp)                          # gone already after a successful replace
+        except FileNotFoundError:
+            pass
 
 
 @router.get("/")
@@ -76,8 +135,10 @@ def get_policy_info(db: Session = Depends(get_db),
         total = get_tenant_collection(tid).count()
     except Exception:
         total = None
-    return {"client_id": cid, "policy_present": os.path.isfile(path),
-            "policy_path": path if os.path.isfile(path) else None,
+    present = os.path.isfile(path)
+    # Filename only: the server-side storage path is an internal detail.
+    return {"client_id": cid, "policy_present": present,
+            "policy_filename": POLICY_FILENAME if present else None,
             "chunks_indexed": total}
 
 
@@ -87,14 +148,20 @@ def delete_policy(db: Session = Depends(get_db),
     cid = _client_id(db, current_user)
     tid = str(current_user.tenant_id)
     path = client_storage.policy_path(cid)
-    existed = os.path.isfile(path)
-    if existed:
-        os.remove(path)
-    from app.services.chroma_client import reset_tenant_collection
+    lock = _tenant_lock(tid)
+    if not lock.acquire(blocking=False):
+        raise _busy()
     try:
-        reset_tenant_collection(tid)  # drop this client's chunks
-    except Exception:
-        pass
+        existed = os.path.isfile(path)
+        if existed:
+            os.remove(path)
+        from app.services.chroma_client import reset_tenant_collection
+        try:
+            reset_tenant_collection(tid)  # drop this client's chunks
+        except Exception:
+            pass
+    finally:
+        lock.release()
     if not existed:
         raise HTTPException(status_code=404, detail="No policy on file")
     return {"status": "ok", "deleted_client": cid}

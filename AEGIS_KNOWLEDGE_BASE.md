@@ -918,6 +918,7 @@ gitignored `backend/.env`.
 | `RAG_TOP_K_CHUNKS` | 8 | |
 | `RATE_LIMIT_INGEST_PER_MINUTE` | 120 | |
 | `MAX_INGEST_PAYLOAD_BYTES` / `MAX_UPLOAD_FILE_SIZE_MB` | 5 MB / 50 MB | |
+| `MAX_POLICY_PAGES` / `MAX_POLICY_TEXT_CHARS` | 500 / 1,000,000 | policy PDF content caps (413 over either) |
 | `PII_ENCRYPTION_KEY` | derived from `SECRET_KEY` if empty | **set explicitly in prod** |
 | `CORS_ORIGINS` | 5173, 5174, 3000 | Aegis UI + mock-bank UIs |
 | `PUBLIC_BASE_URL` | `http://localhost:8000` | builds the SAR `pdf_url` in webhooks |
@@ -1219,9 +1220,11 @@ Extracted from the routers, services, and Pydantic schemas — **not** from the 
 
 ```jsonc
 // POST /api/v1/documents/upload  (multipart 'file')
-// → { "status":"ok","client_id":"TEN-0001","stored_path":"…/policy.pdf",
+// → { "status":"ok","client_id":"TEN-0001","stored_filename":"policy.pdf",
 //     "original_filename":"policy.pdf","chunks_indexed":28 }
-// GET  /api/v1/documents/  → { "client_id","policy_present":true,"policy_path","chunks_indexed":28 }
+//   422 unreadable/encrypted PDF or no extractable text; 413 over the size/page/text caps
+//   409 while another upload/delete for the client runs (previous policy + index kept on any failure)
+// GET  /api/v1/documents/  → { "client_id","policy_present":true,"policy_filename","chunks_indexed":28 }
 
 // POST /api/v1/admin/tenants/{id}/approve
 // → { "tenant_id":"TEN-0001","status":"ACTIVE","api_key":"sk-ae-…" }   // plaintext key, ONCE

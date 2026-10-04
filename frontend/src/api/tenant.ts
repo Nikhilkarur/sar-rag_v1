@@ -44,7 +44,7 @@ export async function getWebhookEvents(): Promise<WebhookEvent[]> {
 export interface PolicyInfo {
   client_id: string
   policy_present: boolean
-  policy_path: string | null
+  policy_filename: string | null
   chunks_indexed: number | null
 }
 
@@ -56,7 +56,7 @@ export async function getPolicyInfo(): Promise<PolicyInfo> {
 export interface PolicyUploadResult {
   status: string
   client_id: string
-  stored_path: string
+  stored_filename: string
   original_filename: string
   chunks_indexed: number
 }

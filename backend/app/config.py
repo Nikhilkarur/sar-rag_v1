@@ -74,6 +74,11 @@ class Settings(BaseSettings):
     CHROMA_PERSIST_DIR: str = "./chroma_data"
     RAG_TOP_K_CHUNKS: int = 8
     MAX_UPLOAD_FILE_SIZE_MB: int = 50
+    # Caps on the policy PDF's CONTENT (not just its bytes): parsing, tokenizing and
+    # embedding cost scales with pages/text, and an oversize policy would pin a CPU for
+    # minutes. Uploads over either cap are rejected with 413.
+    MAX_POLICY_PAGES: int = 500
+    MAX_POLICY_TEXT_CHARS: int = 1_000_000
 
     # Public base URL of this API (used to build the SAR pdf_url in webhooks).
     PUBLIC_BASE_URL: str = "http://localhost:8000"
