@@ -152,6 +152,80 @@ def test_login_and_signup_treat_email_case_insensitively(client):
         assert dup.json()["detail"] == "Email already registered"
 
 
+def test_concurrent_signups_with_same_email_never_500(client):
+    from app.database import SessionLocal
+    from app.schemas.auth import UserSignup
+    from app.services import auth_service
+
+    # Equal once normalized, so all of them pass the pre-check before any commits
+    email = f"Race-{_uid()}@Bank.example.com"
+    variants = [email, email.lower(), email.upper(), email.swapcase()]
+    barrier = threading.Barrier(len(variants))
+    statuses, errors = [], []
+
+    def signup(variant):
+        session = SessionLocal()
+        try:
+            data = UserSignup(company_name=f"Race Bank {_uid()}", company_type="BANK",
+                              admin_email=variant, admin_password=PASSWORD, admin_name="Racer")
+            barrier.wait()
+            auth_service.signup_tenant_admin(data, session)
+            statuses.append(200)
+        except HTTPException as e:
+            statuses.append((e.status_code, e.detail))
+        except Exception as e:  # the losers used to hit UniqueViolation at flush -> 500
+            errors.append(repr(e))
+        finally:
+            session.close()
+
+    threads = [threading.Thread(target=signup, args=(v,)) for v in variants]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join(timeout=60)
+
+    assert errors == []
+    assert sorted(statuses, key=str) == sorted(
+        [200] + [(400, "Email already registered")] * (len(variants) - 1), key=str)
+    assert _login(client, email).status_code == 200
+
+
+def test_concurrent_signups_with_same_company_name_never_500(client):  # client: migrated DB
+    from app.database import SessionLocal
+    from app.schemas.auth import UserSignup
+    from app.services import auth_service
+
+    # Same new name -> same slug for all of them (the pre-check sees it free)
+    name = f"Slug Race Bank {_uid()}"
+    barrier = threading.Barrier(3)
+    statuses, errors = [], []
+
+    def signup():
+        session = SessionLocal()
+        try:
+            data = UserSignup(company_name=name, company_type="BANK",
+                              admin_email=f"slug-{_uid()}@bank.example.com",
+                              admin_password=PASSWORD, admin_name="Racer")
+            barrier.wait()
+            auth_service.signup_tenant_admin(data, session)
+            statuses.append(200)
+        except HTTPException as e:
+            statuses.append(e.status_code)
+        except Exception as e:
+            errors.append(repr(e))
+        finally:
+            session.close()
+
+    threads = [threading.Thread(target=signup) for _ in range(3)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join(timeout=60)
+
+    assert errors == []
+    assert 200 in statuses and set(statuses) <= {200, 409}
+
+
 def test_legacy_mixed_case_account_still_logs_in(client, db):
     email = f"Legacy-{_uid()}@Example.com"
     _make_user(db, email, role="COMPLIANCE_OFFICER")  # stored as-is, like pre-fix rows

@@ -77,46 +77,49 @@ def signup_tenant_admin(data: UserSignup, db: Session):
 
     # Tenant + user + audit log are one atomic unit: a failure mid-way must
     # not leave an orphaned tenant without an admin user.
-    tenant = Tenant(
-        name=data.tenant_name,
-        slug=slug,
-        company_type=data.company_type,
-        cin=data.cin,
-        website=data.website,
-        status="PENDING_VERIFICATION"
-    )
-    db.add(tenant)
-    db.flush()  # assigns tenant.id without committing
-
-    user = User(
-        tenant_id=tenant.id,
-        email=data.email,
-        password_hash=hash_password(data.password),
-        full_name=data.full_name,
-        designation=data.designation,
-        phone=data.phone,
-        role="TENANT_ADMIN"
-    )
-    db.add(user)
-    db.flush()
-
-    db.add(AuditLog(
-        tenant_id=tenant.id,
-        user_id=user.id,
-        action="TENANT_SIGNUP",
-        entity_type="tenant",
-        entity_id=tenant.id,
-        details={"tenant_name": tenant.name}
-    ))
-
-    access_token, refresh_token = _start_session(user, db)
-
     try:
+        tenant = Tenant(
+            name=data.tenant_name,
+            slug=slug,
+            company_type=data.company_type,
+            cin=data.cin,
+            website=data.website,
+            status="PENDING_VERIFICATION"
+        )
+        db.add(tenant)
+        db.flush()  # assigns tenant.id without committing
+
+        user = User(
+            tenant_id=tenant.id,
+            email=data.email,
+            password_hash=hash_password(data.password),
+            full_name=data.full_name,
+            designation=data.designation,
+            phone=data.phone,
+            role="TENANT_ADMIN"
+        )
+        db.add(user)
+        db.flush()
+
+        db.add(AuditLog(
+            tenant_id=tenant.id,
+            user_id=user.id,
+            action="TENANT_SIGNUP",
+            entity_type="tenant",
+            entity_id=tenant.id,
+            details={"tenant_name": tenant.name}
+        ))
+
+        access_token, refresh_token = _start_session(user, db)
         db.commit()
     except IntegrityError:
-        # Lost a race on users.email or tenants.slug — clean 400, never a 500
+        # Lost a race to a concurrent signup on users.email or tenants.slug. The
+        # flushes above raise it as well as the commit, hence the whole block:
+        # a clean 4xx, never a 500.
         db.rollback()
-        raise HTTPException(status_code=400, detail="Email already registered")
+        if db.query(User.id).filter(func.lower(User.email) == data.email).first():
+            raise HTTPException(status_code=400, detail="Email already registered")
+        raise HTTPException(status_code=409, detail="Another signup for this company name is in progress, please try again")
     db.refresh(user)
 
     return {
