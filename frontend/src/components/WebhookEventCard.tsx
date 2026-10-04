@@ -1,12 +1,61 @@
 import { useState } from 'react'
-import { CheckCircle2, ChevronDown, XCircle } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, ChevronDown, Clock, HelpCircle, RotateCcw, XCircle } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
 import type { WebhookEvent } from '../types'
 import { timeAgo } from '../utils/format'
+import { redeliverWebhookEvent } from '../api/tenant'
 import { CodeBlock } from './ui/CodeBlock'
 import { HttpStatusBadge } from './ui/Badge'
+import { Button } from './ui/Button'
+import { useToast } from './ui/Toast'
+
+function StatusIcon({ status }: { status: WebhookEvent['status'] }) {
+  const style = { flexShrink: 0 }
+  switch (status) {
+    case 'DELIVERED':
+      return <CheckCircle2 size={16} color="var(--success)" style={style} />
+    case 'FAILED':
+      return <XCircle size={16} color="var(--danger)" style={style} />
+    case 'PENDING':
+    case 'RETRYING':
+      return <Clock size={16} color="var(--text-3)" style={style} />
+    case 'STALLED':
+      return <AlertTriangle size={16} color="var(--warning)" style={style} />
+    default:
+      return <HelpCircle size={16} color="var(--text-4)" style={style} />
+  }
+}
+
+const STATUS_TEXT: Record<WebhookEvent['status'], string> = {
+  DELIVERED: 'Delivered',
+  FAILED: 'Delivery failed',
+  PENDING: 'Sending…',
+  RETRYING: 'Retrying…',
+  STALLED: 'Interrupted — outcome unknown',
+  UNKNOWN: 'Outcome not recorded (sent before delivery tracking)',
+}
 
 export function WebhookEventCard({ event }: { event: WebhookEvent }) {
   const [expanded, setExpanded] = useState(false)
+  const [redelivering, setRedelivering] = useState(false)
+  const qc = useQueryClient()
+  const { toast } = useToast()
+  const isApproval = (event.event ?? '').startsWith('sar.approved')
+  const canRedeliver = isApproval && ['FAILED', 'STALLED', 'UNKNOWN'].includes(event.status)
+
+  const handleRedeliver = async () => {
+    setRedelivering(true)
+    try {
+      const result = await redeliverWebhookEvent(event.id)
+      toast('success', 'SAR re-delivery started', `Sending to ${result.destination}.`)
+    } catch (err) {
+      const detail = (err as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail
+      toast('error', 'Re-delivery not started', typeof detail === 'string' ? detail : 'Please try again.')
+    } finally {
+      setRedelivering(false)
+      qc.invalidateQueries({ queryKey: ['webhook-events'] })
+    }
+  }
 
   return (
     <div
@@ -37,11 +86,7 @@ export function WebhookEventCard({ event }: { event: WebhookEvent }) {
         onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-elevated)')}
         onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
       >
-        {event.status === 'DELIVERED' ? (
-          <CheckCircle2 size={16} color="var(--success)" style={{ flexShrink: 0 }} />
-        ) : (
-          <XCircle size={16} color="var(--danger)" style={{ flexShrink: 0 }} />
-        )}
+        <StatusIcon status={event.status} />
         <span style={{ fontSize: 13, color: 'var(--text-3)', width: 80, textAlign: 'left', flexShrink: 0 }}>
           {timeAgo(event.received_at)}
         </span>
@@ -88,7 +133,19 @@ export function WebhookEventCard({ event }: { event: WebhookEvent }) {
         style={{ maxHeight: expanded ? 400 : 0, opacity: expanded ? 1 : 0 }}
       >
         <div style={{ padding: '0 16px 16px' }}>
-          <CodeBlock code={JSON.stringify(event.payload, null, 2)} language="json" maxHeight={300} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10, fontSize: 12.5 }}>
+            <span style={{ color: 'var(--text-2)', flex: 1 }}>
+              {STATUS_TEXT[event.status] ?? event.status}
+              {event.attempts ? ` · ${event.attempts} attempt${event.attempts === 1 ? '' : 's'}` : ''}
+              {event.error ? ` · ${event.error}` : ''}
+            </span>
+            {canRedeliver && (
+              <Button variant="secondary" size="sm" icon={<RotateCcw size={13} />} onClick={handleRedeliver} loading={redelivering}>
+                Re-deliver
+              </Button>
+            )}
+          </div>
+          <CodeBlock code={JSON.stringify(event.payload, null, 2)} language="json" maxHeight={260} />
         </div>
       </div>
     </div>

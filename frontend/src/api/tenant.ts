@@ -37,6 +37,12 @@ export async function rotateWebhookSecret(): Promise<{ secret: string; secret_pr
   return data
 }
 
+/** Re-sends the SAR of an approval event whose delivery failed or stalled. */
+export async function redeliverWebhookEvent(eventId: string): Promise<{ status: string; delivery_id: string; destination: string }> {
+  const { data } = await client.post(`/tenant/webhook/events/${eventId}/redeliver`)
+  return data
+}
+
 export async function sendTestWebhook(): Promise<{ status: string; latency_ms: number; message?: string }> {
   const { data } = await client.post('/tenant/webhook/test')
   return data

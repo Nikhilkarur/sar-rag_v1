@@ -184,6 +184,14 @@ def preview_rehydrated(alert_id: str, db: Session = Depends(get_db), current_use
         text = rehydrate_text(text, pii_map.token_map)
     return {"rehydrated_text": text}
 
+def _ensure_not_processing(a: Alert) -> None:
+    # The ingest background task commits the SAR draft while the alert is still PROCESSING and
+    # only then sets its final status (PROCESSING_COMPLETED, or APPROVED + delivery when
+    # AUTO_APPROVE_SARS is on) without re-checking it. A decision taken in that window would be
+    # overwritten, or the SAR delivered twice, so the officer acts once processing has finished.
+    if a.status in ("PENDING_INGESTION", "PROCESSING"):
+        raise HTTPException(status_code=409, detail="Alert is still being processed — try again shortly")
+
 @router.post("/queue/{alert_id}/approve")
 def approve_alert(alert_id: str, payload: Any = Body(default=None), db: Session = Depends(get_db), current_user: User = Depends(get_compliance_user)):
     # Row lock held until commit: of several near-simultaneous approves (double clicks, two
@@ -191,6 +199,7 @@ def approve_alert(alert_id: str, payload: Any = Body(default=None), db: Session 
     a = _get_owned_alert(alert_id, db, current_user, for_update=True)
     if a.status in ("APPROVED", "REJECTED"):
         raise HTTPException(status_code=409, detail=f"Alert already {a.status.lower()}")
+    _ensure_not_processing(a)
     # Approving requires a SAR to approve. Without this, a below-threshold
     # (COMPLETED_CLEAN) or still-PROCESSING alert could be marked APPROVED with no
     # draft — finalize_and_deliver would no-op and leave an "approved" SAR that was
@@ -210,6 +219,7 @@ def reject_alert(alert_id: str, payload: dict = Body(default={}), db: Session = 
     a = _get_owned_alert(alert_id, db, current_user, for_update=True)  # vs. a concurrent approve
     if a.status in ("APPROVED", "REJECTED"):
         raise HTTPException(status_code=409, detail=f"Alert already {a.status.lower()}")
+    _ensure_not_processing(a)
     a.status = 'REJECTED'
     a.reviewed_by = current_user.id
     a.reviewed_at = __import__('sqlalchemy').func.now()

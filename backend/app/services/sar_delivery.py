@@ -8,6 +8,7 @@ the finished report to the tenant's webhook: a webhook_deliveries row (the real 
 an audit copy in webhook_sink_events. It does NOT commit — the caller owns the transaction;
 the HTTP POST to an external callback is only sent once that transaction commits, from a
 background thread that retries with backoff and writes every attempt's result to the row.
+A delivery that failed (or was cut short by a restart) can be re-sent with redeliver_sar.
 """
 import base64
 import hashlib
@@ -46,10 +47,13 @@ AUTO_APPROVER_NAME = "Automated compliance review (auto-approved)"
 INTERNAL_SINK_DESTINATION = "internal-sink"
 
 # Outbound delivery: bounded in-process retry with exponential backoff (2s, 4s, ...). Not
-# durable across a restart — such a delivery stays PENDING/RETRYING, never "DELIVERED".
+# durable across a restart: such a delivery stays PENDING/RETRYING in the table, and once it
+# is older than WEBHOOK_STALLED_AFTER (far beyond the whole retry window) it is reported as
+# STALLED — outcome unknown, never "DELIVERED" — and can be re-delivered.
 WEBHOOK_MAX_ATTEMPTS = 3
 WEBHOOK_RETRY_BACKOFF_SECONDS = 2.0
 WEBHOOK_TIMEOUT_SECONDS = 8.0
+WEBHOOK_STALLED_AFTER = timedelta(minutes=5)
 
 
 def format_approved_at(dt: datetime) -> str:
@@ -73,22 +77,35 @@ def build_draft_pdf_bytes(db: Session, draft) -> bytes | None:
     Used by the officer's on-demand download (/files/sar). Returns None unless the alert is
     APPROVED: a pending or rejected draft is not a filing and must not render as one."""
     from app.models.alert import Alert
-    from app.models.user import User
     alert = db.query(Alert).filter(Alert.id == draft.alert_id).first()
     if not alert or alert.status != "APPROVED":
         return None
     tenant = db.query(Tenant).filter(Tenant.id == draft.tenant_id).first()
     rule_ids = _triggered_rule_ids(db, alert.id)
-    # Same approver + approval time finalize_and_deliver stamped (reviewed_at is stored from
-    # that exact value). reviewed_by is unset only on the auto-approve path.
+    approver_name, approved_at_iso = _stored_approval(db, alert)
+    goaml = build_goaml_str(alert, draft, rule_ids, tenant, approver_name, approved_at_iso)
+    return render_sar_pdf(str(draft.id), alert, draft, goaml, approver_name, approved_at_iso)
+
+
+def _stored_approval(db: Session, alert) -> tuple:
+    """(approver name, approved_at) exactly as finalize_and_deliver stamped them (reviewed_at
+    is stored from that exact value). reviewed_by is unset only on the auto-approve path."""
+    from app.models.user import User
     if alert.reviewed_by:
         approver = db.query(User).filter(User.id == alert.reviewed_by).first()
         approver_name = approver.full_name if approver else "Unknown officer"
     else:
         approver_name = AUTO_APPROVER_NAME
-    approved_at_iso = format_approved_at(alert.reviewed_at) if alert.reviewed_at else None
-    goaml = build_goaml_str(alert, draft, rule_ids, tenant, approver_name, approved_at_iso)
-    return render_sar_pdf(str(draft.id), alert, draft, goaml, approver_name, approved_at_iso)
+    return approver_name, (format_approved_at(alert.reviewed_at) if alert.reviewed_at else None)
+
+
+def delivery_status(d: WebhookDelivery) -> str:
+    """The delivery's recorded status, or STALLED for one whose in-process retries were cut
+    short (restart/deploy): still PENDING/RETRYING long after its last attempt."""
+    if d.status in ("PENDING", "RETRYING") and d.attempted_at is not None \
+            and d.attempted_at < datetime.now(timezone.utc) - WEBHOOK_STALLED_AFTER:
+        return "STALLED"
+    return d.status
 
 
 def _signature(secret_encrypted, body: bytes) -> str | None:
@@ -126,7 +143,23 @@ def _post_once(url: str, body: bytes, headers: dict) -> tuple:
     return False, retryable, r.status_code, f"Receiver responded {r.status_code}"
 
 
-def _record_attempt(delivery_id, attempt: int, status: str, http_status, error,
+def _signed_headers(tenant_id, event_name: str, body: bytes) -> dict:
+    """Headers for one attempt, signed with the tenant's CURRENT secret: a retry after the
+    secret was rotated must verify against the new secret the bank now holds."""
+    db = SessionLocal()
+    try:
+        webhook = db.query(WebhookConfig).filter(WebhookConfig.tenant_id == tenant_id).first()
+        secret_encrypted = webhook.secret_encrypted if webhook else None
+    finally:
+        db.close()
+    headers = {"Content-Type": "application/json", "X-Aegis-Event": event_name}
+    signature = _signature(secret_encrypted, body)
+    if signature:
+        headers["X-Aegis-Signature"] = signature
+    return headers
+
+
+def _record_attempt(delivery_id, attempt: int, headers: dict, status: str, http_status, error,
                     retry_in: float | None) -> None:
     db = SessionLocal()
     try:
@@ -134,6 +167,8 @@ def _record_attempt(delivery_id, attempt: int, status: str, http_status, error,
         if d is None:
             return
         now = datetime.now(timezone.utc)
+        d.request_headers = headers
+        d.hmac_signature = headers.get("X-Aegis-Signature")
         d.attempt_number = attempt
         d.attempted_at = now
         d.status = status
@@ -149,7 +184,7 @@ def _record_attempt(delivery_id, attempt: int, status: str, http_status, error,
         db.close()
 
 
-def deliver_webhook(delivery_id, url: str, body: bytes, headers: dict) -> str | None:
+def deliver_webhook(delivery_id, url: str, body: bytes, event_name: str) -> str | None:
     """POST a recorded delivery to the bank, retrying transient failures with exponential
     backoff, and write each attempt's real outcome to its webhook_deliveries row.
     Returns the final status, or None if the delivery is gone/already handled."""
@@ -159,15 +194,18 @@ def deliver_webhook(delivery_id, url: str, body: bytes, headers: dict) -> str | 
         # Missing = the approving transaction rolled back; never send that SAR.
         if d is None or d.status != "PENDING":
             return None
+        tenant_id = d.tenant_id
     finally:
         db.close()
 
     for attempt in range(1, WEBHOOK_MAX_ATTEMPTS + 1):
+        headers = _signed_headers(tenant_id, event_name, body)
         ok, retryable, http_status, error = _post_once(url, body, headers)
         final = ok or not retryable or attempt == WEBHOOK_MAX_ATTEMPTS
         backoff = WEBHOOK_RETRY_BACKOFF_SECONDS * (2 ** (attempt - 1))
         status = "DELIVERED" if ok else ("FAILED" if final else "RETRYING")
-        _record_attempt(delivery_id, attempt, status, http_status, error, None if final else backoff)
+        _record_attempt(delivery_id, attempt, headers, status, http_status, error,
+                        None if final else backoff)
         if ok:
             logger.info("Webhook delivery %s to %s delivered (HTTP %s, attempt %d)",
                         delivery_id, url, http_status, attempt)
@@ -182,16 +220,17 @@ def deliver_webhook(delivery_id, url: str, body: bytes, headers: dict) -> str | 
     return None
 
 
-def _deliver_after_commit(db: Session, delivery_id, url: str, body: bytes, headers: dict) -> None:
+def _deliver_after_commit(db: Session, delivery_id, url: str, body: bytes, event_name: str) -> None:
     """Send only once the approval is committed: a rolled-back approval must never reach the
     bank, and the HTTP round-trips/backoff must hold neither the request nor the row lock."""
     def _start(_session):
-        threading.Thread(target=deliver_webhook, args=(delivery_id, url, body, headers),
+        threading.Thread(target=deliver_webhook, args=(delivery_id, url, body, event_name),
                          name=f"webhook-delivery-{delivery_id}", daemon=True).start()
     event.listen(db, "after_commit", _start, once=True)
 
 
-def _record_delivery(db: Session, alert, draft, webhook: WebhookConfig, payload: dict) -> None:
+def _record_delivery(db: Session, alert, draft, webhook: WebhookConfig,
+                     payload: dict) -> WebhookDelivery:
     """Record the delivery and its audit event; schedule the POST for an external callback."""
     body = json.dumps(payload).encode("utf-8")
     headers = {"Content-Type": "application/json", "X-Aegis-Event": payload["event"]}
@@ -232,7 +271,8 @@ def _record_delivery(db: Session, alert, draft, webhook: WebhookConfig, payload:
         delivery_id=delivery.id,
     ))
     if external:
-        _deliver_after_commit(db, delivery.id, webhook.callback_url, body, headers)
+        _deliver_after_commit(db, delivery.id, webhook.callback_url, body, payload["event"])
+    return delivery
 
 
 def finalize_and_deliver(alert, db: Session, approver_name: str, approver_user_id=None) -> dict:
@@ -259,7 +299,31 @@ def finalize_and_deliver(alert, db: Session, approver_name: str, approver_user_i
     if pii_map:
         pii_map.rehydrated_at = sqlalchemy.func.now()
 
-    approved_at_iso = format_approved_at(approved_at)
+    delivery_payload = _build_payload(db, alert, draft, approver_name, format_approved_at(approved_at))
+    if delivery_payload["pdf_base64"]:
+        draft.pdf_generated_at = sqlalchemy.func.now()
+
+    webhook = db.query(WebhookConfig).filter(WebhookConfig.tenant_id == alert.tenant_id).first()
+    if webhook and webhook.is_active:
+        _record_delivery(db, alert, draft, webhook, delivery_payload)
+    return delivery_payload
+
+
+def redeliver_sar(db: Session, draft, webhook: WebhookConfig) -> WebhookDelivery:
+    """Send an approved SAR again — after a failed or stalled delivery — to the destination
+    configured now. The payload is rebuilt from stored data (same approver and approval time,
+    so the same report and PDF) and signed with the current secret. Caller commits."""
+    from app.models.alert import Alert
+    alert = db.query(Alert).filter(Alert.id == draft.alert_id).first()
+    if not alert or alert.status != "APPROVED":
+        raise ValueError("Only an approved SAR can be delivered")
+    approver_name, approved_at_iso = _stored_approval(db, alert)
+    payload = _build_payload(db, alert, draft, approver_name, approved_at_iso)
+    return _record_delivery(db, alert, draft, webhook, payload)
+
+
+def _build_payload(db: Session, alert, draft, approver_name: str, approved_at_iso: str) -> dict:
+    """The approval webhook payload: goAML STR (JSON + XML), the PDF and the event metadata."""
     rule_ids = _triggered_rule_ids(db, alert.id)
     tenant = db.query(Tenant).filter(Tenant.id == alert.tenant_id).first()
     goaml = build_goaml_str(alert, draft, rule_ids, tenant, approver_name, approved_at_iso)
@@ -278,7 +342,6 @@ def finalize_and_deliver(alert, db: Session, approver_name: str, approver_user_i
     try:
         pdf_bytes = render_sar_pdf(str(draft.id), alert, draft, goaml, approver_name, approved_at_iso)
         pdf_base64 = base64.b64encode(pdf_bytes).decode("ascii")
-        draft.pdf_generated_at = sqlalchemy.func.now()
     except Exception:
         # PDF render failure must not block approval/delivery
         logger.exception("SAR PDF render failed for SAR %s", draft.id)
@@ -288,7 +351,7 @@ def finalize_and_deliver(alert, db: Session, approver_name: str, approver_user_i
     # Simulator alerts are synthetic: mark them like the /tenant/webhook/test ping (test: true)
     # and under their own event name, so the bank can never file one as a real STR.
     is_test = bool(alert.is_synthetic)
-    delivery_payload = {
+    return {
         "event": "sar.approved.test" if is_test else "sar.approved",
         "test": is_test,
         "sar_id": str(draft.id),
@@ -302,8 +365,3 @@ def finalize_and_deliver(alert, db: Session, approver_name: str, approver_user_i
         "pdf_filename": f"SAR-{draft.id}.pdf",
         "compliance_rules_triggered": rule_ids,
     }
-
-    webhook = db.query(WebhookConfig).filter(WebhookConfig.tenant_id == alert.tenant_id).first()
-    if webhook and webhook.is_active:
-        _record_delivery(db, alert, draft, webhook, delivery_payload)
-    return delivery_payload

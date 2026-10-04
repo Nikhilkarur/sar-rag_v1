@@ -1,7 +1,9 @@
 """SAR approval → PDF download → webhook delivery, end to end through the API.
 
-DB-backed: runs against DATABASE_URL (tables created if missing) and is skipped when that
-database is unreachable. Each test seeds its own tenant, so no cleanup between tests is needed.
+DB-backed: runs only against a dedicated, migrated test database — DATABASE_URL must name a
+database ending in "_test" that `alembic upgrade head` has been run on — and is skipped
+otherwise (never writes to a dev/prod DB, never creates an un-versioned schema). Each test seeds
+its own tenant; every tenant created here is deleted (with its cascaded rows) at module end.
 A local HTTP server stands in for the bank's webhook receiver.
 """
 import base64
@@ -15,23 +17,32 @@ import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
+from sqlalchemy.engine import make_url
 
 from app.config import settings
 
 
-def _db_reachable() -> bool:
+def _test_db_skip_reason() -> str | None:
+    """None if DATABASE_URL is a reachable, migrated *_test database; else why to skip."""
+    url = make_url(settings.DATABASE_URL)
+    if not (url.database or "").endswith("_test"):
+        return f"DATABASE_URL database {url.database!r} is not a dedicated *_test database"
     try:
-        engine = create_engine(settings.DATABASE_URL, connect_args={"connect_timeout": 3})
-        with engine.connect():
-            pass
-        engine.dispose()
-        return True
+        engine = create_engine(url, connect_args={"connect_timeout": 3})
+        try:
+            with engine.connect() as conn:
+                if not inspect(conn).has_table("alembic_version"):
+                    return "test database is not migrated (run `alembic upgrade head`)"
+        finally:
+            engine.dispose()
     except Exception:
-        return False
+        return "DATABASE_URL database is unreachable"
+    return None
 
 
-pytestmark = pytest.mark.skipif(not _db_reachable(), reason="DATABASE_URL database is unreachable")
+_SKIP_REASON = _test_db_skip_reason()
+pytestmark = pytest.mark.skipif(_SKIP_REASON is not None, reason=_SKIP_REASON or "")
 
 HINDI = "राजेश कुमार शर्मा"
 ARABIC = "شركة الأفق الخليجي"
@@ -45,12 +56,15 @@ class _Receiver:
     def __init__(self):
         self.requests = []
         self.script = {}  # path -> list of status codes, consumed per request
+        self.hooks = {}  # path -> callable run on each request before responding
         receiver = self
 
         class Handler(BaseHTTPRequestHandler):
             def do_POST(self):
                 body = self.rfile.read(int(self.headers.get("Content-Length", 0)))
                 receiver.requests.append({"path": self.path, "headers": dict(self.headers), "body": body})
+                if self.path in receiver.hooks:
+                    receiver.hooks[self.path]()
                 codes = receiver.script.get(self.path) or [200]
                 code = codes.pop(0) if len(codes) > 1 else codes[0]
                 self.send_response(code)
@@ -77,13 +91,33 @@ def receiver():
 
 # ── App + seed data ──────────────────────────────────────────────────
 
+_created_tenant_ids = []
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _cleanup_tenants():
+    """Delete every tenant this module created. Everything tenant-owned cascades; audit and
+    API logs only SET NULL, so those rows are removed explicitly first (plus the API logs of
+    this module's unauthenticated requests, which carry no tenant)."""
+    from app.database import engine
+    with engine.connect() as conn:
+        started = conn.execute(text("SELECT now()")).scalar()
+    yield
+    time.sleep(0.3)  # let in-flight delivery threads record their last attempt
+    with engine.begin() as conn:
+        ids = {"ids": list(_created_tenant_ids)}
+        conn.execute(text("DELETE FROM audit_logs WHERE tenant_id = ANY(:ids)"), ids)
+        conn.execute(text("DELETE FROM api_logs WHERE tenant_id = ANY(:ids)"), ids)
+        conn.execute(text("DELETE FROM api_logs WHERE tenant_id IS NULL AND user_agent = 'testclient' "
+                          "AND created_at >= :started"), {"started": started})
+        conn.execute(text("DELETE FROM tenants WHERE id = ANY(:ids)"), ids)
+    _created_tenant_ids.clear()
+
+
 @pytest.fixture(scope="module")
 def client():
     from fastapi.testclient import TestClient
-    from app.database import engine
-    from app.models import Base
     from app.main import app
-    Base.metadata.create_all(engine)
     return TestClient(app)
 
 
@@ -120,6 +154,7 @@ class Tenancy:
                              status="ACTIVE", tenant_id_public=f"TST-{tag}")
         db.add(self.tenant)
         db.flush()
+        _created_tenant_ids.append(self.tenant.id)
         self.officer = User(tenant_id=self.tenant.id, email=f"officer-{tag}@test.local", password_hash="x",
                             full_name="Priya Nair", role="COMPLIANCE_OFFICER")
         self.admin = User(tenant_id=self.tenant.id, email=f"admin-{tag}@test.local", password_hash="x",
@@ -161,6 +196,20 @@ class Tenancy:
         self.db.commit()
         return a, draft
 
+    def rotate_secret(self):
+        """Rotate the signing secret directly in the DB (as /webhook/secret/rotate does)."""
+        from app.database import SessionLocal
+        from app.models.webhook import WebhookConfig
+        from app.utils.security import encrypt_json
+        self.secret = "rotated-" + uuid.uuid4().hex[:8]
+        s = SessionLocal()
+        try:
+            w = s.get(WebhookConfig, self.webhook.id)
+            w.secret_encrypted = encrypt_json(self.secret)
+            s.commit()
+        finally:
+            s.close()
+
     def set_callback(self, url):
         self.db.refresh(self.webhook)
         self.webhook.callback_url = url
@@ -179,6 +228,11 @@ def _wait_for_delivery(db, draft_id, timeout=15):
             return d
         time.sleep(0.05)
     raise AssertionError(f"delivery for {draft_id} did not finish")
+
+
+def _signed_by(req, secret) -> bool:
+    expected = "sha256=" + hmac.new(secret.encode(), req["body"], hashlib.sha256).hexdigest()
+    return hmac.compare_digest(req["headers"].get("X-Aegis-Signature", ""), expected)
 
 
 def _approve(client, t, alert):
@@ -321,6 +375,37 @@ class TestWebhookDelivery:
         assert (evt["status"], evt["http_status"], evt["destination"]) == ("DELIVERED", None, "internal-sink")
         assert evt["hmac_valid"] is True and "pdf_base64" not in evt["payload"]
 
+    def test_retry_after_secret_rotation_is_signed_with_the_new_secret(self, client, db, receiver):
+        receiver.script["/rotated"] = [503, 200]
+        t = Tenancy(db, callback_url=f"{receiver.base}/rotated")
+        old_secret = t.secret
+        rotated = []
+
+        def rotate_once():  # the bank rotates its secret after the first (failed) attempt
+            if not rotated:
+                t.rotate_secret()
+                rotated.append(True)
+        receiver.hooks["/rotated"] = rotate_once
+        alert, draft = t.alert()
+        assert _approve(client, t, alert).status_code == 200
+        d = _wait_for_delivery(db, draft.id)
+        first, second = receiver.to("/rotated")
+        assert _signed_by(first, old_secret) and _signed_by(second, t.secret)
+        assert d.status == "DELIVERED" and d.hmac_signature == second["headers"]["X-Aegis-Signature"]
+
+    def test_stalled_delivery_is_reported_stalled(self, client, db):
+        from datetime import datetime, timedelta, timezone
+        from app.models.delivery import WebhookDelivery
+        t = Tenancy(db)
+        alert, draft = t.alert()
+        assert _approve(client, t, alert).status_code == 200
+        d = db.query(WebhookDelivery).filter(WebhookDelivery.sar_draft_id == draft.id).one()
+        # as left behind by a restart in the middle of the retry loop
+        d.status, d.attempted_at = "RETRYING", datetime.now(timezone.utc) - timedelta(minutes=30)
+        db.commit()
+        [evt] = _events(client, t)
+        assert evt["status"] == "STALLED" and "outcome unknown" in evt["error"]
+
     def test_legacy_event_without_delivery_record_is_unknown(self, client, db):
         from app.models.webhook import WebhookSinkEvent
         t = Tenancy(db)
@@ -330,6 +415,91 @@ class TestWebhookDelivery:
         db.commit()
         [evt] = _events(client, t)
         assert evt["status"] == "UNKNOWN" and evt["http_status"] is None and evt["destination"] is None
+
+
+# ── Re-delivery ──────────────────────────────────────────────────────
+
+class TestRedeliver:
+    def _redeliver(self, client, t, event_id, user=None):
+        return client.post(f"/api/v1/tenant/webhook/events/{event_id}/redeliver",
+                           headers=_auth(user or t.admin))
+
+    def test_failed_delivery_is_resent_once_to_the_current_destination(self, client, db, receiver):
+        from app.models.audit import AuditLog
+        from app.models.delivery import WebhookDelivery
+        receiver.script["/redeliver-dead"] = [500]
+        t = Tenancy(db, callback_url=f"{receiver.base}/redeliver-dead")
+        alert, draft = t.alert()
+        assert _approve(client, t, alert).status_code == 200
+        failed = _wait_for_delivery(db, draft.id)
+        assert failed.status == "FAILED"
+        [evt] = _events(client, t)
+
+        t.set_callback(f"{receiver.base}/redeliver-new")  # the bank fixed its endpoint
+        t.rotate_secret()
+        r = self._redeliver(client, t, evt["id"])
+        assert r.status_code == 200, r.text
+        assert r.json()["destination"] == f"{receiver.base}/redeliver-new"
+        deadline = time.time() + 15
+        while time.time() < deadline and not receiver.to("/redeliver-new"):
+            time.sleep(0.05)
+        [req] = receiver.to("/redeliver-new")
+        assert _signed_by(req, t.secret)
+        # rebuilt from stored data: byte-identical to the report that failed to arrive
+        assert hashlib.sha256(req["body"]).hexdigest() == failed.request_body_hash
+        assert json.loads(receiver.to("/redeliver-dead")[0]["body"]) == json.loads(req["body"])
+
+        new_id = uuid.UUID(r.json()["delivery_id"])
+        while time.time() < deadline:
+            db.expire_all()
+            if db.get(WebhookDelivery, new_id).status == "DELIVERED":
+                break
+            time.sleep(0.05)
+        events = _events(client, t)
+        assert [e["status"] for e in events] == ["DELIVERED", "FAILED"]
+        assert db.query(AuditLog).filter(AuditLog.tenant_id == t.tenant.id,
+                                         AuditLog.action == "WEBHOOK_REDELIVERED").count() == 1
+        # delivered now: neither event can send it again
+        for e in events:
+            assert self._redeliver(client, t, e["id"]).status_code == 409
+        assert len(receiver.to("/redeliver-new")) == 1
+
+    def test_stalled_delivery_can_be_redelivered(self, client, db):
+        from datetime import datetime, timedelta, timezone
+        from app.models.delivery import WebhookDelivery
+        t = Tenancy(db)
+        alert, draft = t.alert()
+        assert _approve(client, t, alert).status_code == 200
+        d = db.query(WebhookDelivery).filter(WebhookDelivery.sar_draft_id == draft.id).one()
+        d.status, d.attempted_at = "PENDING", datetime.now(timezone.utc) - timedelta(minutes=30)
+        db.commit()
+        [evt] = _events(client, t)
+        r = self._redeliver(client, t, evt["id"])
+        assert r.status_code == 200 and r.json()["status"] == "DELIVERED"  # built-in sink
+
+    def test_in_flight_delivery_cannot_be_redelivered(self, client, db):
+        from app.models.delivery import WebhookDelivery
+        t = Tenancy(db)
+        alert, draft = t.alert()
+        assert _approve(client, t, alert).status_code == 200
+        d = db.query(WebhookDelivery).filter(WebhookDelivery.sar_draft_id == draft.id).one()
+        d.status = "RETRYING"  # recent: its retry loop is still running
+        db.commit()
+        [evt] = _events(client, t)
+        r = self._redeliver(client, t, evt["id"])
+        assert r.status_code == 409 and "retrying" in r.json()["detail"]
+
+    def test_only_approval_events_of_own_tenant_by_admin(self, client, db):
+        t, other = Tenancy(db), Tenancy(db)
+        assert client.post("/api/v1/tenant/webhook/test", headers=_auth(t.admin)).status_code == 200
+        [ping] = _events(client, t)
+        assert self._redeliver(client, t, ping["id"]).status_code == 409  # webhook.test ping
+        alert, _ = t.alert()
+        assert _approve(client, t, alert).status_code == 200
+        approval = _events(client, t)[0]
+        assert self._redeliver(client, other, approval["id"]).status_code == 404
+        assert self._redeliver(client, t, approval["id"], user=t.officer).status_code == 403
+        assert self._redeliver(client, t, "not-a-uuid").status_code == 404
 
 
 # ── Auto-approve path (routers/ingest.py background task) ────────────
@@ -397,6 +567,21 @@ class TestConcurrentApprove:
         assert len(receiver.to("/race")) == 1
         assert db.query(WebhookDelivery).filter(WebhookDelivery.sar_draft_id == draft.id).count() == 1
         assert db.query(WebhookSinkEvent).filter(WebhookSinkEvent.tenant_id == t.tenant.id).count() == 1
+
+
+class TestBackgroundProcessingRace:
+    @pytest.mark.parametrize("action", ["approve", "reject"])
+    def test_alert_still_processing_cannot_be_decided(self, client, db, action):
+        # ingest.py commits the draft while the alert is PROCESSING and then sets its final
+        # status unconditionally; a decision in that window would be overwritten or doubled.
+        from app.models.delivery import WebhookDelivery
+        t = Tenancy(db)
+        alert, draft = t.alert(status="PROCESSING")
+        r = client.post(f"/api/v1/alerts/queue/{alert.id}/{action}", json={}, headers=_auth(t.officer))
+        assert r.status_code == 409 and "still being processed" in r.json()["detail"]
+        db.refresh(alert)
+        assert alert.status == "PROCESSING"
+        assert db.query(WebhookDelivery).filter(WebhookDelivery.sar_draft_id == draft.id).count() == 0
 
 
 # ── Simulator (synthetic) alerts ─────────────────────────────────────

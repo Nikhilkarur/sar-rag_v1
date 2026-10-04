@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { CheckCircle2, XCircle, Zap } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, RotateCcw, XCircle, Zap } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useWebhookConfig, useWebhookEvents } from '../../../hooks/useTenant'
 import { rotateWebhookSecret, sendTestWebhook, updateWebhookConfig } from '../../../api/tenant'
@@ -7,6 +7,7 @@ import { Button } from '../../../components/ui/Button'
 import { Toggle } from '../../../components/ui/Toggle'
 import { Input } from '../../../components/ui/Input'
 import { CopyButton } from '../../../components/ui/CopyButton'
+import { Modal } from '../../../components/ui/Modal'
 import { Skeleton } from '../../../components/ui/Skeleton'
 import { useToast } from '../../../components/ui/Toast'
 import { WebhookEventCard } from '../../../components/WebhookEventCard'
@@ -23,6 +24,8 @@ export function Webhook() {
   const [url, setUrl] = useState('')
   const [saving, setSaving] = useState(false)
   const [newSecret, setNewSecret] = useState<string | null>(null)
+  const [rotateOpen, setRotateOpen] = useState(false)
+  const [rotating, setRotating] = useState(false)
   const [testing, setTesting] = useState(false)
   const [testResult, setTestResult] = useState<TestResult>(null)
 
@@ -50,14 +53,27 @@ export function Webhook() {
     }
     setSaving(true)
     try {
+      // Saving only changes the destination; the signing secret is rotated separately (below),
+      // so a URL change never invalidates the secret the bank verifies with.
       await updateWebhookConfig({ callback_url: url, use_internal_sink: false })
+      qc.invalidateQueries({ queryKey: ['webhook-config'] })
+      toast('success', 'Webhook configuration saved', 'Deliveries are signed with your current secret.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleRotate = async () => {
+    setRotating(true)
+    try {
       // The full secret only exists in the rotate response — keep it in state to show once.
       const rotated = await rotateWebhookSecret()
       setNewSecret(rotated.secret)
+      setRotateOpen(false)
       qc.invalidateQueries({ queryKey: ['webhook-config'] })
-      toast('success', 'Webhook configuration saved', 'A new signing secret was generated.')
+      toast('warning', 'Signing secret rotated', 'Your previous secret is now invalid.')
     } finally {
-      setSaving(false)
+      setRotating(false)
     }
   }
 
@@ -144,7 +160,7 @@ export function Webhook() {
                   </div>
                   <div>
                     <Button onClick={handleSave} loading={saving} size="sm">
-                      Save & Generate Secret
+                      Save
                     </Button>
                   </div>
                   {(newSecret || config?.secret_prefix) && (
@@ -175,11 +191,26 @@ export function Webhook() {
                           {config?.secret_prefix}•••••••••••••••••••••••••
                         </span>
                       )}
-                      {newSecret && (
+                      {newSecret ? (
                         <p style={{ fontSize: 12, color: 'var(--warning)', marginTop: 6 }}>
                           Update your HMAC verification immediately — this secret is shown once.
                         </p>
+                      ) : (
+                        <p style={{ fontSize: 12, color: 'var(--text-4)', marginTop: 6 }}>
+                          The full secret is only shown when it is generated. Generate a new one to set up
+                          verification of <code>X-Aegis-Signature</code>.
+                        </p>
                       )}
+                      <div style={{ marginTop: 10 }}>
+                        <Button
+                          variant="danger-ghost"
+                          size="sm"
+                          icon={<RotateCcw size={13} />}
+                          onClick={() => setRotateOpen(true)}
+                        >
+                          Generate New Secret
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -259,6 +290,42 @@ export function Webhook() {
           </div>
         )}
       </div>
+
+      {/* Rotate secret modal */}
+      <Modal
+        open={rotateOpen}
+        onClose={() => setRotateOpen(false)}
+        title="Generate a new signing secret?"
+        width={420}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setRotateOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="danger" onClick={handleRotate} loading={rotating}>
+              Generate
+            </Button>
+          </>
+        }
+      >
+        <div
+          style={{
+            background: 'var(--danger-subtle)',
+            border: '1px solid rgba(179,56,44,0.3)',
+            borderRadius: 'var(--r-md)',
+            padding: 14,
+            fontSize: 13,
+            color: 'var(--text-2)',
+            display: 'flex',
+            gap: 10,
+            alignItems: 'flex-start',
+          }}
+        >
+          <AlertTriangle size={15} color="var(--danger)" style={{ flexShrink: 0, marginTop: 1 }} />
+          Your current secret stops working immediately: every delivery from now on, including retries, is
+          signed with the new one. Update your HMAC verification right after.
+        </div>
+      </Modal>
     </div>
   )
 }
