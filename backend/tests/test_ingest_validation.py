@@ -87,6 +87,13 @@ class TestTextFields:
         status, _ = _status_detail(ingest._clean_text_field, {"transaction_type": "WIRE\x00"}, FIELD_MAP, "transaction_type")
         assert status == 422
 
+    @pytest.mark.parametrize("field", ["transaction_id", "transaction_currency", "transaction_type"])
+    def test_unpaired_surrogate_is_422_naming_field(self, field):
+        # psycopg2 cannot UTF-8 encode it: was a UnicodeEncodeError (500) at flush
+        status, detail = _status_detail(ingest._clean_text_field, {field: "A\ud800"}, FIELD_MAP, field)
+        assert status == 422
+        assert detail.startswith(f"{field} (") and "surrogate" in detail
+
     def test_missing_or_blank_is_none_never_the_string_none(self):
         for normalized in ({}, {"transaction_id": None}, {"transaction_id": "  "}):
             assert ingest._clean_text_field(normalized, FIELD_MAP, "transaction_id") is None
@@ -106,8 +113,27 @@ class TestTimestamp:
 
     @pytest.mark.parametrize("value", ["yesterday", "2026-13-45", 1718000000, {"t": 1}])
     def test_unparseable_raises(self, value):
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError) as exc:
             ingest._parse_txn_timestamp(value)
+        assert not isinstance(exc.value, ingest._TimestampOutOfRange)
+
+    @pytest.mark.parametrize("value", [
+        # Valid ISO 8601, but the UTC instant Postgres stores is outside Python's
+        # years 1-9999: committed fine, then every read of the alert raised
+        "9999-12-31T23:00:00-05:00",
+        "0001-01-01T00:00:00+05:30",  # .NET DateTime.MinValue with an IST offset
+        "0001-01-01T00:00:00Z",
+        "1899-12-31T23:59:59Z",
+        "2101-01-01T00:00:00",
+        "2100-12-31T23:00:00-05:00",  # 2101 in UTC
+    ])
+    def test_out_of_range_raises(self, value):
+        with pytest.raises(ingest._TimestampOutOfRange):
+            ingest._parse_txn_timestamp(value)
+
+    @pytest.mark.parametrize("value", ["1900-01-01T00:00:00Z", "2100-12-31T23:59:59Z", "2100-12-31T23:59:59"])
+    def test_range_bounds_inclusive(self, value):
+        assert ingest._parse_txn_timestamp(value) is not None
 
 
 class TestRiskScore:
@@ -128,6 +154,17 @@ class TestLoadsPayload:
     @pytest.mark.parametrize("body", [b'{"a": NaN}', b'{"a": [Infinity]}', b'{"a": {"b": 1e400}}'])
     def test_flags_non_finite(self, body):
         assert ingest._loads_payload(body)[1] is True
+
+
+class TestEncodesAsUtf8:
+    @pytest.mark.parametrize("body", [b'{"a": "\\ud800"}', b'{"a": {"b": ["x\\udfff"]}}', b'{"\\ud800": 1}'])
+    def test_lone_surrogate_anywhere(self, body):
+        assert ingest._encodes_as_utf8(ingest._loads_payload(body)[0]) is False
+
+    def test_paired_surrogates_and_non_ascii_pass(self):
+        payload, _ = ingest._loads_payload('{"a": "\\ud83d\\ude00", "b": "₹ 990000"}'.encode())
+        assert payload["a"] == "\U0001F600"
+        assert ingest._encodes_as_utf8(payload) is True
 
 
 class TestHandlerRunsInThreadpool:

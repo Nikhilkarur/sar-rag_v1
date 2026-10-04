@@ -22,25 +22,48 @@ import threading
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal, DecimalException, ROUND_HALF_UP
 from collections import defaultdict, deque
 from sqlalchemy import func
 from sqlalchemy.exc import DataError, IntegrityError
 
 
+# Plausible transaction years. Anything outside is a placeholder (.NET's
+# DateTime.MinValue serializes as 0001-01-01T00:00:00) or a unit mix-up, not a
+# real transaction date to put on a SAR. The bound also keeps the stored value
+# loadable: Postgres keeps timestamptz in UTC, so a value Python parses fine but
+# whose UTC instant falls outside years 1-9999 (9999-12-31T23:00:00-05:00,
+# 0001-01-01T00:00:00+05:30) used to commit and then fail every read of the
+# alert, which took down the tenant's whole review queue.
+_TXN_TIMESTAMP_YEARS = (1900, 2100)
+
+class _TimestampOutOfRange(ValueError):
+    pass
+
 def _parse_txn_timestamp(value):
     """Parse a payload transaction_timestamp (ISO 8601) into a datetime.
     Missing -> None (the summary/goAML then fall back to the row's created_at).
     Present but unparseable -> ValueError, which the handler turns into a 422:
-    silently dropping it put the ingest time on the report as the txn date."""
+    silently dropping it put the ingest time on the report as the txn date.
+    Outside _TXN_TIMESTAMP_YEARS (checked in UTC) -> _TimestampOutOfRange."""
     if value is None or (isinstance(value, str) and not value.strip()):
         return None
     if isinstance(value, datetime):
-        return value
-    if not isinstance(value, str):
+        ts = value
+    elif not isinstance(value, str):
         raise ValueError("not a string")
-    return datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
+    else:
+        ts = datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
+    # Check the UTC instant Postgres will store, not the local wall-clock time
+    try:
+        year = ts.astimezone(timezone.utc).year if ts.tzinfo else ts.year
+    except OverflowError:
+        year = None
+    low, high = _TXN_TIMESTAMP_YEARS
+    if year is None or not low <= year <= high:
+        raise _TimestampOutOfRange(f"year outside {low}-{high}")
+    return ts
 
 # --- Typed-column validation ---
 # The normalizer is deliberately tolerant (a missing path is just None), but these
@@ -73,6 +96,8 @@ def _clean_text_field(normalized: dict, field_map: dict, field: str):
         raise _field_error(field, field_map, f"must be at most {limit} characters")
     if "\x00" in value:
         raise _field_error(field, field_map, "must not contain NUL characters")
+    if not _encodes_as_utf8(value):
+        raise _field_error(field, field_map, "must not contain unpaired UTF-16 surrogates")
     return value
 
 def _parse_amount(normalized: dict, field_map: dict):
@@ -133,6 +158,17 @@ def _loads_payload(body: bytes):
 
     payload = json.loads(body, parse_float=_float, parse_constant=_constant)
     return payload, bool(non_finite)
+
+def _encodes_as_utf8(value) -> bool:
+    """False if any string in value (keys included) holds an unpaired surrogate.
+    json.loads turns a lone \\ud800-\\udfff escape into a str that has no UTF-8
+    form, so psycopg2 and the PII tokenizer raised UnicodeEncodeError (a 500).
+    Properly paired escapes (e.g. emoji) are joined by json.loads and pass."""
+    try:
+        json.dumps(value, ensure_ascii=False).encode("utf-8")
+    except UnicodeEncodeError:
+        return False
+    return True
 
 # --- Rate limiting (sliding window, in-process) ---
 # Two layers, so a caller without the API key can never spend a tenant's quota:
@@ -430,6 +466,9 @@ def _ingest_payload(request: Request, db: Session, tenant: Tenant, body: bytes):
     transaction_type = _clean_text_field(normalized, field_map, "transaction_type")
     try:
         transaction_timestamp = _parse_txn_timestamp(normalized.get("transaction_timestamp"))
+    except _TimestampOutOfRange:
+        low, high = _TXN_TIMESTAMP_YEARS
+        raise _field_error("transaction_timestamp", field_map, f"is out of range (years {low}-{high} UTC)")
     except ValueError:
         raise _field_error("transaction_timestamp", field_map, "must be an ISO 8601 datetime")
     _check_risk_score(normalized, field_map)
@@ -437,6 +476,11 @@ def _ingest_payload(request: Request, db: Session, tenant: Tenant, body: bytes):
         raise HTTPException(
             status_code=422,
             detail="Payload contains a non-finite number (NaN, Infinity or out of range)",
+        )
+    if not _encodes_as_utf8(raw_payload):
+        raise HTTPException(
+            status_code=422,
+            detail="Payload contains an unpaired UTF-16 surrogate (a lone \\ud800-\\udfff escape)",
         )
 
     # 2. Mask PII

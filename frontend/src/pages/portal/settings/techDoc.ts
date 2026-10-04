@@ -229,7 +229,7 @@ export function buildTechDocHtml(tenantId: string): string {
       <tr><td>409</td><td>Duplicate submission (idempotency key already processed). Includes the original alert id.</td></tr>
       <tr><td>411</td><td>Missing <code>Content-Length</code> (body was streamed/chunked).</td></tr>
       <tr><td>413</td><td>Payload too large.</td></tr>
-      <tr><td>422</td><td>A field cannot be stored: <code>txn.amount</code> not a finite number or over 16 integer digits, <code>txn.ref_id</code> / <code>txn.currency</code> / <code>txn.type</code> longer than 255 / 10 / 50 characters, <code>txn.timestamp</code> not ISO 8601, or a NaN/Infinity number. <code>detail</code> names the field.</td></tr>
+      <tr><td>422</td><td>A field cannot be stored: <code>txn.amount</code> not a finite number or over 16 integer digits, <code>txn.ref_id</code> / <code>txn.currency</code> / <code>txn.type</code> longer than 255 / 10 / 50 characters, <code>txn.timestamp</code> not ISO 8601 or outside years 1900&ndash;2100 (UTC), a NaN/Infinity number, or a string with an unpaired UTF-16 surrogate escape (<code>\\ud800</code>&ndash;<code>\\udfff</code>). <code>detail</code> names the field.</td></tr>
       <tr><td>429</td><td>Rate limited &mdash; honor <code>Retry-After</code>.</td></tr>
     </table>
   </section>

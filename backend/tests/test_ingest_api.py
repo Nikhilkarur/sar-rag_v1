@@ -159,6 +159,10 @@ class TestInvalidFieldsAre422:
         (_payload(txn={"currency": "RUPEES-LONG-CURRENCY-CODE"}), "transaction_currency"),
         (_payload(txn={"type": "T" * 300}), "transaction_type"),
         (_payload(txn={"timestamp": "yesterday"}), "transaction_timestamp"),
+        # Valid ISO 8601 whose UTC instant Python cannot read back: used to commit,
+        # 500 at refresh, stay PROCESSING and break every read of the tenant's queue
+        (_payload(txn={"timestamp": "9999-12-31T23:00:00-05:00"}), "transaction_timestamp"),
+        (_payload(txn={"timestamp": "0001-01-01T00:00:00+05:30"}), "transaction_timestamp"),
     ])
     def test_named_field(self, ctx, payload, field):
         r = ctx.client.post(URL, json=payload, headers=ctx.headers)
@@ -179,6 +183,31 @@ class TestInvalidFieldsAre422:
         assert r.status_code == 422, r.text
         assert expected in r.json()["detail"]
         assert ctx.alerts() == []
+
+    @pytest.mark.parametrize("old,new,expected", [
+        # json.loads accepts a lone surrogate escape; psycopg2 then failed to
+        # encode it (typed columns) or the PII tokenizer did (full_name): 500s
+        ('"ref_id": "TXN-', '"ref_id": "\\ud800TXN-', "transaction_id ("),
+        ('"currency": "INR"', '"currency": "\\udfff"', "transaction_currency ("),
+        ('"type": "NEFT_TRANSFER"', '"type": "NEFT\\ud800"', "transaction_type ("),
+        ('"full_name": "Rajesh Kumar Sharma"', '"full_name": "\\ud800"', "unpaired UTF-16 surrogate"),
+        ('"reason": "Near reporting threshold"', '"reason": "\\ud800"', "unpaired UTF-16 surrogate"),
+    ])
+    def test_unpaired_surrogate(self, ctx, old, new, expected):
+        body = json.dumps(_payload())
+        assert old in body
+        r = ctx.client.post(URL, content=body.replace(old, new, 1),
+                            headers={**ctx.headers, "Content-Type": "application/json"})
+        assert r.status_code == 422, r.text
+        assert expected in r.json()["detail"]
+        assert ctx.alerts() == []
+
+    def test_paired_surrogate_escape_is_stored(self, ctx):
+        body = json.dumps(_payload()).replace('"Rajesh Kumar Sharma"', '"Rajesh \\ud83d\\ude00"')
+        r = ctx.client.post(URL, content=body, headers={**ctx.headers, "Content-Type": "application/json"})
+        assert r.status_code == 200, r.text
+        [alert] = ctx.alerts()
+        assert alert.raw_payload["customer"]["full_name"] == "Rajesh \U0001F600"
 
     def test_db_rejection_is_422_and_leaves_nothing_behind(self, ctx):
         # JSONB refuses \u0000: caught as DataError on the single commit, so neither
