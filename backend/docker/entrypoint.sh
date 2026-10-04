@@ -14,14 +14,9 @@ python - <<'PY'
 import os, sys
 from app.config import settings
 
+# (includes the PII_ENCRYPTION_KEY Fernet-format check)
 errors = settings.production_config_errors()
 if settings.ENVIRONMENT == "production":
-    if settings.PII_ENCRYPTION_KEY:
-        try:
-            from cryptography.fernet import Fernet
-            Fernet(settings.PII_ENCRYPTION_KEY)
-        except Exception:
-            errors.append("PII_ENCRYPTION_KEY is not a valid Fernet key.")
     if os.environ.get("SEED_ON_START", "false") == "true":
         for var in ("AEGIS_ADMIN_PASSWORD", "AEGIS_TENANT_ADMIN_PASSWORD"):
             if not os.environ.get(var):

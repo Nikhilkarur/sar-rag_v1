@@ -24,6 +24,7 @@
   - [POST /api/v1/auth/signup](#post-apiv1authsignup)
   - [POST /api/v1/auth/login](#post-apiv1authlogin)
   - [POST /api/v1/auth/refresh](#post-apiv1authrefresh)
+  - [POST /api/v1/auth/logout](#post-apiv1authlogout)
   - [GET /api/v1/auth/me](#get-apiv1authme)
 - [Domain 2: Super Admin](#domain-2-super-admin)
   - [GET /api/v1/admin/verifications](#get-apiv1adminverifications)
@@ -207,8 +208,32 @@ Register a new tenant + admin user. Sets status to `PENDING_VERIFICATION`.
 ```json
 {
   "access_token": "eyJ...",
-  "expires_in": 900
+  "refresh_token": "eyJ...",
+  "token_type": "bearer"
 }
+```
+
+**Business Logic:**
+1. Every login/signup opens its own refresh session (`refresh_sessions` row; the token's `sid`), so signing in on another tab/device never ends this one
+2. Each refresh rotates the token within its session: the returned `refresh_token` replaces the old one, which is dead from then on
+3. Presenting an already-rotated token of a session (a replay) returns `401` AND revokes that whole session (logged as `REFRESH_TOKEN_REUSE`); other sessions of the user are unaffected. Access tokens already issued stay valid until they expire (15 min)
+
+---
+
+### `POST /api/v1/auth/logout`
+
+Ends one login: revokes the refresh session the token belongs to (other logins stay active).
+
+**Auth:** None (refresh token in body, so an expired access token can still sign out)
+
+**Request:**
+```json
+{ "refresh_token": "eyJ..." }
+```
+
+**Response `200`** (also for unknown/expired/already revoked tokens):
+```json
+{ "status": "ok" }
 ```
 
 ---
@@ -279,27 +304,20 @@ Pending tenant applications.
 **Response `200`:**
 ```json
 {
-  "message": "Tenant approved successfully.",
-  "tenant": {
-    "id": "uuid",
-    "name": "PayFast India Pvt Ltd",
-    "status": "ACTIVE",
-    "tenant_id_public": "TEN-0001"
-  },
-  "credentials": {
-    "api_key": "sk-ae-a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0",
-    "api_key_prefix": "sk-ae-a1b2",
-    "tenant_id": "TEN-0001",
-    "warning": "This is the only time the full API key will be shown. Store it securely."
-  }
+  "tenant_id": "TEN-0001",
+  "id": "uuid",
+  "status": "ACTIVE",
+  "api_key": "sk-ae-a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0"
 }
 ```
+`tenant_id` is the public id the tenant sends as `X-Tenant-ID` (with `api_key` as `X-API-Key`);
+`id` is the internal UUID used in admin URLs. The plaintext `api_key` is returned only here.
 
 **Business Logic:**
 1. Validate tenant is in `PENDING_VERIFICATION` status
 2. Generate cryptographically secure API key (`sk-ae-` + 34 hex chars)
 3. bcrypt-hash and store the key; store only the prefix for display
-4. Generate `tenant_id_public` (format: `TEN-XXXX`, auto-incremented)
+4. Generate `tenant_id_public` (format: `TEN-XXXX`, from the `tenant_public_id_seq` sequence, so concurrent approvals never collide)
 5. Update tenant status to `ACTIVE`, set `approved_at`, `approved_by`
 6. Create default `webhook_configs` (use_internal_sink=true, is_active=true)
 7. Create default `llm_configs` (provider=GROQ, model=llama-3.3-70b-versatile)
@@ -314,6 +332,7 @@ Pending tenant applications.
 ```json
 { "reason": "Unable to verify corporate registration number." }
 ```
+`reason` is shown to the applicant: trimmed, 3-2000 characters, otherwise `422`.
 
 **Response `200`:**
 ```json

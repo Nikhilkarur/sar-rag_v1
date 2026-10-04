@@ -1278,8 +1278,21 @@ PK = primary key, FK = foreign key, U = unique.
 | role | varchar(30) | SUPER_ADMIN / TENANT_ADMIN / COMPLIANCE_OFFICER |
 | is_active | bool | default true |
 | last_login_at | ts | |
-| refresh_token_hash · refresh_token_exp | varchar/ts | rotation tracking |
+| refresh_token_hash · refresh_token_exp | varchar/ts | legacy, unused (superseded by `refresh_sessions`) |
 | created_at · updated_at | ts | |
+
+Emails are stored lowercase and matched on `lower(email)` (index `ix_users_email_lower`).
+
+**`refresh_sessions`** ([user.py](backend/app/models/user.py)) — one row per login (tab/device)
+
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid PK | the refresh JWT's `sid` claim |
+| user_id | uuid FK→users | `ON DELETE CASCADE` |
+| token_hash | varchar(255) | bcrypt of the session's CURRENT refresh token (rotated on every refresh) |
+| expires_at | ts | |
+| revoked_at · revoked_reason | ts/varchar(30) | `LOGOUT` or `TOKEN_REUSE` (an already-rotated token was replayed) |
+| created_at · last_used_at | ts | |
 
 **`ingestion_schemas`** ([schema.py](backend/app/models/schema.py))
 

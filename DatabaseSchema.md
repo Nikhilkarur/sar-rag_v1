@@ -133,7 +133,7 @@ CREATE TABLE users (
     is_active       BOOLEAN NOT NULL DEFAULT TRUE,
     last_login_at   TIMESTAMPTZ,
     
-    -- JWT refresh token tracking
+    -- Legacy single-session refresh tracking: no longer used, see refresh_sessions
     refresh_token_hash  VARCHAR(255),
     refresh_token_exp   TIMESTAMPTZ,
     
@@ -144,6 +144,24 @@ CREATE TABLE users (
 CREATE INDEX idx_users_tenant_id ON users(tenant_id);
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_role ON users(role);
+-- Emails are stored lowercase; logins/signups match on lower(email)
+CREATE INDEX ix_users_email_lower ON users(lower(email));
+
+-- One row per login (tab/device). The refresh JWT carries the row id ("sid"); each
+-- refresh rotates token_hash. Presenting an already-rotated token of a session revokes
+-- that session (reuse detection); other sessions of the user are unaffected.
+CREATE TABLE refresh_sessions (
+    id              UUID PRIMARY KEY,                       -- = refresh JWT "sid"
+    user_id         UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash      VARCHAR(255) NOT NULL,                  -- bcrypt of the CURRENT refresh token
+    expires_at      TIMESTAMPTZ NOT NULL,
+    revoked_at      TIMESTAMPTZ,
+    revoked_reason  VARCHAR(30),                            -- LOGOUT | TOKEN_REUSE
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    last_used_at    TIMESTAMPTZ
+);
+
+CREATE INDEX ix_refresh_sessions_user_id ON refresh_sessions(user_id);
 ```
 
 ---
