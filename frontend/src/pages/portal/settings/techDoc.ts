@@ -31,7 +31,7 @@ const REQUEST_SPEC: Group[] = [
   {
     group: 'txn', blurb: 'The transaction that fired your alert.',
     fields: [
-      { path: 'txn.ref_id', example: 'TXN-2026-061099182', pii: false, desc: 'Unique transaction reference. Echoed back and used to correlate the report.' },
+      { path: 'txn.ref_id', example: 'TXN-2026-061099182', pii: false, desc: 'Unique transaction reference. Echoed back and used to correlate the report. If omitted, Aegis assigns AUTO-<uuid>.' },
       { path: 'txn.amount', example: '990000.00', pii: false, desc: 'Transaction amount as a decimal number.' },
       { path: 'txn.currency', example: 'INR', pii: false, desc: 'ISO 4217 currency code.' },
       { path: 'txn.type', example: 'NEFT_TRANSFER', pii: false, desc: 'Instrument / rail, e.g. NEFT_TRANSFER, IMPS, UPI, INTERNATIONAL_WIRE.' },
@@ -229,6 +229,7 @@ export function buildTechDocHtml(tenantId: string): string {
       <tr><td>409</td><td>Duplicate submission (idempotency key already processed). Includes the original alert id.</td></tr>
       <tr><td>411</td><td>Missing <code>Content-Length</code> (body was streamed/chunked).</td></tr>
       <tr><td>413</td><td>Payload too large.</td></tr>
+      <tr><td>422</td><td>A field cannot be stored: <code>txn.amount</code> not a finite number or over 16 integer digits, <code>txn.ref_id</code> / <code>txn.currency</code> / <code>txn.type</code> longer than 255 / 10 / 50 characters, <code>txn.timestamp</code> not ISO 8601, or a NaN/Infinity number. <code>detail</code> names the field.</td></tr>
       <tr><td>429</td><td>Rate limited &mdash; honor <code>Retry-After</code>.</td></tr>
     </table>
   </section>
