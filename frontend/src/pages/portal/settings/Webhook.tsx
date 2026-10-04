@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { CheckCircle2, XCircle, Zap } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useWebhookConfig, useWebhookEvents } from '../../../hooks/useTenant'
-import { sendTestWebhook, updateWebhookConfig } from '../../../api/tenant'
+import { rotateWebhookSecret, sendTestWebhook, updateWebhookConfig } from '../../../api/tenant'
 import { Button } from '../../../components/ui/Button'
 import { Toggle } from '../../../components/ui/Toggle'
 import { Input } from '../../../components/ui/Input'
@@ -11,7 +11,7 @@ import { Skeleton } from '../../../components/ui/Skeleton'
 import { useToast } from '../../../components/ui/Toast'
 import { WebhookEventCard } from '../../../components/WebhookEventCard'
 
-type TestResult = { status: 'SUCCESS' | 'FAILED'; latency_ms: number } | null
+type TestResult = { status: 'SUCCESS' | 'FAILED'; latency_ms: number; message?: string } | null
 
 export function Webhook() {
   const { data: config, isLoading } = useWebhookConfig()
@@ -50,8 +50,10 @@ export function Webhook() {
     }
     setSaving(true)
     try {
-      const result = await updateWebhookConfig({ callback_url: url, use_internal_sink: false })
-      setNewSecret(result.secret_prefix)
+      await updateWebhookConfig({ callback_url: url, use_internal_sink: false })
+      // The full secret only exists in the rotate response — keep it in state to show once.
+      const rotated = await rotateWebhookSecret()
+      setNewSecret(rotated.secret)
       qc.invalidateQueries({ queryKey: ['webhook-config'] })
       toast('success', 'Webhook configuration saved', 'A new signing secret was generated.')
     } finally {
@@ -122,19 +124,9 @@ export function Webhook() {
             <div style={{ marginTop: 20 }}>
               {useSink ? (
                 <div className="anim-fade-in">
-                  <div className="label-upper" style={{ marginBottom: 8 }}>
-                    Sink URL
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <Input
-                      readOnly
-                      value={config?.internal_sink_url ?? ''}
-                      style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-2)' }}
-                    />
-                    <CopyButton value={config?.internal_sink_url ?? ''} />
-                  </div>
-                  <p style={{ fontSize: 12, color: 'var(--text-4)', marginTop: 8 }}>
-                    Webhook payloads are delivered internally. No server needed for testing.
+                  <p style={{ fontSize: 12, color: 'var(--text-4)' }}>
+                    Webhook payloads are recorded inside Aegis and listed in the Delivery Log below. No server
+                    needed for testing.
                   </p>
                 </div>
               ) : (
@@ -221,7 +213,7 @@ export function Webhook() {
             ) : (
               <>
                 <XCircle size={15} color="var(--danger)" />
-                <span style={{ color: 'var(--danger)' }}>Failed: 404 Not Found</span>
+                <span style={{ color: 'var(--danger)' }}>Failed: {testResult.message ?? 'delivery failed'}</span>
               </>
             )}
           </div>

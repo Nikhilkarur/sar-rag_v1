@@ -20,6 +20,7 @@ export function WebhookEventCard({ event }: { event: WebhookEvent }) {
     >
       <button
         onClick={() => setExpanded((e) => !e)}
+        title={`${event.status}${event.attempts ? ` after ${event.attempts} attempt(s)` : ''}${event.error ? ` — ${event.error}` : ''}`}
         style={{
           width: '100%',
           height: 48,
@@ -56,9 +57,9 @@ export function WebhookEventCard({ event }: { event: WebhookEvent }) {
             whiteSpace: 'nowrap',
           }}
         >
-          {event.destination}
+          {event.destination ?? '—'}
         </span>
-        <HttpStatusBadge code={event.http_status} />
+        {event.http_status != null && <HttpStatusBadge code={event.http_status} />}
         <span
           style={{
             fontSize: 11,

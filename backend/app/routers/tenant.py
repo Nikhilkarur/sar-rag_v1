@@ -24,10 +24,12 @@ from app.models.sar import SARDraft
 from app.models.llm_config import LLMConfig
 from app.models.schema import IngestionSchema
 from app.models.webhook import WebhookConfig, WebhookSinkEvent
+from app.models.delivery import WebhookDelivery
 from app.models.audit import AuditLog
 from app.models.compliance import ComplianceMatch
 from app.data.schema_presets import SCHEMA_PRESETS
 from app.schemas.tenant import TenantResponse
+from app.services.sar_delivery import INTERNAL_SINK_DESTINATION
 
 router = APIRouter(prefix="/api/v1/tenant", tags=["Tenant"])
 
@@ -75,10 +77,11 @@ def rotate_api_key(db: Session = Depends(get_db), current_user: User = Depends(g
 # ── Webhook ──────────────────────────────────────────────────────────
 
 def _webhook_dict(w: WebhookConfig, tenant: Tenant) -> dict:
+    # No internal_sink_url: the built-in sink is in-process (deliveries are stored and read via
+    # /webhook/events), so there is no URL a client could call.
     return {
         "callback_url": w.callback_url,
         "use_internal_sink": w.use_internal_sink,
-        "internal_sink_url": f"/api/v1/webhooks/sink/{tenant.tenant_id_public}",
         "secret_prefix": w.secret_prefix,
         "last_tested_at": w.last_tested_at.isoformat() if w.last_tested_at else None,
         "last_test_status": w.last_test_status,
@@ -128,16 +131,34 @@ def update_webhook(payload: dict, db: Session = Depends(get_db), current_user: U
     db.refresh(webhook)
     return _webhook_dict(webhook, tenant)
 
-def _ensure_webhook_secret(webhook: WebhookConfig) -> str:
-    """Secrets created before encrypted storage are unrecoverable (bcrypt) —
-    rotate transparently so signing works."""
-    if webhook.secret_encrypted:
-        return decrypt_json(webhook.secret_encrypted)
+def _new_webhook_secret(webhook: WebhookConfig) -> str:
+    """Generate + store a signing secret the same way tenant creation does (admin_service):
+    bcrypt hash, Fernet-encrypted copy (needed to sign) and a display prefix."""
     secret = pysecrets.token_hex(32)
     webhook.secret_encrypted = encrypt_json(secret)
     webhook.secret_prefix = secret[:12]
     webhook.secret_hash = hash_api_key(secret)
     return secret
+
+def _ensure_webhook_secret(webhook: WebhookConfig) -> str:
+    """Secrets created before encrypted storage are unrecoverable (bcrypt) —
+    rotate transparently so signing works."""
+    if webhook.secret_encrypted:
+        return decrypt_json(webhook.secret_encrypted)
+    return _new_webhook_secret(webhook)
+
+@router.post("/webhook/secret/rotate")
+def rotate_webhook_secret(db: Session = Depends(get_db), current_user: User = Depends(get_tenant_admin)):
+    """Issue a new HMAC signing secret so the bank can verify X-Aegis-Signature. The full
+    value is returned only in this response; afterwards only its prefix is shown."""
+    webhook, _ = _get_webhook(db, current_user)
+    secret = _new_webhook_secret(webhook)
+    webhook.updated_at = func.now()
+    db.add(AuditLog(tenant_id=current_user.tenant_id, user_id=current_user.id,
+                    action="WEBHOOK_SECRET_ROTATED", entity_type="webhook_config",
+                    entity_id=webhook.id))
+    db.commit()
+    return {"secret": secret, "secret_prefix": webhook.secret_prefix}
 
 @router.post("/webhook/test")
 def test_webhook(db: Session = Depends(get_db), current_user: User = Depends(get_tenant_admin)):
@@ -191,25 +212,38 @@ def test_webhook(db: Session = Depends(get_db), current_user: User = Depends(get
     db.commit()
     return {"status": status, "latency_ms": latency_ms, "message": message}
 
+def _webhook_event_dict(e: WebhookSinkEvent, d: WebhookDelivery | None) -> dict:
+    """The outcome recorded when the event was delivered — never derived from the current
+    config. Test pings to the built-in sink have no delivery row (the event is the delivery);
+    approval events from before delivery tracking have no recorded outcome."""
+    if d is not None:
+        status, http_status, destination = d.status, d.http_status_code, d.destination_url
+        attempts, error = d.attempt_number, d.error_message
+    elif (e.headers or {}).get("X-Aegis-Event") == "webhook.test":
+        status, http_status, destination, attempts, error = "DELIVERED", None, INTERNAL_SINK_DESTINATION, 1, None
+    else:
+        status, http_status, destination, attempts, error = "UNKNOWN", None, None, None, None
+    return {
+        "id": str(e.id),
+        "received_at": e.received_at.isoformat(),
+        "hmac_valid": bool(e.hmac_valid),
+        "status": status,
+        "http_status": http_status,
+        "destination": destination,
+        "attempts": attempts,
+        "error": error,
+        "payload": e.payload,
+    }
+
 @router.get("/webhook/events")
 def webhook_events(db: Session = Depends(get_db), current_user: User = Depends(get_tenant_admin)):
-    webhook, tenant = _get_webhook(db, current_user)
-    events = db.query(WebhookSinkEvent).filter(
+    _get_webhook(db, current_user)
+    rows = db.query(WebhookSinkEvent, WebhookDelivery).outerjoin(
+        WebhookDelivery, WebhookSinkEvent.delivery_id == WebhookDelivery.id
+    ).filter(
         WebhookSinkEvent.tenant_id == current_user.tenant_id
     ).order_by(WebhookSinkEvent.received_at.desc()).limit(10).all()
-    return [
-        {
-            "id": str(e.id),
-            "received_at": e.received_at.isoformat(),
-            "hmac_valid": bool(e.hmac_valid),
-            "status": "DELIVERED",
-            "http_status": 200,
-            "destination": webhook.callback_url if not webhook.use_internal_sink and webhook.callback_url
-                           else f"/api/v1/webhooks/sink/{tenant.tenant_id_public}",
-            "payload": e.payload,
-        }
-        for e in events
-    ]
+    return [_webhook_event_dict(e, d) for e, d in rows]
 
 # ── Ingestion schemas ────────────────────────────────────────────────
 
