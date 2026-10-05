@@ -43,6 +43,7 @@ On first start the backend applies the database migrations and seeds a super-adm
 - For production: set `ENVIRONMENT=production`, a strong `SECRET_KEY`, a `PII_ENCRYPTION_KEY` (the app refuses to start without one), `SEED_ON_START=false`, and change the seeded passwords.
 - **Mock Bank with Docker:** the Mock Bank reaches the API at `http://localhost:8000` as usual. When you set its webhook URL in the Aegis portal, use `http://host.docker.internal:<port>/...` instead of `localhost`, because inside the container `localhost` is the container itself.
 - Useful commands: `docker compose ps`, `docker compose logs -f backend`, `docker compose exec backend python seed.py`, `docker compose up --build -d` (after pulling new code).
+- **After pulling new code**, always rebuild with `docker compose up --build -d`: the backend image bundles the PDF fonts and Python dependencies, and pending database migrations run automatically on start. If you copied `.env` from an older `.env.example`, set `PUBLIC_BASE_URL=http://localhost:5173` so the SAR PDF links sent in bank webhooks go through the dashboard origin.
 
 The manual (non-Docker) setup follows below.
 
