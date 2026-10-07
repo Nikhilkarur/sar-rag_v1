@@ -4,7 +4,12 @@ venv/
 .venv/
 __pycache__/
 *.pyc
+# Secrets: real env files and key material never get committed (templates stay tracked)
 .env
+.env.*
+!.env.example
+*.pem
+*.key
 chroma_data/
 backend/chroma_data/
 outputs/
